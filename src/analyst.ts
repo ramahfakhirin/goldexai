@@ -104,7 +104,7 @@ export function computeHtfBiasFromH4(candlesH4: Candle[] | null): { bias: "BULL"
  * Computes the final aligned HTF Confluence Bias from BOTH H1 and H4 trends.
  * Sinyal BUY hanya akan valid jika trend utama H1 minimal bersifat Bullish.
  */
-export function computeAlignedHtfConfluence(candlesH1: Candle[] | null, candlesH4: Candle[] | null): { bias: "BULL" | "BEAR" | "RANGING" | "WEAK_BULL" | "WEAK_BEAR" | null; note: string } {
+export function computeAlignedHtfConfluence(candlesH1: Candle[] | null, candlesH4: Candle[] | null): { bias: "BULL" | "BEAR" | "RANGING" | null; note: string } {
   const h1 = computeHtfBiasFromH1(candlesH1);
   const h4 = computeHtfBiasFromH4(candlesH4);
 
@@ -122,7 +122,7 @@ export function computeAlignedHtfConfluence(candlesH1: Candle[] | null, candlesH
     if (h4.bias === "BULL" || h4.bias === "RANGING") {
       return { bias: "BULL", note: `CONFLUENCE BULL: H1 Bullish (${h1.note}) & H4 Aligned (${h4.note})` };
     } else {
-      return { bias: "WEAK_BULL", note: `H1 Bullish (${h1.note}) but H4 Bearish (${h4.note}) — Weak bullish setup allowed with high filter.` };
+      return { bias: "RANGING", note: `HTF Conflict: H1 Bullish but H4 Bearish. Standing aside.` };
     }
   }
 
@@ -130,7 +130,7 @@ export function computeAlignedHtfConfluence(candlesH1: Candle[] | null, candlesH
     if (h4.bias === "BEAR" || h4.bias === "RANGING") {
       return { bias: "BEAR", note: `CONFLUENCE BEAR: H1 Bearish (${h1.note}) & H4 Aligned (${h4.note})` };
     } else {
-      return { bias: "WEAK_BEAR", note: `H1 Bearish (${h1.note}) but H4 Bullish (${h4.note}) — Weak bearish setup allowed with high filter.` };
+      return { bias: "RANGING", note: `HTF Conflict: H1 Bearish but H4 Bullish. Standing aside.` };
     }
   }
 
@@ -214,7 +214,7 @@ export function runMultiTimeframeScan(
   }
 
   // 4. M1 Subordinate Veto
-  // M1 signal is only valid if M5 aligns, or M5 directional score is >= 3
+  // M1 signal is only valid if M5 aligns, or M5 directional score is >= 4
   const m1 = results.m1;
   const m5 = results.m5;
   if (m1 && (m1.signal === "BUY" || m1.signal === "SELL")) {
@@ -222,16 +222,16 @@ export function runMultiTimeframeScan(
     const m5Sig = m5?.signal || "WAIT";
     const m5Score = m5?.score || 0;
     const isM5Aligned = m5Sig === dir;
-    // We check if the opposite score is less than 3
+    // We check if the M5 directional score is less than 4
     const m5DirScore = dir === "BUY" ? (m5?.conditions?.score_buy ?? 0) : (m5?.conditions?.score_sell ?? 0);
 
-    if (!isM5Aligned && m5DirScore < 3) {
-      console.log(`🚫 M1 ${dir} diveto — M5=${m5Sig}, skor arah M5=${m5DirScore}/7 < 3`);
+    if (!isM5Aligned && m5DirScore < 4) {
+      console.log(`🚫 M1 ${dir} diveto — M5=${m5Sig}, skor arah M5=${m5DirScore}/7 < 4`);
       results.m1 = {
         ...m1,
         signal: "WAIT",
         confidence: "M1_VETOED",
-        reason: `M1 ${dir} diveto — M5 tidak konfirmasi (M5=${m5Sig}, skor ${dir.toLowerCase()} M5=${m5DirScore}/7). ${m1.reason || ""}`,
+        reason: `M1 ${dir} diveto — M5 tidak konfirmasi (M5=${m5Sig}, skor ${dir.toLowerCase()} M5=${m5DirScore}/7 < 4). ${m1.reason || ""}`,
       };
     }
   }

@@ -380,7 +380,7 @@ export function getBerkahSignal(
   capital: number = 2000.0,
   riskPercent: number = 1.5,
   valuePerLot: number = 10.0,
-  htfBiasOverride?: "BULL" | "BEAR" | "RANGING" | "WEAK_BULL" | "WEAK_BEAR"
+  htfBiasOverride?: "BULL" | "BEAR" | "RANGING"
 ): any {
   const n = candles.length;
   if (n < 30) {
@@ -398,26 +398,24 @@ export function getBerkahSignal(
 
   let htf_bias_bull = false;
   let htf_bias_bear = false;
-  let is_weak_trend = false;
   let htf_src = "EMA lokal (fallback)";
 
   if (htfBiasOverride) {
-    htf_bias_bull = htfBiasOverride === "BULL" || htfBiasOverride === "WEAK_BULL";
-    htf_bias_bear = htfBiasOverride === "BEAR" || htfBiasOverride === "WEAK_BEAR";
-    is_weak_trend = htfBiasOverride === "WEAK_BULL" || htfBiasOverride === "WEAK_BEAR";
-    htf_src = is_weak_trend ? "H1 minor (H4 berlawanan)" : "H1 asli";
+    htf_bias_bull = htfBiasOverride === "BULL";
+    htf_bias_bear = htfBiasOverride === "BEAR";
+    htf_src = "H1 asli";
   } else {
     const min_gap = price * 0.002;
     htf_bias_bull = ema_gap > min_gap;
     htf_bias_bear = ema_gap < -min_gap;
   }
 
-  // Dynamic score scaling based on trend quality to unlock high-probability setups and hit 4-6 signals/day
+  // Dynamic score scaling based on trend quality to safeguard winrate > 80%
   let dynamicThreshold = scoreThreshold;
   if (htfBiasOverride === "BULL" || htfBiasOverride === "BEAR") {
-    dynamicThreshold = 3; // Fully aligned strong trend allows earlier entries with score 3/7
-  } else if (is_weak_trend) {
-    dynamicThreshold = 5; // Weak trend requires strict high confluence of 5/7 to safeguard winrate > 80%
+    dynamicThreshold = 4; // Strong fully-aligned trend requires score of 4/7
+  } else {
+    dynamicThreshold = 5; // Ranging or unaligned trend requires a strict high confluence score of 5/7
   }
 
   // Veto overextension
@@ -508,8 +506,12 @@ export function getBerkahSignal(
   const score_buy = Object.values(score_detail_buy).filter(item => item.val).length;
   const score_sell = Object.values(score_detail_sell).filter(item => item.val).length;
 
-  let can_buy = htf_bias_bull && score_buy >= dynamicThreshold;
-  let can_sell = htf_bias_bear && score_sell >= dynamicThreshold;
+  // We require at least one structure or price action trigger (BoS, Liquidity Sweep, or Pin Bar) to execute a trade
+  const has_buy_trigger = bos_bull || liq_buy || is_bull_pin;
+  const has_sell_trigger = bos_bear || liq_sell || is_bear_pin;
+
+  let can_buy = htf_bias_bull && score_buy >= dynamicThreshold && has_buy_trigger;
+  let can_sell = htf_bias_bear && score_sell >= dynamicThreshold && has_sell_trigger;
 
   if (can_buy && can_sell) {
     if (score_buy >= score_sell) can_buy = true;
@@ -581,14 +583,25 @@ export function getBerkahSignal(
     } else if (!htf_bias_bull && !htf_bias_bear) {
       reason = "HTF RANGING — tidak ada bias tren jelas, semua sinyal diblokir.";
     } else {
-      const miss_buy = Object.values(score_detail_buy).filter(item => !item.val).map(item => item.desc);
-      const miss_sell = Object.values(score_detail_sell).filter(item => !item.val).map(item => item.desc);
-      const htf_note = htf_bias_bull
-        ? `HTF BULL (skor buy=${score_buy}/${dynamicThreshold})`
-        : htf_bias_bear
-        ? `HTF BEAR (skor sell=${score_sell}/${dynamicThreshold})`
-        : "HTF RANGING";
-      reason = `WAIT — ${htf_note} | BUY miss [${score_buy}/7 < ${dynamicThreshold}]: ${miss_buy.join(", ")} | SELL miss [${score_sell}/7 < ${dynamicThreshold}]: ${miss_sell.join(", ")}`;
+      const score_met_buy = score_buy >= dynamicThreshold;
+      const score_met_sell = score_sell >= dynamicThreshold;
+      const trigger_missed_buy = score_met_buy && !has_buy_trigger;
+      const trigger_missed_sell = score_met_sell && !has_sell_trigger;
+
+      if (trigger_missed_buy && htf_bias_bull) {
+        reason = `WAIT — HTF BULL [Skor OK ${score_buy}/7 >= ${dynamicThreshold}] tapi tidak ada Trigger (butuh BoS↑, Liquidity Sweep, atau Pin Bar)`;
+      } else if (trigger_missed_sell && htf_bias_bear) {
+        reason = `WAIT — HTF BEAR [Skor OK ${score_sell}/7 >= ${dynamicThreshold}] tapi tidak ada Trigger (butuh BoS↓, Liquidity Sweep, atau Pin Bar)`;
+      } else {
+        const miss_buy = Object.values(score_detail_buy).filter(item => !item.val).map(item => item.desc);
+        const miss_sell = Object.values(score_detail_sell).filter(item => !item.val).map(item => item.desc);
+        const htf_note = htf_bias_bull
+          ? `HTF BULL (skor buy=${score_buy}/${dynamicThreshold})`
+          : htf_bias_bear
+          ? `HTF BEAR (skor sell=${score_sell}/${dynamicThreshold})`
+          : "HTF RANGING";
+        reason = `WAIT — ${htf_note} | BUY miss [${score_buy}/7 < ${dynamicThreshold}]: ${miss_buy.join(", ")} | SELL miss [${score_sell}/7 < ${dynamicThreshold}]: ${miss_sell.join(", ")}`;
+      }
     }
   }
 
