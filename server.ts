@@ -1235,7 +1235,7 @@ app.get("/api/scheduler_status", loginRequired, (req, res) => {
     thread_alive: true,
     market_open: isMarketOpen(),
     market_closed_reason: marketClosedReason(),
-    timeframe: "5m",
+    timeframe: (process.env.DEFAULT_TIMEFRAME || "1m").toUpperCase(),
   });
 });
 
