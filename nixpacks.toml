@@ -1,3 +1,5 @@
+providers = ["python"]
+
 [phases.setup]
 nixPkgs = ["python312", "freetype", "libpng", "zlib", "gcc", "pkg-config"]
 
