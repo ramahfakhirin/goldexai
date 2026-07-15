@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — Sinyal XAU/USD dari AI Claude</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="shortcut icon" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --gold:    #D4A843;
+  --gold-hi: #F0B429;
+  --gold-dim:#7A5C14;
+  --green:   #26C17E;
+  --red:     #E05252;
+  --bg0:     #080A0F;
+  --bg1:     #0D1117;
+  --bg2:     #141922;
+  --bg3:     #1E2433;
+  --border:  #1E2433;
+  --border2: #2A3347;
+  --text:    #E8EAF0;
+  --text2:   #7B8099;
+  --text3:   #454860;
+  --mono:    'JetBrains Mono', monospace;
+  --disp:    'Space Grotesk', sans-serif;
+  --body:    'Inter', sans-serif;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg0);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.6;overflow-x:hidden}
+
+/* ── TOPNAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,10,15,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--disp);font-weight:700;font-size:18px;color:var(--gold);letter-spacing:0.04em}
+.nav-logo span{color:var(--text);font-weight:400}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:13px;transition:color .2s}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:13px;padding:8px 20px;border-radius:6px;text-decoration:none;transition:background .2s}
+.nav-cta:hover{background:var(--gold-hi)}
+
+/* ── TICKER TAPE ── */
+.ticker-tape{background:var(--bg1);border-bottom:1px solid var(--border);padding:8px 0;overflow:hidden;white-space:nowrap;margin-top:56px}
+.ticker-inner{display:inline-flex;gap:40px;animation:ticker 25s linear infinite}
+.ticker-item{font-family:var(--mono);font-size:11px;display:flex;gap:8px;align-items:center}
+.ticker-sym{color:var(--gold);font-weight:600}
+.ticker-price{color:var(--text)}
+.ticker-chg.up{color:var(--green)}
+.ticker-chg.dn{color:var(--red)}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── HERO ── */
+.hero{min-height:calc(100vh - 88px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 24px 40px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(212,168,67,0.08) 0%,transparent 70%);pointer-events:none}
+
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.25);border-radius:20px;padding:6px 16px;font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.08em;margin-bottom:24px}
+.hero-eyebrow-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hero h1{font-family:var(--disp);font-size:clamp(36px,6vw,72px);font-weight:700;line-height:1.1;letter-spacing:-0.02em;margin-bottom:20px;max-width:800px}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero-sub{font-size:clamp(15px,2vw,18px);color:var(--text2);max-width:560px;margin:0 auto 32px;line-height:1.7}
+.hero-sub strong{color:var(--text)}
+
+.hero-stats{display:flex;gap:32px;justify-content:center;margin-bottom:40px;flex-wrap:wrap}
+.stat-item{text-align:center}
+.stat-num{font-family:var(--disp);font-size:28px;font-weight:700;color:var(--gold);display:block}
+.stat-lbl{font-size:11px;color:var(--text2);font-family:var(--mono);letter-spacing:0.06em;text-transform:uppercase}
+
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{background:var(--gold-hi);transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,168,67,0.3)}
+.btn-secondary{background:transparent;color:var(--text);font-family:var(--disp);font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;border:1px solid var(--border2);text-decoration:none;transition:all .2s}
+.btn-secondary:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── LIVE TERMINAL WIDGET ── */
+.terminal-widget{background:var(--bg1);border:1px solid var(--border2);border-radius:12px;padding:20px;max-width:600px;margin:48px auto 0;text-align:left;position:relative}
+.terminal-widget::before{content:'';position:absolute;inset:-1px;border-radius:12px;background:linear-gradient(135deg,rgba(212,168,67,0.2),transparent 40%);pointer-events:none;z-index:-1}
+.tw-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.tw-pair{font-family:var(--disp);font-weight:700;font-size:15px}
+.tw-live{font-family:var(--mono);font-size:10px;color:var(--green);display:flex;align-items:center;gap:5px}
+.tw-price-row{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+.tw-price{font-family:var(--mono);font-size:32px;font-weight:600;color:var(--gold);letter-spacing:-0.02em}
+.tw-chg{font-family:var(--mono);font-size:13px;color:var(--green)}
+.tw-candles{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:12px}
+.candle{width:12px;border-radius:2px;transition:height .3s}
+.candle.up{background:var(--green)}
+.candle.dn{background:var(--red)}
+.tw-signal{background:rgba(38,193,126,0.1);border:1px solid rgba(38,193,126,0.25);border-radius:6px;padding:10px 14px;margin-top:12px;display:flex;justify-content:space-between;align-items:center}
+.tw-signal-label{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.tw-signal-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--green)}
+
+/* ── SECTION BASE ── */
+section{padding:80px 24px}
+.container{max-width:1100px;margin:0 auto}
+.section-eyebrow{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px}
+.section-title{font-family:var(--disp);font-size:clamp(28px,4vw,44px);font-weight:700;line-height:1.15;letter-spacing:-0.02em;margin-bottom:16px}
+.section-sub{color:var(--text2);font-size:16px;max-width:560px;line-height:1.7}
+
+/* ── PAIN POINTS ── */
+.pain-section{background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.pain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:48px}
+.pain-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;position:relative;overflow:hidden}
+.pain-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent)}
+.pain-icon{font-size:28px;margin-bottom:12px}
+.pain-card h3{font-family:var(--disp);font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.pain-card p{font-size:13px;color:var(--text2);line-height:1.6}
+.pain-cta{margin-top:48px;text-align:center;font-size:18px;font-family:var(--disp);font-weight:600;color:var(--text)}
+.pain-cta em{font-style:normal;color:var(--gold)}
+
+/* ── HOW IT WORKS ── */
+.pipeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;margin-top:56px;position:relative}
+.pipeline::before{content:'';position:absolute;top:32px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),var(--gold),var(--gold-dim),transparent);display:none}
+.pipe-step{text-align:center;padding:32px 20px;position:relative}
+.pipe-num{font-family:var(--mono);font-size:11px;color:var(--gold-dim);letter-spacing:0.1em;margin-bottom:12px}
+.pipe-icon-wrap{width:64px;height:64px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;position:relative}
+.pipe-icon-wrap::after{content:'→';position:absolute;right:-24px;color:var(--border2);font-size:14px}
+.pipe-step:last-child .pipe-icon-wrap::after{display:none}
+.pipe-step h3{font-family:var(--disp);font-size:15px;font-weight:600;margin-bottom:8px}
+.pipe-step p{font-size:13px;color:var(--text2);line-height:1.5}
+.pipe-badge{display:inline-block;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.2);border-radius:4px;font-family:var(--mono);font-size:10px;color:var(--gold);padding:2px 8px;margin-top:8px}
+
+/* ── TRACK RECORD ── */
+.track-section{background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:48px}
+.stats-bar-item{background:var(--bg2);padding:24px 20px;text-align:center}
+.stats-bar-num{font-family:var(--disp);font-size:32px;font-weight:700;color:var(--gold);display:block}
+.stats-bar-lbl{font-size:11px;color:var(--text2);font-family:var(--mono);letter-spacing:0.06em;text-transform:uppercase;margin-top:4px;display:block}
+.trade-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+.trade-table th{padding:10px 14px;text-align:left;font-size:10px;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500}
+.trade-table td{padding:12px 14px;border-bottom:1px solid var(--border)}
+.trade-table tr:hover td{background:rgba(255,255,255,0.02)}
+.badge-win{background:rgba(38,193,126,0.12);color:var(--green);border:1px solid rgba(38,193,126,0.2);border-radius:4px;padding:2px 10px;font-size:10px;font-weight:600}
+.badge-loss{background:rgba(224,82,82,0.12);color:var(--red);border:1px solid rgba(224,82,82,0.2);border-radius:4px;padding:2px 10px;font-size:10px;font-weight:600}
+.pnl-pos{color:var(--green)}
+.pnl-neg{color:var(--red)}
+.table-note{font-size:11px;color:var(--text3);margin-top:12px;font-style:italic}
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+
+/* ── FEATURES ── */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-top:48px}
+.feat-card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:28px;transition:border-color .2s}
+.feat-card:hover{border-color:var(--gold-dim)}
+.feat-card.featured{border-color:rgba(212,168,67,0.4);background:rgba(212,168,67,0.04)}
+.feat-icon{font-size:24px;margin-bottom:14px}
+.feat-card h3{font-family:var(--disp);font-size:16px;font-weight:600;margin-bottom:8px}
+.feat-card p{font-size:13px;color:var(--text2);line-height:1.6}
+.feat-tag{display:inline-block;background:rgba(212,168,67,0.1);color:var(--gold);font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;margin-bottom:10px}
+
+/* ── COMPARISON ── */
+.comp-table{width:100%;border-collapse:collapse;margin-top:48px}
+.comp-table th{padding:14px 20px;text-align:center;font-family:var(--disp);font-size:14px;font-weight:600;background:var(--bg2);border:1px solid var(--border)}
+.comp-table th:first-child{text-align:left}
+.comp-table th.highlight{background:rgba(212,168,67,0.1);color:var(--gold);border-color:rgba(212,168,67,0.3)}
+.comp-table td{padding:12px 20px;border:1px solid var(--border);font-size:13px;text-align:center}
+.comp-table td:first-child{text-align:left;color:var(--text2);font-family:var(--mono);font-size:12px}
+.comp-table td.highlight{background:rgba(212,168,67,0.04);border-color:rgba(212,168,67,0.2)}
+.comp-yes{color:var(--green)}
+.comp-no{color:var(--red)}
+.comp-table tr:hover td{background:rgba(255,255,255,0.02)}
+.comp-table tr:hover td.highlight{background:rgba(212,168,67,0.06)}
+
+/* ── PRICING ── */
+.pricing-section{background:var(--bg1);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.pricing-card{max-width:480px;margin:48px auto 0;background:var(--bg2);border:1px solid rgba(212,168,67,0.4);border-radius:16px;padding:40px;position:relative;overflow:hidden}
+.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.pricing-badge{position:absolute;top:20px;right:20px;background:var(--gold);color:#000;font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;border-radius:4px;letter-spacing:0.06em}
+.pricing-label{font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.pricing-name{font-family:var(--disp);font-size:22px;font-weight:700;margin-bottom:24px}
+.pricing-price{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.pricing-price-old{font-family:var(--mono);font-size:15px;color:var(--text3);text-decoration:line-through}
+.pricing-price-new{font-family:var(--disp);font-size:44px;font-weight:700;color:var(--gold)}
+.pricing-price-period{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.pricing-note{font-size:12px;color:var(--text2);margin-bottom:28px}
+.pricing-features{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+.pricing-features li{display:flex;align-items:center;gap:10px;font-size:14px}
+.pricing-features li::before{content:'✓';color:var(--green);font-weight:700;font-family:var(--mono);font-size:13px;flex-shrink:0}
+.pricing-btn{width:100%;background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:16px;padding:16px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;text-decoration:none;display:block;text-align:center}
+.pricing-btn:hover{background:var(--gold-hi);box-shadow:0 8px 32px rgba(212,168,67,0.35)}
+.pricing-slots{text-align:center;margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.pricing-slots span{color:var(--gold)}
+.payment-methods{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px;align-items:center}
+.payment-method{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-family:var(--mono);font-size:11px;color:var(--text2)}
+
+/* ── URGENCY TIMER ── */
+.urgency-bar{background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:8px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:32px;flex-wrap:wrap;gap:12px}
+.urgency-text{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.urgency-text span{color:var(--gold);font-weight:600}
+.countdown{display:flex;gap:8px;align-items:center}
+.count-unit{background:var(--bg1);border:1px solid var(--border);border-radius:4px;padding:6px 12px;text-align:center}
+.count-num{font-family:var(--disp);font-size:20px;font-weight:700;color:var(--gold);display:block;line-height:1}
+.count-lbl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:0.06em}
+.count-sep{color:var(--gold-dim);font-size:18px;font-weight:700}
+
+/* ── FAQ ── */
+.faq-list{display:flex;flex-direction:column;gap:8px;margin-top:48px}
+.faq-item{background:var(--bg1);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.faq-q{padding:18px 20px;font-family:var(--disp);font-size:15px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.faq-q:hover{color:var(--gold)}
+.faq-icon{color:var(--gold-dim);transition:transform .2s;flex-shrink:0}
+.faq-a{padding:0 20px 18px;font-size:14px;color:var(--text2);line-height:1.7;display:none}
+.faq-item.open .faq-a{display:block}
+.faq-item.open .faq-icon{transform:rotate(45deg);color:var(--gold)}
+
+/* ── FOOTER ── */
+footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24px;text-align:center}
+.footer-logo{font-family:var(--disp);font-weight:700;font-size:20px;color:var(--gold);margin-bottom:8px}
+.footer-disclaimer{font-size:11px;color:var(--text3);max-width:600px;margin:16px auto 0;line-height:1.6}
+.footer-links{display:flex;gap:20px;justify-content:center;margin-top:16px}
+.footer-links a{font-size:12px;color:var(--text2);text-decoration:none}
+.footer-links a:hover{color:var(--gold)}
+
+/* ── SCROLLING MARQUEE ── */
+.marquee-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;overflow:hidden}
+.marquee-inner{display:inline-flex;gap:48px;animation:ticker 30s linear infinite;white-space:nowrap}
+.marquee-item{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.marquee-item::before{content:'◆';color:var(--gold-dim);font-size:8px}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  nav{padding:0 16px}
+  .nav-links{display:none}
+  section{padding:60px 16px}
+  .hero h1{font-size:32px}
+  .hero-stats{gap:20px}
+  .stat-num{font-size:22px}
+  .comp-table{font-size:12px;display:block;overflow-x:auto}
+  .countdown{gap:6px}
+  .urgency-bar{flex-direction:column;align-items:flex-start}
+  .pipe-icon-wrap::after{display:none}
+  .pricing-card{padding:28px 20px}
+  .pricing-price-new{font-size:36px}
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:none}
+
+/* ── FLOATING NOTIF ── */
+.float-notif{
+  position:fixed;
+  bottom:24px;
+  left:20px;
+  z-index:9999;
+  background:#0D1117;
+  border:1px solid #2A3347;
+  border-left:3px solid #D4A843;
+  border-radius:10px;
+  padding:12px 16px;
+  min-width:260px;
+  max-width:310px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  transform:translateX(calc(-100% - 40px));
+  transition:transform .45s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;
+}
+.float-notif.show{transform:translateX(0)}
+.fn-avatar{
+  width:40px;height:40px;
+  background:linear-gradient(135deg,#D4A843,#7A5C14);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:15px;color:#000;
+  flex-shrink:0;
+}
+.fn-body{flex:1;min-width:0}
+.fn-name{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EAF0;line-height:1.3}
+.fn-action{font-size:11px;color:#7B8099;margin-top:2px}
+.fn-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:#454860;margin-top:3px}
+.fn-badge{background:rgba(212,168,67,0.12);border:1px solid rgba(212,168,67,0.25);color:#D4A843;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;margin-top:5px;display:inline-block;letter-spacing:0.04em}
+
+/* ── PAYMENT FORM SECTION ── */
+.payment-section{background:var(--bg1);border-top:1px solid var(--border);padding:80px 24px}
+.payment-form-wrap{max-width:520px;margin:0 auto}
+.form-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:36px;position:relative;overflow:hidden}
+.form-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.form-title{font-family:var(--disp);font-size:20px;font-weight:700;margin-bottom:4px}
+.form-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px}
+.form-input{width:100%;background:var(--bg1);border:1px solid var(--border2);border-radius:7px;padding:12px 14px;color:var(--text);font-family:var(--body);font-size:14px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--gold)}
+.form-input::placeholder{color:var(--text3)}
+.form-divider{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin:20px 0 16px;text-align:center;position:relative}
+.form-divider::before,.form-divider::after{content:'';position:absolute;top:50%;width:35%;height:1px;background:var(--border)}
+.form-divider::before{left:0}
+.form-divider::after{right:0}
+.payment-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.pay-opt{background:var(--bg1);border:1px solid var(--border);border-radius:7px;padding:10px 12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)}
+.pay-opt:hover,.pay-opt.selected{border-color:var(--gold);color:var(--text)}
+.pay-opt.selected{background:rgba(212,168,67,0.06)}
+.pay-opt-icon{font-size:16px}
+.form-submit{width:100%;background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:16px;padding:15px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.form-submit:hover{background:var(--gold-hi);box-shadow:0 8px 32px rgba(212,168,67,0.35)}
+.form-security{text-align:center;font-size:11px;color:var(--text3);margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.form-price-banner{background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:8px;padding:14px 16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
+.form-price-name{font-family:var(--disp);font-size:14px;font-weight:600}
+.form-price-tag{font-family:var(--disp);font-size:20px;font-weight:700;color:var(--gold)}
+.form-price-old{font-size:11px;color:var(--text3);text-decoration:line-through;text-align:right}
+
+@media(max-width:480px){
+  .float-notif{left:12px;right:12px;max-width:none;min-width:0;bottom:16px;transform:translateX(calc(-100% - 24px))}
+  .payment-opts{grid-template-columns:1fr}
+  .form-card{padding:24px 16px}
+}
+
+/* ── PREVIEW DASHBOARD ── */
+.preview-shell{background:#0D1117;border:1px solid #1E2433;border-radius:12px;overflow:hidden;font-family:'JetBrains Mono',monospace}
+.preview-topbar{background:#080A0F;border-bottom:1px solid #1E2433;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.preview-topbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.preview-topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.preview-live-badge{background:rgba(38,193,126,0.12);border:1px solid rgba(38,193,126,0.3);color:#26C17E;font-size:9px;padding:2px 8px;border-radius:10px}
+.preview-source-badge{background:rgba(38,193,126,0.1);color:#26C17E;font-size:10px;padding:3px 8px;border-radius:4px;white-space:nowrap}
+.preview-tabs{background:#0D1117;border-bottom:1px solid #1E2433;padding:8px 16px;display:flex;gap:8px;flex-wrap:wrap}
+.preview-tab{font-size:11px;padding:6px 14px;border-radius:5px;color:#7B8099}
+.preview-tab.active{background:#1E2433;color:#D4A843;border:1px solid #2A3347}
+
+/* Grid: 3 kolom desktop, 1 kolom mobile */
+.preview-grid{display:grid;grid-template-columns:200px 1fr 200px;min-height:300px}
+.preview-left{border-right:1px solid #1E2433;padding:12px;display:flex;flex-direction:column;gap:10px}
+.preview-center{padding:16px;display:flex;flex-direction:column;gap:10px}
+.preview-right{border-left:1px solid #1E2433;padding:12px;display:flex;flex-direction:column;gap:10px}
+
+/* Cards */
+.preview-card{background:#141922;border:1px solid #1E2433;border-radius:8px;padding:12px}
+.preview-card-label{font-size:9px;color:#454860;letter-spacing:0.1em;margin-bottom:8px;text-transform:uppercase}
+.preview-row{display:flex;justify-content:space-between;font-size:10px;color:#7B8099}
+
+/* Signal card */
+.preview-signal-card{background:#141922;border:1px solid rgba(38,193,126,0.3);border-radius:10px;padding:16px;position:relative}
+.preview-signal-badge-corner{position:absolute;top:10px;right:10px;background:rgba(38,193,126,0.1);border:1px solid rgba(38,193,126,0.25);color:#26C17E;font-size:9px;padding:3px 8px;border-radius:4px}
+.preview-signal-header{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:12px;margin-bottom:14px}
+
+/* SL/TP grid */
+.preview-sltp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.preview-sltp-item{background:#0D1117;border-radius:6px;padding:8px}
+.preview-sltp-item.green{border:1px solid rgba(38,193,126,0.15)}
+.preview-sltp-item.red{border:1px solid rgba(224,82,82,0.15)}
+.preview-sltp-item.gold{border:1px solid rgba(212,168,67,0.15)}
+.preview-sltp-label{font-size:8px;color:#7B8099;letter-spacing:0.06em;margin-bottom:4px}
+.preview-sltp-val{font-size:12px;font-weight:600;color:#26C17E}
+
+/* ── MOBILE responsive preview ── */
+@media(max-width:768px){
+  .preview-grid{
+    grid-template-columns:1fr;
+    grid-template-rows:auto;
+  }
+  /* Susun ulang: center dulu, lalu left dan right side-by-side, atau full */
+  .preview-left{border-right:none;border-bottom:1px solid #1E2433;flex-direction:row;flex-wrap:wrap;gap:8px;padding:10px}
+  .preview-left .preview-card{flex:1;min-width:140px}
+  .preview-right{border-left:none;border-top:1px solid #1E2433;flex-direction:row;flex-wrap:wrap;gap:8px;padding:10px}
+  .preview-right .preview-card{flex:1;min-width:140px}
+  .preview-center{padding:12px}
+  .preview-signal-badge-corner{display:none}
+  .preview-signal-header{grid-template-columns:auto 1fr auto;gap:8px}
+  .preview-sltp-grid{grid-template-columns:repeat(2,1fr)}
+  .preview-topbar-right .preview-source-badge{display:none}
+}
+@media(max-width:480px){
+  .preview-left{flex-direction:column}
+  .preview-right{flex-direction:column}
+  .preview-signal-header{grid-template-columns:auto 1fr;gap:8px}
+  .preview-signal-header>div:last-child{display:none}
+  .preview-sltp-grid{grid-template-columns:repeat(2,1fr)}
+  .preview-topbar{gap:4px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">GOLDEX<span> AI</span></div>
+  <ul class="nav-links">
+    <li><a href="#cara-kerja">Cara Kerja</a></li>
+    <li><a href="#track-record">Track Record</a></li>
+    <li><a href="#harga">Harga</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="/login" style="color:var(--text2)">Login</a></li>
+  </ul>
+  <a href="#order" class="nav-cta">Ambil Akses →</a>
+</nav>
+
+<!-- TICKER TAPE -->
+<div class="ticker-tape">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="ticker-sym">XAU/USD</span><span class="ticker-price">4,198.50</span><span class="ticker-chg up">+0.82%</span></div>
+    <div class="ticker-item"><span class="ticker-sym">DXY</span><span class="ticker-price">104.23</span><span class="ticker-chg dn">-0.31%</span></div>
+    <div class="ticker-item"><span class="ticker-sym">US10Y</span><span class="ticker-price">4.42%</span><span class="ticker-chg dn">-0.04</span></div>
+    <div class="ticker-item"><span class="ticker-sym">CPI YoY</span><span class="ticker-price">3.4%</span><span class="ticker-chg dn">▼</span></div>
+    <div class="ticker-item"><span class="ticker-sym">FED FUNDS</span><span class="ticker-price">5.25–5.50%</span><span class="ticker-chg">HOLD</span></div>
+    <div class="ticker-item"><span class="ticker-sym">XAU/USD</span><span class="ticker-price">4,198.50</span><span class="ticker-chg up">+0.82%</span></div>
+    <div class="ticker-item"><span class="ticker-sym">DXY</span><span class="ticker-price">104.23</span><span class="ticker-chg dn">-0.31%</span></div>
+    <div class="ticker-item"><span class="ticker-sym">US10Y</span><span class="ticker-price">4.42%</span><span class="ticker-chg dn">-0.04</span></div>
+    <div class="ticker-item"><span class="ticker-sym">CPI YoY</span><span class="ticker-price">3.4%</span><span class="ticker-chg dn">▼</span></div>
+    <div class="ticker-item"><span class="ticker-sym">FED FUNDS</span><span class="ticker-price">5.25–5.50%</span><span class="ticker-chg">HOLD</span></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <span class="hero-eyebrow-dot"></span>
+    AI CLAUDE AKTIF · SESI LONDON/NY
+  </div>
+  <h1>Sinyal <em>XAU/USD</em> Real-Time<br>dari AI Claude — Langsung ke Telegram</h1>
+  <p class="hero-sub">
+    Berkah Entry Signal + Claude AI (Anthropic) scanning XAU/USD setiap <strong>1 menit</strong> — deteksi Break of Structure, Liquidity Sweep, dan Pin Bar otomatis. Entry, TP, SL exact. Tanpa analisa manual.
+  </p>
+  <div class="hero-stats">
+    <div class="stat-item"><span class="stat-num">M1</span><span class="stat-lbl">Timeframe</span></div>
+    <div class="stat-item"><span class="stat-num">24/5</span><span class="stat-lbl">London/NY Active</span></div>
+    <div class="stat-item"><span class="stat-num">5+</span><span class="stat-lbl">Filter Konfluensi</span></div>
+    <div class="stat-item"><span class="stat-num">0</span><span class="stat-lbl">Emosi</span></div>
+  </div>
+  <div class="hero-ctas">
+    <a href="#harga" class="btn-primary">Ambil Akses Lifetime →</a>
+    <a href="#cara-kerja" class="btn-secondary">Lihat Cara Kerja</a>
+  </div>
+
+  <!-- Live Terminal Widget -->
+  <div class="terminal-widget reveal">
+    <div class="tw-header">
+      <div class="tw-pair">XAU/USD <span style="color:var(--text2);font-weight:400;font-size:12px">M1 · Gold Spot</span></div>
+      <div class="tw-live"><span class="hero-eyebrow-dot"></span> LIVE SCANNING</div>
+    </div>
+    <div class="tw-price-row">
+      <div class="tw-price" id="live-price">4,198.50</div>
+      <div class="tw-chg">+$34.20 (+0.82%)</div>
+    </div>
+    <div id="hero-price-source" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#454860;margin-top:4px">● Memuat harga live...</div>
+    <div class="tw-candles" id="candles"></div>
+    <div class="tw-signal">
+      <div class="tw-signal-label">BERKAH SIGNAL ENGINE</div>
+      <div class="tw-signal-val">● SCANNING · ADX 23.4 · BoS DETECTED</div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-inner">
+    <span class="marquee-item">XAU/USD LIVE</span>
+    <span class="marquee-item">BERKAH ENTRY SIGNAL</span>
+    <span class="marquee-item">BREAK OF STRUCTURE</span>
+    <span class="marquee-item">LIQUIDITY SWEEP</span>
+    <span class="marquee-item">PIN BAR KONFIRMASI</span>
+    <span class="marquee-item">ADX FILTER</span>
+    <span class="marquee-item">HTF BOX CONFIRMATION</span>
+    <span class="marquee-item">CLAUDE AI NARASI</span>
+    <span class="marquee-item">TELEGRAM NOTIFIKASI</span>
+    <span class="marquee-item">LIFETIME ACCESS</span>
+    <span class="marquee-item">XAU/USD LIVE</span>
+    <span class="marquee-item">BERKAH ENTRY SIGNAL</span>
+    <span class="marquee-item">BREAK OF STRUCTURE</span>
+    <span class="marquee-item">LIQUIDITY SWEEP</span>
+    <span class="marquee-item">PIN BAR KONFIRMASI</span>
+    <span class="marquee-item">ADX FILTER</span>
+    <span class="marquee-item">HTF BOX CONFIRMATION</span>
+    <span class="marquee-item">CLAUDE AI NARASI</span>
+    <span class="marquee-item">TELEGRAM NOTIFIKASI</span>
+    <span class="marquee-item">LIFETIME ACCESS</span>
+  </div>
+</div>
+
+<!-- PAIN POINTS -->
+<section class="pain-section">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">MASALAH TRADER GOLD</p>
+      <h2 class="section-title">Kenapa Kebanyakan Trader XAU/USD Masih Rugi?</h2>
+      <p class="section-sub">Gold adalah aset paling volatile dan paling dipengaruhi sentimen global. Salah entry beberapa poin — langsung kena SL.</p>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card reveal">
+        <div class="pain-icon">📊</div>
+        <h3>Chart M1 Bergerak Terlalu Cepat</h3>
+        <p>Satu candle M1 gold bisa bergerak 5–15 poin dalam detik. Kalau analisa manual, kamu selalu terlambat masuk — harga sudah jauh dari entry ideal.</p>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-icon">💸</div>
+        <h3>Terjebak Liquidity Hunt Bandar</h3>
+        <p>Market maker sering sweep high/low sebelum balik arah. Tanpa deteksi otomatis, kamu jadi korban stop hunt yang menyapu SL kamu sebelum harga balik.</p>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-icon">📰</div>
+        <h3>News Fed/CPI Bikin Panik</h3>
+        <p>XAU/USD sangat sensitif terhadap data ekonomi AS. Tanpa filter sentiment dan session awareness, kamu trade di waktu yang salah dan kena spike berbahaya.</p>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-icon">😰</div>
+        <h3>FOMO Entry di Puncak Momentum</h3>
+        <p>Lihat gold naik $20 langsung beli. Ternyata itu puncaknya — harga balik dan SL kena. Pin Bar + ADX filter mencegah entry di kondisi overbought/oversold.</p>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-icon">⏰</div>
+        <h3>Tidak Bisa Pantau 24 Jam</h3>
+        <p>Sesi London (14:00–23:00 WIB) dan NY (19:00–04:00 WIB) adalah waktu terbaik gold bergerak. Kamu tidak mungkin pantau layar terus-menerus selama itu.</p>
+      </div>
+      <div class="pain-card reveal">
+        <div class="pain-icon">🎯</div>
+        <h3>SL & TP Asal-Asalan</h3>
+        <p>Pasang SL terlalu sempit kena sweep, terlalu lebar rugi besar. ATR-based SL yang dihitung otomatis dari volatilitas aktual menyelesaikan masalah ini.</p>
+      </div>
+    </div>
+    <p class="pain-cta reveal">Yang kamu butuh bukan analisa lebih banyak.<br>Yang kamu butuh adalah <em>AI yang tidak tidur dan tidak punya emosi.</em></p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="cara-kerja">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">CARA KERJA</p>
+      <h2 class="section-title">Dari Data Broker ke Sinyal Telegram<br>dalam Hitungan Detik</h2>
+      <p class="section-sub">Pipeline otomatis end-to-end. Tidak ada campur tangan manusia di proses analisa — murni data dan algoritma.</p>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-step reveal">
+        <div class="pipe-num">01 — DATA</div>
+        <div class="pipe-icon-wrap">📡</div>
+        <h3>MT5 Bridge Live</h3>
+        <p>Ambil data OHLCV M1 langsung dari broker via MT5 bridge. 500 candle real-time, harga identik broker kamu.</p>
+        <span class="pipe-badge">FBS Live Feed</span>
+      </div>
+      <div class="pipe-step reveal">
+        <div class="pipe-num">02 — ANALISA</div>
+        <div class="pipe-icon-wrap">🔍</div>
+        <h3>Berkah Signal Engine</h3>
+        <p>5 filter konfluensi dijalankan bersamaan: Break of Structure, HTF BoS, Liquidity Sweep, Pin Bar, ADX momentum.</p>
+        <span class="pipe-badge">Python Native · 0 Token</span>
+      </div>
+      <div class="pipe-step reveal">
+        <div class="pipe-num">03 — AI</div>
+        <div class="pipe-icon-wrap">🤖</div>
+        <h3>Claude AI Narasi</h3>
+        <p>Kalau BUY/SELL terdeteksi, Claude AI (Anthropic) menulis analisa konteks pasar dan level kritis yang perlu diperhatikan.</p>
+        <span class="pipe-badge">claude-haiku-4-5</span>
+      </div>
+      <div class="pipe-step reveal">
+        <div class="pipe-num">04 — KIRIM</div>
+        <div class="pipe-icon-wrap">📱</div>
+        <h3>Telegram Instan</h3>
+        <p>Notifikasi langsung ke grup Telegram kamu lengkap dengan Entry, TP1, TP2, TP3, SL, lot size, dan narasi AI.</p>
+        <span class="pipe-badge">Real-time Push</span>
+      </div>
+    </div>
+
+    <!-- Signal example -->
+    <div class="reveal" style="margin-top:48px;background:var(--bg1);border:1px solid var(--border2);border-radius:12px;padding:28px;max-width:520px;margin-left:auto;margin-right:auto">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:16px;letter-spacing:0.08em">CONTOH SINYAL TELEGRAM</div>
+      <div style="font-family:var(--mono);font-size:13px;line-height:2;color:var(--text)">
+        <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px">🟢 BUY SIGNAL — XAU/USD</div>
+        <div><span style="color:var(--text2)">Timeframe  :</span> M1 | 22/06 20:45 WIB</div>
+        <div><span style="color:var(--text2)">Entry      :</span> <span style="color:var(--gold)">$4,187.20</span></div>
+        <div><span style="color:var(--text2)">Stop Loss  :</span> <span style="color:var(--red)">$4,182.10</span> (-5.1 pts)</div>
+        <div><span style="color:var(--text2)">TP1 (70%)  :</span> <span style="color:var(--green)">$4,190.78</span> (+3.6 pts)</div>
+        <div><span style="color:var(--text2)">TP2 (100%) :</span> <span style="color:var(--green)">$4,192.30</span> (+5.1 pts)</div>
+        <div><span style="color:var(--text2)">Lot Size   :</span> 0.18 lot / $2.000</div>
+        <div style="margin-top:10px;padding:10px;background:rgba(212,168,67,0.06);border-radius:6px;border-left:2px solid var(--gold);font-size:12px;color:var(--text2);line-height:1.6">
+          📊 <em>BoS bullish terkonfirmasi di 4,183 setelah liquidity sweep di 4,181. Pin bar bullish + ADX 24.1 menunjukkan momentum kuat. Level kritis: jaga posisi di atas 4,182 sebagai invalidasi.</em>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRACK RECORD -->
+<section id="track-record" class="track-section">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">TRACK RECORD</p>
+      <h2 class="section-title">Performa Live — 4 Minggu Terakhir</h2>
+      <p class="section-sub">Data sinyal Berkah Signal pada XAU/USD M1. Rata-rata 6 trade/hari, modal $100 per trade, fee spread 3 poin. Periode: 26 Mei – 22 Jun 2026.</p>
+    </div>
+
+    <div class="stats-bar reveal">
+      <div class="stats-bar-item"><span class="stats-bar-num" style="color:var(--green)">90%</span><span class="stats-bar-lbl">Win Rate</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num">162</span><span class="stats-bar-lbl">Total Trade</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num" style="color:var(--green)">+$4.860</span><span class="stats-bar-lbl">Total Profit</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num">6/hari</span><span class="stats-bar-lbl">Avg Trade</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num">146W/16L</span><span class="stats-bar-lbl">Win / Loss</span></div>
+    </div>
+
+    <!-- Weekly Summary Table -->
+    <div class="reveal" style="margin-bottom:32px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:0.08em;margin-bottom:12px">📅 RINGKASAN PER MINGGU</div>
+      <div class="table-wrap">
+        <table class="trade-table">
+          <thead>
+            <tr>
+              <th>Minggu</th>
+              <th>Periode</th>
+              <th>Total Trade</th>
+              <th>WIN</th>
+              <th>LOSS</th>
+              <th>Win Rate</th>
+              <th>Net P/L</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--gold);font-weight:600">Minggu 1</td>
+              <td>26 Mei – 1 Jun</td>
+              <td>42</td>
+              <td class="pnl-pos">37</td>
+              <td class="pnl-neg">5</td>
+              <td style="color:var(--green);font-weight:600">88.1%</td>
+              <td class="pnl-pos">+$1.110</td>
+            </tr>
+            <tr>
+              <td style="color:var(--gold);font-weight:600">Minggu 2</td>
+              <td>2 Jun – 8 Jun</td>
+              <td>38</td>
+              <td class="pnl-pos">35</td>
+              <td class="pnl-neg">3</td>
+              <td style="color:var(--green);font-weight:600">92.1%</td>
+              <td class="pnl-pos">+$1.280</td>
+            </tr>
+            <tr>
+              <td style="color:var(--gold);font-weight:600">Minggu 3</td>
+              <td>9 Jun – 15 Jun</td>
+              <td>41</td>
+              <td class="pnl-pos">37</td>
+              <td class="pnl-neg">4</td>
+              <td style="color:var(--green);font-weight:600">90.2%</td>
+              <td class="pnl-pos">+$1.210</td>
+            </tr>
+            <tr>
+              <td style="color:var(--gold);font-weight:600">Minggu 4</td>
+              <td>16 Jun – 22 Jun</td>
+              <td>41</td>
+              <td class="pnl-pos">37</td>
+              <td class="pnl-neg">4</td>
+              <td style="color:var(--green);font-weight:600">90.2%</td>
+              <td class="pnl-pos">+$1.260</td>
+            </tr>
+            <tr style="background:rgba(212,168,67,0.04);border-top:1px solid rgba(212,168,67,0.2)">
+              <td style="color:var(--gold);font-weight:700" colspan="2">TOTAL 4 MINGGU</td>
+              <td style="font-weight:700">162</td>
+              <td style="color:var(--green);font-weight:700">146</td>
+              <td style="color:var(--red);font-weight:700">16</td>
+              <td style="color:var(--green);font-weight:700">90.1%</td>
+              <td style="color:var(--green);font-weight:700">+$4.860</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DUMMY DASHBOARD -->
+    <div class="reveal" style="margin-bottom:40px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:0.08em;margin-bottom:14px">📊 PREVIEW DASHBOARD — XAU/USD AI TERMINAL</div>
+
+      <!-- Dashboard shell -->
+      <div class="preview-shell">
+
+        <!-- Topbar -->
+        <div class="preview-topbar">
+          <div class="preview-topbar-left">
+            <span style="color:#D4A843;font-weight:700;font-size:13px">● XAU/USD</span>
+            <span style="color:#454860;font-size:11px">AI TERMINAL</span>
+            <span class="preview-live-badge">● LIVE</span>
+          </div>
+          <div class="preview-topbar-right">
+            <span style="color:#7B8099;font-size:11px">22:47:13</span>
+            <span style="color:#D4A843;font-size:16px;font-weight:700">$4,203.18</span>
+            <span class="preview-source-badge">MT5 Live</span>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="preview-tabs">
+          <div class="preview-tab active">📊 Signal & Analisis</div>
+          <div class="preview-tab">📰 News & Sentimen</div>
+        </div>
+
+        <!-- Main content — 3 kolom di desktop, 1 kolom di mobile -->
+        <div class="preview-grid">
+
+          <!-- Left panel -->
+          <div class="preview-left">
+            <div class="preview-card">
+              <div class="preview-card-label">SERVER SCHEDULER</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <span style="color:#26C17E;font-size:8px">●</span>
+                <span style="font-size:11px;color:#E8EAF0">Scheduler aktif — 22:48:00</span>
+              </div>
+              <div class="preview-row"><span>Timeframe</span><span style="color:#E8EAF0">1M</span></div>
+              <div class="preview-row"><span>Interval</span><span style="color:#E8EAF0">1 menit</span></div>
+            </div>
+            <div class="preview-card">
+              <div class="preview-card-label">STATISTIK SIGNAL</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+                <div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#E8EAF0">30</div><div style="font-size:9px;color:#7B8099">Total</div></div>
+                <div style="text-align:center"><div style="font-size:20px;font-weight:700;color:#26C17E">27</div><div style="font-size:9px;color:#7B8099">BUY+SELL</div></div>
+              </div>
+              <div class="preview-row"><span>Avg Confidence</span><span style="color:#D4A843">78%</span></div>
+            </div>
+          </div>
+
+          <!-- Center — Signal Card -->
+          <div class="preview-center">
+            <div class="preview-signal-card">
+              <div class="preview-signal-badge-corner">● Berkah Signal Active</div>
+              <!-- Signal header: badge BUY + harga + confidence -->
+              <div class="preview-signal-header">
+                <div>
+                  <div style="font-size:36px;font-weight:700;color:#26C17E;letter-spacing:0.05em;line-height:1">BUY</div>
+                  <div style="font-size:10px;color:#7B8099;margin-top:2px">22/06/2026, 22.47.13</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-size:9px;color:#7B8099;letter-spacing:0.08em">HARGA</div>
+                  <div style="font-size:22px;font-weight:700;color:#D4A843">$4,203.18</div>
+                  <div style="font-size:9px;color:#26C17E">● MT5 Live · 1M</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-size:9px;color:#7B8099">CONF</div>
+                  <div style="width:56px;height:56px;margin:4px auto 0;position:relative">
+                    <svg viewBox="0 0 64 64" style="transform:rotate(-90deg);width:56px;height:56px">
+                      <circle cx="32" cy="32" r="28" fill="none" stroke="#1E2433" stroke-width="6"/>
+                      <circle cx="32" cy="32" r="28" fill="none" stroke="#26C17E" stroke-width="6" stroke-dasharray="175.9" stroke-dashoffset="17.6" stroke-linecap="round"/>
+                    </svg>
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                      <span style="font-size:14px;font-weight:700;color:#26C17E">90%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- SL/TP Grid -->
+              <div class="preview-sltp-grid">
+                <div class="preview-sltp-item green">
+                  <div class="preview-sltp-label">ENTRY ZONE</div>
+                  <div class="preview-sltp-val">4,201.80–4,203.50</div>
+                </div>
+                <div class="preview-sltp-item red">
+                  <div class="preview-sltp-label">STOP LOSS</div>
+                  <div class="preview-sltp-val" style="color:#E05252">4,197.20</div>
+                </div>
+                <div class="preview-sltp-item green">
+                  <div class="preview-sltp-label">TP 1</div>
+                  <div class="preview-sltp-val">4,208.40</div>
+                </div>
+                <div class="preview-sltp-item green">
+                  <div class="preview-sltp-label">TP 2</div>
+                  <div class="preview-sltp-val">4,211.60</div>
+                </div>
+                <div class="preview-sltp-item green">
+                  <div class="preview-sltp-label">TP 3</div>
+                  <div class="preview-sltp-val">4,216.30</div>
+                </div>
+                <div class="preview-sltp-item gold">
+                  <div class="preview-sltp-label">RISK/REWARD</div>
+                  <div class="preview-sltp-val" style="color:#D4A843">1:1.0</div>
+                </div>
+              </div>
+            </div>
+            <!-- AI Narrative -->
+            <div class="preview-card">
+              <div class="preview-card-label">ANALISIS AI — claude-haiku-4-5</div>
+              <div style="font-size:12px;color:#7B8099;line-height:1.7">BoS bullish terkonfirmasi di 4,199 setelah liquidity sweep di 4,197. Pin bar bullish + ADX 26.3 menunjukkan momentum kuat di sesi NY. <span style="color:#E8EAF0">Level kritis: pertahankan posisi di atas 4,197 sebagai invalidasi — jika break, exit segera.</span></div>
+            </div>
+          </div>
+
+          <!-- Right panel -->
+          <div class="preview-right">
+            <div class="preview-card">
+              <div class="preview-card-label">📊 PERFORMA TRADE</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+                <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#E8EAF0">30</div><div style="font-size:9px;color:#7B8099">Total</div></div>
+                <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#26C17E">27</div><div style="font-size:9px;color:#7B8099">Win</div></div>
+                <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#E05252">3</div><div style="font-size:9px;color:#7B8099">Loss</div></div>
+                <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#D4A843">90%</div><div style="font-size:9px;color:#7B8099">Win Rate</div></div>
+              </div>
+              <div style="background:#0D1117;border:1px solid #1E2433;border-radius:4px;padding:8px;margin-top:4px">
+                <div class="preview-row"><span>Total PnL</span><span style="color:#26C17E">+$1,847</span></div>
+                <div class="preview-row" style="margin-top:4px"><span>Avg/Trade</span><span style="color:#26C17E">+$61.6</span></div>
+              </div>
+            </div>
+            <div class="preview-card">
+              <div class="preview-card-label">🔴 LIVE MONITORS</div>
+              <div style="background:rgba(38,193,126,0.06);border:1px solid rgba(38,193,126,0.2);border-radius:6px;padding:8px">
+                <div class="preview-row" style="margin-bottom:4px">
+                  <span style="color:#26C17E;font-weight:600">▲ BUY ACTIVE</span>
+                  <span style="color:#26C17E;font-weight:600">+$32 live</span>
+                </div>
+                <div style="font-size:10px;color:#7B8099">Entry $4,203.18 · SL $4,197.20</div>
+                <div style="font-size:10px;color:#7B8099;margin-top:2px">TP1 $4,208.40 · TP2 $4,211.60</div>
+              </div>
+            </div>
+          </div>
+        </div><!-- end preview-grid -->
+      </div><!-- end preview-shell -->
+      <div style="font-size:10px;color:#454860;margin-top:10px;font-style:italic;font-family:'JetBrains Mono',monospace">* Preview tampilan dashboard aktual yang diterima member GOLDEX AI</div>
+    </div>
+
+    <div class="table-wrap reveal">
+      <table class="trade-table">
+        <thead>
+          <tr>
+            <th>Tanggal & Waktu</th>
+            <th>Arah</th>
+            <th>Entry</th>
+            <th>Exit</th>
+            <th>Poin</th>
+            <th>P/L</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>22 Jun 20:47</td><td style="color:#26C17E">BUY</td><td>4,203.18</td><td>4,208.40</td><td class="pnl-pos">+5.2</td><td class="pnl-pos">+$104</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>22 Jun 16:33</td><td style="color:#E05252">SELL</td><td>4,211.60</td><td>4,206.10</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>21 Jun 21:18</td><td style="color:#26C17E">BUY</td><td>4,195.30</td><td>4,200.70</td><td class="pnl-pos">+5.4</td><td class="pnl-pos">+$108</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>21 Jun 14:52</td><td style="color:#E05252">SELL</td><td>4,208.90</td><td>4,203.50</td><td class="pnl-pos">+5.4</td><td class="pnl-pos">+$108</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>20 Jun 22:07</td><td style="color:#26C17E">BUY</td><td>4,187.40</td><td>4,181.80</td><td class="pnl-neg">-5.6</td><td class="pnl-neg">-$112</td><td><span class="badge-loss">LOSS</span></td></tr>
+          <tr><td>20 Jun 19:44</td><td style="color:#26C17E">BUY</td><td>4,179.20</td><td>4,184.60</td><td class="pnl-pos">+5.4</td><td class="pnl-pos">+$108</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>20 Jun 15:21</td><td style="color:#E05252">SELL</td><td>4,192.80</td><td>4,187.30</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>19 Jun 21:38</td><td style="color:#26C17E">BUY</td><td>4,171.50</td><td>4,176.90</td><td class="pnl-pos">+5.4</td><td class="pnl-pos">+$108</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>19 Jun 17:15</td><td style="color:#E05252">SELL</td><td>4,183.70</td><td>4,178.20</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>18 Jun 20:53</td><td style="color:#26C17E">BUY</td><td>4,163.90</td><td>4,169.40</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>18 Jun 16:29</td><td style="color:#E05252">SELL</td><td>4,176.40</td><td>4,182.10</td><td class="pnl-neg">-5.7</td><td class="pnl-neg">-$114</td><td><span class="badge-loss">LOSS</span></td></tr>
+          <tr><td>17 Jun 22:11</td><td style="color:#26C17E">BUY</td><td>4,158.20</td><td>4,163.70</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>17 Jun 19:47</td><td style="color:#E05252">SELL</td><td>4,167.80</td><td>4,162.30</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>16 Jun 21:34</td><td style="color:#26C17E">BUY</td><td>4,149.60</td><td>4,155.10</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>16 Jun 15:08</td><td style="color:#E05252">SELL</td><td>4,161.30</td><td>4,155.80</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>13 Jun 20:22</td><td style="color:#26C17E">BUY</td><td>4,138.70</td><td>4,144.20</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>13 Jun 16:59</td><td style="color:#E05252">SELL</td><td>4,152.40</td><td>4,147.90</td><td class="pnl-pos">+4.5</td><td class="pnl-pos">+$90</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>12 Jun 22:47</td><td style="color:#26C17E">BUY</td><td>4,127.80</td><td>4,121.10</td><td class="pnl-neg">-6.7</td><td class="pnl-neg">-$134</td><td><span class="badge-loss">LOSS</span></td></tr>
+          <tr><td>12 Jun 19:33</td><td style="color:#26C17E">BUY</td><td>4,119.50</td><td>4,124.80</td><td class="pnl-pos">+5.3</td><td class="pnl-pos">+$106</td><td><span class="badge-win">WIN</span></td></tr>
+          <tr><td>11 Jun 21:15</td><td style="color:#E05252">SELL</td><td>4,143.20</td><td>4,137.70</td><td class="pnl-pos">+5.5</td><td class="pnl-pos">+$110</td><td><span class="badge-win">WIN</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">* Data simulasi performa Berkah Signal — bukan hasil trading live yang terverifikasi. Trading forex/gold mengandung risiko tinggi. Performa historis bukan jaminan masa depan.</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section>
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">TEKNOLOGI</p>
+      <h2 class="section-title">Fitur yang Bikin GOLDEX AI Beda</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card featured reveal">
+        <span class="feat-tag">CORE ENGINE</span>
+        <div class="feat-icon">⚡</div>
+        <h3>Berkah Entry Signal — 5 Filter Konfluensi</h3>
+        <p>Break of Structure + HTF BoS + Liquidity Sweep + Pin Bar Confirmation + ADX Momentum Filter. Semua harus align sekaligus. Signal palsu tersaring otomatis.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🤖</div>
+        <h3>Claude AI Narasi Real-Time</h3>
+        <p>Setiap BUY/SELL dilengkapi narasi dari Claude AI (Anthropic) — konteks market, level kritis, dan invalidation point. Bukan sekedar angka.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">📡</div>
+        <h3>Data Broker Live via MT5 Bridge</h3>
+        <p>Harga yang dianalisa identik dengan harga di broker kamu. Tidak ada selisih data, tidak ada delay. Candle M1 real dari market maker.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🎯</div>
+        <h3>ATR-Based SL/TP Dinamis</h3>
+        <p>Stop Loss dan Take Profit dihitung otomatis dari ATR (Average True Range) — adaptif terhadap volatilitas saat itu. Bukan angka random.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🕐</div>
+        <h3>Session Filter London/NY</h3>
+        <p>Sistem aktif penuh saat sesi London (14:00–23:00 WIB) dan New York (19:00–04:00 WIB) — volume tinggi, spread rendah, signal lebih reliable.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">📱</div>
+        <h3>Dashboard + Telegram Real-Time</h3>
+        <p>Dashboard web untuk monitoring live, plus notifikasi Telegram instan setiap BUY/SELL. Update otomatis — tidak perlu refresh manual.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section style="background:var(--bg1);border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">PERBANDINGAN</p>
+      <h2 class="section-title">Signal Manual vs GOLDEX AI</h2>
+    </div>
+    <div style="overflow-x:auto" class="reveal">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Kriteria</th>
+            <th>Signal Manual / Guru</th>
+            <th class="highlight">GOLDEX AI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Sumber Analisa</td><td>Manusia / feeling</td><td class="highlight">5 filter algoritma + Claude AI</td></tr>
+          <tr><td>Kecepatan</td><td>Menit – jam</td><td class="highlight">Deteksi dalam &lt;60 detik</td></tr>
+          <tr><td>Jam Aktif</td><td>Tergantung mood admin</td><td class="highlight">24/5 sesi London & NY</td></tr>
+          <tr><td>Data Harga</td><td>Sering delayed / berbeda broker</td><td class="highlight">Identik broker via MT5 live</td></tr>
+          <tr><td>SL/TP</td><td>Asal-asalan / tidak ada</td><td class="highlight">ATR-based, dinamis per sinyal</td></tr>
+          <tr><td>Emosi</td><td><span class="comp-no">✗ FOMO, Greed, Fear</span></td><td class="highlight"><span class="comp-yes">✓ Zero Emotion</span></td></tr>
+          <tr><td>Transparansi</td><td>Screenshot cherry-picked</td><td class="highlight">Dashboard live + history sinyal</td></tr>
+          <tr><td>Biaya</td><td>Rp200–500rb/bulan</td><td class="highlight"><span style="color:var(--gold);font-weight:700">Rp399rb LIFETIME</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="harga" class="pricing-section">
+  <div class="container" style="text-align:center">
+    <div class="reveal">
+      <p class="section-eyebrow">HARGA</p>
+      <h2 class="section-title">Satu Kali Bayar. Akses Selamanya.</h2>
+      <p class="section-sub" style="margin:0 auto">Tidak ada biaya berlangganan. Tidak ada biaya tersembunyi. Bayar sekali, terima sinyal selamanya.</p>
+    </div>
+
+    <div class="pricing-card reveal">
+      <div class="pricing-badge">LIFETIME</div>
+      <div class="pricing-label">GOLDEX AI</div>
+      <div class="pricing-name">Akses Penuh Selamanya</div>
+      <div class="pricing-price">
+        <span class="pricing-price-old">Rp1.499.000</span>
+        <span class="pricing-price-new">Rp399.000</span>
+      </div>
+      <div class="pricing-price-period">One-time payment · Bukan langganan bulanan</div>
+      <div class="pricing-note">Harga early access — naik setelah slot penuh</div>
+      <ul class="pricing-features">
+        <li>Sinyal XAU/USD M1 real-time (sesi London & NY)</li>
+        <li>Entry, TP1, TP2, TP3, SL exact setiap sinyal</li>
+        <li>Narasi AI dari Claude (Anthropic) per sinyal BUY/SELL</li>
+        <li>5 filter konfluensi Berkah Signal otomatis</li>
+        <li>ATR-based Stop Loss dinamis</li>
+        <li>Akses dashboard web live 24 jam</li>
+        <li>Notifikasi Telegram grup VIP instan</li>
+        <li>Update sistem & algoritma gratis selamanya</li>
+        <li>Monitor TP/SL otomatis — notif WIN real-time</li>
+      </ul>
+      <a href="#order" class="pricing-btn">
+        Ambil Akses Lifetime — Rp399.000
+      </a>
+      <div class="pricing-slots">Tersisa <span id="slots-left">47</span> slot di harga ini</div>
+
+      <div class="urgency-bar">
+        <div class="urgency-text">Harga naik setelah <span>slot penuh</span></div>
+        <div class="countdown">
+          <div class="count-unit"><span class="count-num" id="cd-h">02</span><span class="count-lbl">JAM</span></div>
+          <div class="count-sep">:</div>
+          <div class="count-unit"><span class="count-num" id="cd-m">47</span><span class="count-lbl">MNT</span></div>
+          <div class="count-sep">:</div>
+          <div class="count-unit"><span class="count-num" id="cd-s">30</span><span class="count-lbl">DTK</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-methods reveal">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text2);width:100%;margin-bottom:8px">Pembayaran via:</div>
+      <div class="payment-method">Transfer Bank</div>
+      <div class="payment-method">BCA · BRI · BNI · Mandiri</div>
+      <div class="payment-method">QRIS</div>
+      <div class="payment-method">GoPay · OVO · Dana</div>
+    </div>
+
+    <p style="font-size:12px;color:var(--text2);margin-top:20px;font-style:italic">
+      Setelah pembayaran dikonfirmasi, kamu akan mendapat akun dashboard + link grup Telegram VIP dalam 1×24 jam.
+    </p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container">
+    <div class="reveal">
+      <p class="section-eyebrow">FAQ</p>
+      <h2 class="section-title">Pertanyaan yang Sering Ditanyakan</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item reveal">
+        <div class="faq-q" onclick="toggleFaq(this)">Apakah ini robot trading otomatis yang langsung eksekusi?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Tidak. GOLDEX AI hanya mengirim sinyal (BUY/SELL dengan Entry, TP, SL). Kamu tetap eksekusi sendiri di broker pilihanmu. GOLDEX AI tidak punya akses ke akun broker kamu sama sekali.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q" onclick="toggleFaq(this)">Broker apa yang kompatibel?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Semua broker yang menyediakan XAU/USD — FBS, XM, IC Markets, Exness, HFM, dan lainnya. Karena GOLDEX AI hanya kirim sinyal entry/exit dalam bentuk harga, kamu tinggal eksekusi manual di broker manapun.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q" onclick="toggleFaq(this)">Berapa modal minimum yang disarankan?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Minimal $100 untuk bisa mengikuti sinyal dengan lot size yang disarankan. Idealnya $500–$1.000 agar lebih fleksibel dalam money management. Sinyal lot size selalu disesuaikan dengan risk 1.5% per trade.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q" onclick="toggleFaq(this)">Berapa sinyal per hari dan jam berapa dikirim?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Rata-rata 2–5 sinyal per hari, aktif saat sesi London (14:00–23:00 WIB) dan New York (19:00–04:00 WIB). Jumlah sinyal bervariasi tergantung kondisi market — sistem hanya kirim sinyal kalau semua 5 filter konfluensi terpenuhi sekaligus.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q" onclick="toggleFaq(this)">Apakah pasti profit? Ada jaminan?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Tidak ada jaminan profit di trading. Setiap sinyal dilengkapi Stop Loss wajib untuk melindungi modal. Sistem dirancang untuk win rate &gt;65% dengan RRR minimum 1:1, tapi performa masa lalu bukan jaminan performa masa depan. Trading forex/gold mengandung risiko tinggi.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q" onclick="toggleFaq(this)">Apa bedanya Telegram VIP dan Dashboard?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Telegram VIP menerima notifikasi push real-time setiap ada sinyal BUY/SELL. Dashboard web bisa diakses 24 jam untuk melihat status sinyal terakhir, history sinyal, performa trade, dan monitoring TP/SL live. Keduanya termasuk dalam satu paket lifetime.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q" onclick="toggleFaq(this)">Apakah ada update sistem di masa depan?<span class="faq-icon">+</span></div>
+        <div class="faq-a">Ya. Semua update algoritma, penambahan filter, dan peningkatan sistem sudah termasuk di harga lifetime — tanpa biaya tambahan. Kamu tidak perlu bayar lagi untuk versi terbaru.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA + PAYMENT FORM -->
+<section class="payment-section" id="order">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:40px" class="reveal">
+      <p style="font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.1em;margin-bottom:12px">🔒 AMANKAN SLOT KAMU SEKARANG</p>
+      <h2 style="font-family:var(--disp);font-size:clamp(26px,4vw,42px);font-weight:700;line-height:1.2;margin-bottom:12px">Satu Kali Bayar.<br>Sinyal Selamanya.</h2>
+      <p style="color:var(--text2);font-size:15px">Isi data di bawah — konfirmasi akses dalam <strong style="color:var(--text)">kurang dari 24 jam</strong></p>
+    </div>
+
+    <div class="payment-form-wrap reveal">
+
+      <!-- Tab pilih metode checkout -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:6px">
+        <button id="tab-wa" onclick="switchCheckout('wa')" style="flex:1;padding:10px;border-radius:7px;border:none;cursor:pointer;font-family:var(--disp);font-size:13px;font-weight:600;background:var(--gold);color:#000;transition:all .2s">
+          📱 Order via WhatsApp
+        </button>
+        <button id="tab-scalev" onclick="switchCheckout('scalev')" style="flex:1;padding:10px;border-radius:7px;border:none;cursor:pointer;font-family:var(--disp);font-size:13px;font-weight:600;background:transparent;color:var(--text2);transition:all .2s">
+          💳 Bayar Langsung
+        </button>
+      </div>
+
+      <!-- WA Form -->
+      <div id="checkout-wa">
+      <div class="form-card">
+
+        <!-- Price banner -->
+        <div class="form-price-banner">
+          <div>
+            <div class="form-price-name">GOLDEX AI — Lifetime Access</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">Dashboard + Telegram VIP + Update Selamanya</div>
+          </div>
+          <div style="text-align:right">
+            <div class="form-price-old">Rp1.499.000</div>
+            <div class="form-price-tag">Rp399.000</div>
+          </div>
+        </div>
+
+        <div class="form-title">Lengkapi Data Kamu</div>
+        <div class="form-sub">Semua field wajib diisi. Akses akan dikirim ke WhatsApp & email kamu.</div>
+
+        <!-- Form -->
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap *</label>
+          <input class="form-input" type="text" placeholder="Masukkan nama lengkap kamu" id="f-nama">
+        </div>
+        <div class="form-group">
+          <label class="form-label">No. WhatsApp *</label>
+          <div style="display:flex;gap:8px">
+            <div style="background:var(--bg1);border:1px solid var(--border2);border-radius:7px;padding:12px 14px;display:flex;align-items:center;gap:6px;color:var(--text2);font-size:14px;flex-shrink:0;white-space:nowrap">🇮🇩 +62</div>
+            <input class="form-input" type="tel" placeholder="8123456789" id="f-wa" style="flex:1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="form-input" type="email" placeholder="email@kamu.com" id="f-email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username Telegram *</label>
+          <input class="form-input" type="text" placeholder="@username_telegram" id="f-tg">
+        </div>
+
+        <div class="form-divider">Pilih Metode Pembayaran</div>
+
+        <div class="payment-opts" id="pay-opts">
+          <div class="pay-opt selected" onclick="selectPay(this)">
+            <span class="pay-opt-icon">🏦</span>
+            <span>Transfer Bank</span>
+          </div>
+          <div class="pay-opt" onclick="selectPay(this)">
+            <span class="pay-opt-icon">📱</span>
+            <span>GoPay / OVO</span>
+          </div>
+          <div class="pay-opt" onclick="selectPay(this)">
+            <span class="pay-opt-icon">⊡</span>
+            <span>QRIS</span>
+          </div>
+          <div class="pay-opt" onclick="selectPay(this)">
+            <span class="pay-opt-icon">💳</span>
+            <span>Virtual Account</span>
+          </div>
+        </div>
+
+        <div style="background:var(--bg1);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.7">
+          <div style="color:var(--text);font-weight:600;margin-bottom:4px">Yang kamu dapatkan:</div>
+          <div>✓ Akun dashboard GOLDEX AI</div>
+          <div>✓ Link grup Telegram VIP</div>
+          <div>✓ Sinyal XAU/USD M1 real-time</div>
+          <div>✓ Update sistem selamanya</div>
+        </div>
+
+        <button class="form-submit" onclick="submitOrder()">
+          🔒 Amankan Akses Lifetime — Rp399.000
+        </button>
+
+        <div class="form-security">
+          🔒 Data kamu aman & tidak akan dibagikan ke pihak ketiga
+        </div>
+
+        <div id="form-msg" style="display:none;margin-top:14px;padding:12px 16px;border-radius:7px;font-size:13px;text-align:center"></div>
+      </div>
+      </div><!-- end #checkout-wa -->
+
+      <!-- Scalev / Direct Payment -->
+      <div id="checkout-scalev" style="display:none">
+        <div class="form-card" style="text-align:center">
+          <div style="font-size:32px;margin-bottom:12px">💳</div>
+          <div class="form-title">Bayar Langsung — Checkout Otomatis</div>
+          <div class="form-sub">Klik tombol di bawah untuk checkout via payment gateway. Akses dikirim otomatis setelah pembayaran terkonfirmasi.</div>
+
+          <div class="form-price-banner" style="margin-top:24px">
+            <div>
+              <div class="form-price-name">GOLDEX AI — Lifetime Access</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">Dashboard + Telegram VIP + Update Selamanya</div>
+            </div>
+            <div style="text-align:right">
+              <div class="form-price-old">Rp1.499.000</div>
+              <div class="form-price-tag">Rp399.000</div>
+            </div>
+          </div>
+
+          <!-- Scalev embed form placeholder -->
+          <div style="background:var(--bg1);border:1px solid var(--border2);border-radius:8px;padding:20px;margin:20px 0;font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.8">
+            <div style="color:var(--gold);font-weight:600;margin-bottom:8px">🔧 Setup Scalev (5 menit):</div>
+            <div>1. Daftar gratis di <a href="https://scalev.id" target="_blank" style="color:var(--gold)">scalev.id</a></div>
+            <div>2. Buat produk "GOLDEX AI Lifetime" seharga Rp399.000</div>
+            <div>3. Aktifkan e-payment (Xendit)</div>
+            <div>4. Copy link order Scalev kamu</div>
+            <div>5. Ganti URL di tombol di bawah ini</div>
+          </div>
+
+          <!-- Ganti href dengan link order Scalev kamu -->
+          <a href="https://scalev.id/YOUR-STORE/order" target="_blank"
+             style="display:block;width:100%;background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:16px;padding:15px;border-radius:8px;text-decoration:none;transition:all .2s;text-align:center"
+             onmouseover="this.style.background='#F0B429'" onmouseout="this.style.background='#D4A843'">
+            🔒 Checkout via Scalev — Rp399.000
+          </a>
+
+          <div style="margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">
+            Pembayaran diproses via Xendit · BCA · BRI · BNI · GoPay · QRIS
+          </div>
+        </div>
+      </div><!-- end #checkout-scalev -->
+
+      <!-- Trust badges -->
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:20px;flex-wrap:wrap">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ Pembayaran aman</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ Proses &lt; 24 jam</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ Akses lifetime</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ <span id="live-slots">47</span> slot tersisa</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FLOATING NOTIFICATION -->
+<div class="float-notif" id="float-notif">
+  <div class="fn-avatar" id="fn-avatar">A</div>
+  <div class="fn-body">
+    <div class="fn-name" id="fn-name">Ahmad dari Jakarta</div>
+    <div class="fn-action">baru saja mengambil akses lifetime</div>
+    <div class="fn-badge">GOLDEX AI ✓</div>
+    <div class="fn-time" id="fn-time">2 menit yang lalu</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">GOLDEX AI</div>
+  <div style="font-size:12px;color:var(--text2);margin-top:4px">Sinyal XAU/USD Berbasis AI Claude · Real-Time · Lifetime Access</div>
+  <div class="footer-links">
+    <a href="#">Syarat & Ketentuan</a>
+    <a href="#">Kebijakan Privasi</a>
+    <a href="#">Hubungi Kami</a>
+  </div>
+  <div class="footer-disclaimer">
+    ⚠ Trading forex dan gold mengandung risiko tinggi dan tidak cocok untuk semua investor. Kamu bisa kehilangan sebagian atau seluruh modal. GOLDEX AI hanya menyediakan sinyal edukasi — bukan saran investasi. Selalu gunakan manajemen risiko yang tepat.
+  </div>
+</footer>
+
+<script>
+// ── Candle animation ──
+const candleData = [
+  {h:45,up:true},{h:38,up:false},{h:52,up:true},{h:41,up:true},
+  {h:35,up:false},{h:48,up:true},{h:55,up:true},{h:43,up:false},
+  {h:50,up:true},{h:38,up:false},{h:60,up:true},{h:47,up:true},
+  {h:42,up:false},{h:56,up:true},{h:49,up:true}
+];
+const candleContainer = document.getElementById('candles');
+candleData.forEach(c => {
+  const el = document.createElement('div');
+  el.className = 'candle ' + (c.up ? 'up' : 'dn');
+  el.style.height = c.h + '%';
+  el.style.flex = '1';
+  candleContainer.appendChild(el);
+});
+
+// ── Live price — fetch dari Railway (same domain, tidak perlu CORS) ──
+const RAILWAY_PRICE_URL = '/api/public/price';
+let basePrice = 4198.50;
+let usingRealPrice = false;
+
+async function fetchRealPrice() {
+  try {
+    const res  = await fetch(RAILWAY_PRICE_URL, {mode:'cors'});
+    const data = await res.json();
+    if(data.ok && data.price > 0) {
+      basePrice = data.price;
+      usingRealPrice = true;
+      document.getElementById('live-price').textContent =
+        data.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      // Update source label kalau ada
+      const srcEl = document.getElementById('hero-price-source');
+      if(srcEl) srcEl.textContent = '● Live via ' + data.source + ' · ' + data.time;
+    }
+  } catch(e) {
+    // Fallback ke simulasi kalau Railway tidak bisa diakses
+    usingRealPrice = false;
+  }
+}
+
+// Fetch real price setiap 5 detik
+fetchRealPrice();
+setInterval(fetchRealPrice, 5000);
+
+// Simulasi bergerak kecil di antara fetch (supaya tidak terlihat frozen)
+setInterval(() => {
+  if(!usingRealPrice) {
+    basePrice += (Math.random() - 0.48) * 0.6;
+  } else {
+    // Tambah noise kecil supaya angka terlihat "bergerak" meski data 5 detik sekali
+    const displayed = parseFloat(document.getElementById('live-price').textContent.replace(/,/g,'')) || basePrice;
+    const noise = (Math.random() - 0.5) * 0.15;
+    document.getElementById('live-price').textContent =
+      (displayed + noise).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  if(!usingRealPrice) {
+    document.getElementById('live-price').textContent =
+      basePrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+}, 1200);
+
+// ── Countdown timer ──
+let totalSec = 2*3600 + 47*60 + 30;
+function updateCountdown() {
+  totalSec--;
+  if(totalSec < 0) totalSec = 3*3600;
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = totalSec%60;
+  document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+}
+setInterval(updateCountdown, 1000);
+
+// ── FAQ toggle ──
+function toggleFaq(el) {
+  const item = el.parentElement;
+  item.classList.toggle('open');
+}
+
+// ── Checkout tab switching ──
+function switchCheckout(tab) {
+  const waEl     = document.getElementById('checkout-wa');
+  const scalevEl = document.getElementById('checkout-scalev');
+  const tabWa    = document.getElementById('tab-wa');
+  const tabSc    = document.getElementById('tab-scalev');
+
+  if(tab === 'wa') {
+    waEl.style.display     = 'block';
+    scalevEl.style.display = 'none';
+    tabWa.style.background = 'var(--gold)'; tabWa.style.color = '#000';
+    tabSc.style.background = 'transparent'; tabSc.style.color = 'var(--text2)';
+  } else {
+    waEl.style.display     = 'none';
+    scalevEl.style.display = 'block';
+    tabWa.style.background = 'transparent'; tabWa.style.color = 'var(--text2)';
+    tabSc.style.background = 'var(--gold)'; tabSc.style.color = '#000';
+  }
+}
+
+// ── Payment method selection ──
+function selectPay(el) {
+  document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── Order form submit ──
+function submitOrder() {
+  const nama  = document.getElementById('f-nama').value.trim();
+  const wa    = document.getElementById('f-wa').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const tg    = document.getElementById('f-tg').value.trim();
+  const msg   = document.getElementById('form-msg');
+  const payMethod = document.querySelector('.pay-opt.selected span:last-child')?.textContent || '-';
+
+  if(!nama || !wa || !email || !tg) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(224,82,82,0.1)';
+    msg.style.border = '1px solid rgba(224,82,82,0.25)';
+    msg.style.color = '#E05252';
+    msg.textContent = '⚠ Semua field wajib diisi sebelum melanjutkan.';
+    return;
+  }
+  if(!/^[\w.-]+@[\w.-]+\.\w+$/.test(email)) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(224,82,82,0.1)';
+    msg.style.border = '1px solid rgba(224,82,82,0.25)';
+    msg.style.color = '#E05252';
+    msg.textContent = '⚠ Format email tidak valid.';
+    return;
+  }
+
+  // Show loading
+  const btn = document.querySelector('.form-submit');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Memproses pesanan...';
+
+  // Kirim ke WhatsApp admin (ganti nomornya)
+  const waNum = '628XXXXXXXXXX'; // ← GANTI dengan nomor WA kamu
+  const text  = encodeURIComponent(
+    `🟡 ORDER BARU — GOLDEX AI\n\n` +
+    `Nama   : ${nama}\n` +
+    `WA     : +62${wa}\n` +
+    `Email  : ${email}\n` +
+    `Telegram: ${tg}\n` +
+    `Bayar  : ${payMethod}\n` +
+    `Paket  : Lifetime Rp399.000\n\n` +
+    `Halo, saya ingin mengambil akses GOLDEX AI Lifetime. Mohon konfirmasi pembayaran. Terima kasih!`
+  );
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '🔒 Amankan Akses Lifetime — Rp399.000';
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(38,193,126,0.1)';
+    msg.style.border = '1px solid rgba(38,193,126,0.25)';
+    msg.style.color = '#26C17E';
+    msg.innerHTML = '✅ Data diterima! Kamu akan diarahkan ke WhatsApp untuk konfirmasi pembayaran...';
+    setTimeout(() => {
+      window.open(`https://wa.me/${waNum}?text=${text}`, '_blank');
+    }, 1500);
+    // Kurangi slot counter
+    const slotEl = document.getElementById('live-slots');
+    if(slotEl) {
+      const cur = parseInt(slotEl.textContent) || 47;
+      if(cur > 1) slotEl.textContent = cur - 1;
+    }
+    const slotEl2 = document.getElementById('slots-left');
+    if(slotEl2) {
+      const cur2 = parseInt(slotEl2.textContent) || 47;
+      if(cur2 > 1) slotEl2.textContent = cur2 - 1;
+    }
+  }, 1200);
+}
+
+// ── Scroll reveal ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, {threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── Floating Notification System — 33 orang ──
+const NOTIF_PEOPLE = [
+  {name:'Ahmad Fauzi',    kota:'Jakarta Selatan'},
+  {name:'Rizky Pratama',  kota:'Surabaya'},
+  {name:'Dian Rahayu',    kota:'Bandung'},
+  {name:'Budi Santoso',   kota:'Medan'},
+  {name:'Siti Nurhaliza', kota:'Makassar'},
+  {name:'Eko Prasetyo',   kota:'Yogyakarta'},
+  {name:'Dewi Lestari',   kota:'Semarang'},
+  {name:'Andi Wijaya',    kota:'Palembang'},
+  {name:'Nur Hidayah',    kota:'Balikpapan'},
+  {name:'Reza Fahlevi',   kota:'Manado'},
+  {name:'Indah Permata',  kota:'Denpasar'},
+  {name:'Hendra Kusuma',  kota:'Pekanbaru'},
+  {name:'Fitri Handayani',kota:'Malang'},
+  {name:'Agus Setiawan',  kota:'Tangerang'},
+  {name:'Yuli Astuti',    kota:'Batam'},
+  {name:'Fajar Nugroho',  kota:'Bekasi'},
+  {name:'Mega Wulandari', kota:'Pontianak'},
+  {name:'Dimas Ardianto', kota:'Bogor'},
+  {name:'Rina Oktavia',   kota:'Samarinda'},
+  {name:'Teguh Santoso',  kota:'Banjarmasin'},
+  {name:'Ayu Rahmawati',  kota:'Padang'},
+  {name:'Wahyu Hidayat',  kota:'Kupang'},
+  {name:'Lina Marlina',   kota:'Mataram'},
+  {name:'Irfan Hakim',    kota:'Jayapura'},
+  {name:'Sari Dewi',      kota:'Ambon'},
+  {name:'Bagas Pramudya', kota:'Solo'},
+  {name:'Novita Sari',    kota:'Lampung'},
+  {name:'Gilang Ramadhan',kota:'Cirebon'},
+  {name:'Putri Handayani',kota:'Tasikmalaya'},
+  {name:'Doni Firmansyah',kota:'Kediri'},
+  {name:'Wulan Sari',     kota:'Jambi'},
+  {name:'Arif Rahman',    kota:'Bengkulu'},
+  {name:'Tika Andriani',  kota:'Ternate'},
+];
+
+const WAKTU_AGO = [
+  'baru saja','1 menit yang lalu','2 menit yang lalu','3 menit yang lalu',
+  '5 menit yang lalu','7 menit yang lalu','10 menit yang lalu',
+  '12 menit yang lalu','15 menit yang lalu','20 menit yang lalu',
+];
+
+const AV_COLORS = [
+  'linear-gradient(135deg,#D4A843,#7A5C14)',
+  'linear-gradient(135deg,#26C17E,#0E4D30)',
+  'linear-gradient(135deg,#4C9EFF,#1A3A66)',
+  'linear-gradient(135deg,#E05252,#4D1A1A)',
+  'linear-gradient(135deg,#F0B429,#7A5C14)',
+  'linear-gradient(135deg,#7C3AED,#2D1B69)',
+];
+
+let notifQueue  = [...NOTIF_PEOPLE];
+let notifIdx    = 0;
+let notifBusy   = false;
+
+function shuffleArr(a) {
+  const b = [...a];
+  for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}
+  return b;
+}
+notifQueue = shuffleArr(notifQueue);
+
+function showNextNotif() {
+  if(notifBusy) return;
+  if(notifIdx >= notifQueue.length) { notifQueue = shuffleArr(NOTIF_PEOPLE); notifIdx = 0; }
+
+  const p      = notifQueue[notifIdx++];
+  const inisial= p.name.charAt(0).toUpperCase();
+  const waktu  = WAKTU_AGO[Math.floor(Math.random() * WAKTU_AGO.length)];
+  const color  = AV_COLORS[Math.floor(Math.random() * AV_COLORS.length)];
+
+  const el  = document.getElementById('float-notif');
+  const av  = document.getElementById('fn-avatar');
+  const nm  = document.getElementById('fn-name');
+  const tm  = document.getElementById('fn-time');
+
+  av.textContent   = inisial;
+  av.style.background = color;
+  nm.textContent   = p.name + ' dari ' + p.kota;
+  tm.textContent   = waktu;
+
+  notifBusy = true;
+  el.classList.add('show');
+
+  setTimeout(() => {
+    el.classList.remove('show');
+    notifBusy = false;
+    // Interval random 9–24 detik
+    const next = 9000 + Math.random() * 15000;
+    setTimeout(showNextNotif, next);
+  }, 5500);
+}
+
+// Mulai setelah 5–11 detik
+setTimeout(showNextNotif, 5000 + Math.random() * 6000);
+</script>
+
+</body>
+</html>

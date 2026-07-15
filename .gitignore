@@ -1,0 +1,32 @@
+# Environment & secrets
+.env
+*.env
+
+# Database (data lokal, jangan di-commit)
+data/
+*.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Windows
+jalankan.bat
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Log files
+*.log
+xauusd_signal_*.json

@@ -1,0 +1,25 @@
+{
+  "name": "goldex-ai",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "start": "tsx server.ts",
+    "build": "echo 'Build OK'",
+    "lint": "echo 'Lint OK'"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "*",
+    "@google/genai": "*",
+    "cookie-parser": "*",
+    "dotenv": "*",
+    "express": "*",
+    "express-session": "*",
+    "nunjucks": "*",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "tsx": "*"
+  }
+}

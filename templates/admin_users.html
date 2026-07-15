@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management — GOLDEX AI Admin</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="shortcut icon" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+body{background:var(--bg0);color:var(--text);font-family:var(--body);padding:0;margin:0}
+.admin-wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+.admin-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px}
+.admin-title{font-family:var(--disp);font-size:20px;font-weight:700;color:var(--gold)}
+.admin-back{font-family:var(--mono);font-size:11px;color:var(--text-dim);text-decoration:none;border:1px solid var(--border);border-radius:5px;padding:6px 12px;transition:all .2s}
+.admin-back:hover{color:var(--gold);border-color:var(--gold)}
+
+/* Form card */
+.form-card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
+.form-card h3{font-family:var(--disp);font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-group label{display:block;font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+.form-group input,.form-group select{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:var(--body);outline:none;transition:border-color .2s;box-sizing:border-box}
+.form-group input:focus,.form-group select:focus{border-color:var(--gold)}
+.btn-add{background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:13px;padding:10px 24px;border:none;border-radius:6px;cursor:pointer;transition:all .2s}
+.btn-add:hover{background:var(--gold-hi)}
+.form-msg{margin-top:10px;padding:8px 12px;border-radius:6px;font-size:12px;display:none}
+.form-msg.ok{background:rgba(38,193,126,.1);border:1px solid rgba(38,193,126,.25);color:var(--green)}
+.form-msg.err{background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.25);color:var(--red)}
+
+/* User table */
+.user-table-wrap{background:var(--bg1);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.user-table{width:100%;border-collapse:collapse;font-size:12px}
+.user-table th{padding:10px 12px;text-align:left;font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--bg2)}
+.user-table td{padding:12px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.user-table tr:last-child td{border-bottom:none}
+.user-table tr:hover td{background:rgba(255,255,255,.02)}
+.badge-role{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:4px;font-weight:600}
+.badge-role.superadmin{background:rgba(212,168,67,.15);color:var(--gold);border:1px solid rgba(212,168,67,.3)}
+.badge-role.user{background:rgba(76,158,255,.1);color:#4c9eff;border:1px solid rgba(76,158,255,.25)}
+.badge-active{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px}
+.badge-active.on{background:rgba(38,193,126,.1);color:var(--green);border:1px solid rgba(38,193,126,.2)}
+.badge-active.off{background:rgba(224,82,82,.1);color:var(--red);border:1px solid rgba(224,82,82,.2)}
+.btn-del{background:transparent;border:1px solid var(--border2);color:var(--text-dim);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:var(--mono);transition:all .2s}
+.btn-del:hover{border-color:var(--red);color:var(--red)}
+.user-meta{color:var(--text-dim);font-size:11px;margin-top:2px}
+.empty-users{text-align:center;padding:32px;color:var(--text-dim);font-family:var(--mono);font-size:12px}
+
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr}
+  .user-table th:nth-child(n+4),.user-table td:nth-child(n+4){display:none}
+}
+</style>
+</head>
+<body>
+<div class="admin-wrap">
+  <div class="admin-topbar">
+    <div>
+      <div class="admin-title">👥 User Management</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px">GOLDEX AI — Superadmin Panel</div>
+    </div>
+    <a href="/" class="admin-back">← Kembali ke Dashboard</a>
+  </div>
+
+  <!-- Form Tambah User -->
+  <div class="form-card">
+    <h3>➕ Tambah User Baru</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nama Lengkap *</label>
+        <input type="text" id="f-fullname" placeholder="Nama lengkap user">
+      </div>
+      <div class="form-group">
+        <label>Username Login *</label>
+        <input type="text" id="f-username" placeholder="username (tanpa spasi)">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Password Login *</label>
+        <input type="password" id="f-password" placeholder="Min. 6 karakter">
+      </div>
+      <div class="form-group">
+        <label>Kota</label>
+        <input type="text" id="f-kota" placeholder="Jakarta, Surabaya, dll">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>No. WhatsApp</label>
+        <input type="text" id="f-wa" placeholder="08123456789">
+      </div>
+      <div class="form-group">
+        <label>Username Telegram</label>
+        <input type="text" id="f-telegram" placeholder="@username">
+      </div>
+    </div>
+    <div class="form-row" style="grid-template-columns:1fr auto;align-items:end">
+      <div class="form-group">
+        <label>Role</label>
+        <select id="f-role">
+          <option value="user">User (Member)</option>
+          <option value="superadmin">Superadmin</option>
+        </select>
+      </div>
+      <button class="btn-add" onclick="createUser()">+ Buat User</button>
+    </div>
+    <div class="form-msg" id="form-msg"></div>
+  </div>
+
+  <!-- Daftar User -->
+  <div class="user-table-wrap">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Kontak</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Login Terakhir</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="user-tbody">
+        <tr><td colspan="6" class="empty-users">Memuat data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:12px;text-align:center">
+    Total: <span id="user-count">0</span> user aktif · Hapus = nonaktifkan (data tetap tersimpan)
+  </p>
+</div>
+
+<script>
+async function loadUsers() {
+  const res  = await fetch('/api/admin/users');
+  const data = await res.json();
+  if (!data.ok) return;
+
+  const users  = data.users;
+  const tbody  = document.getElementById('user-tbody');
+  const active = users.filter(u => u.is_active).length;
+  document.getElementById('user-count').textContent = active;
+
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-users">Belum ada user</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600;color:var(--text)">${u.full_name}</div>
+        <div class="user-meta">@${u.username}</div>
+        ${u.kota ? `<div class="user-meta">📍 ${u.kota}</div>` : ''}
+      </td>
+      <td>
+        ${u.no_wa ? `<div class="user-meta">📱 ${u.no_wa}</div>` : '<span style="color:var(--border2)">-</span>'}
+        ${u.telegram ? `<div class="user-meta">✈ ${u.telegram}</div>` : ''}
+      </td>
+      <td><span class="badge-role ${u.role}">${u.role}</span></td>
+      <td><span class="badge-active ${u.is_active ? 'on' : 'off'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+      <td style="color:var(--text-dim);font-size:11px">${u.last_login ? u.last_login.substring(0,16).replace('T',' ') : '-'}</td>
+      <td>
+        ${u.role !== 'superadmin' ? `<button class="btn-del" onclick="deleteUser(${u.id}, '${u.username}')">Nonaktifkan</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function createUser() {
+  const msg = document.getElementById('form-msg');
+  const body = {
+    full_name: document.getElementById('f-fullname').value.trim(),
+    username:  document.getElementById('f-username').value.trim(),
+    password:  document.getElementById('f-password').value.trim(),
+    kota:      document.getElementById('f-kota').value.trim(),
+    no_wa:     document.getElementById('f-wa').value.trim(),
+    telegram:  document.getElementById('f-telegram').value.trim(),
+    role:      document.getElementById('f-role').value,
+  };
+
+  if (!body.full_name || !body.username || !body.password) {
+    showMsg('Nama lengkap, username, dan password wajib diisi', false);
+    return;
+  }
+
+  const res  = await fetch('/api/admin/users', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+
+  if (data.ok) {
+    showMsg('✓ ' + data.message, true);
+    ['f-fullname','f-username','f-password','f-kota','f-wa','f-telegram'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('f-role').value = 'user';
+    loadUsers();
+  } else {
+    showMsg('✗ ' + (data.error || 'Gagal'), false);
+  }
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Nonaktifkan user "${username}"? User tidak bisa login tapi data tersimpan.`)) return;
+  const res  = await fetch(`/api/admin/users/${id}`, {method: 'DELETE'});
+  const data = await res.json();
+  if (data.ok) { showMsg('✓ ' + data.message, true); loadUsers(); }
+  else showMsg('✗ ' + data.error, false);
+}
+
+function showMsg(text, ok) {
+  const el = document.getElementById('form-msg');
+  el.textContent = text;
+  el.className   = 'form-msg ' + (ok ? 'ok' : 'err');
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+loadUsers();
+</script>
+</body>
+</html>

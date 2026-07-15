@@ -1,0 +1,3097 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>>87.5%<YPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>>85.7%<YPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>>87.5%<YPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>>80.0%<YPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>>87.5%<YPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>>85.7%<YPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>>87.5%<YPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — XAU/USD Signal Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+button, a { cursor: default !important; pointer-events: none; }
+.sched-toggle { pointer-events: none; }
+@media (max-width: 1100px) { .panel-right { display: flex !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge">● LIVE</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">08:27:14</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price">$4,067.84</span>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn" style="color:var(--gold)">👥 Admin</a>
+    <span class="topbar-divider">|</span>
+    <a href="#" class="logout-btn">⏻ Keluar</a>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT PANEL -->
+  <aside class="panel panel-left">
+    <section class="card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf">M5 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> LIVE SCANNING</div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price">4,067.84</div>
+        <div class="dt-chg">+$12.40 (0.31%)</div>
+      </div>
+      <div class="dt-source">● MT5 Bridge · VPS Live · Latency 42ms</div>
+      <div class="dt-candles">
+        <div class="dt-candle up" style="height:28px"></div>
+        <div class="dt-candle up" style="height:36px"></div>
+        <div class="dt-candle dn" style="height:18px"></div>
+        <div class="dt-candle up" style="height:42px"></div>
+        <div class="dt-candle up" style="height:31px"></div>
+        <div class="dt-candle dn" style="height:22px"></div>
+        <div class="dt-candle up" style="height:38px"></div>
+        <div class="dt-candle up" style="height:44px"></div>
+        <div class="dt-candle dn" style="height:14px"></div>
+        <div class="dt-candle up" style="height:40px"></div>
+        <div class="dt-candle up" style="height:48px"></div>
+        <div class="dt-candle up" style="height:35px"></div>
+      </div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-status">● ACTIVE · M5 + H1 HTF BULL</div>
+      </div>
+    </section>
+
+    <section class="card card-setup">
+      <div class="card-label">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" style="color:var(--green)">●</span>
+        <span class="server-label">● Aktif — Sesi London</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Timeframe</span>
+        <span class="ind-val">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name">Interval</span>
+        <span class="ind-val">5 menit</span>
+      </div>
+    </section>
+
+    <section class="card card-stats">
+      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-val">48</div><div class="stat-lbl">Total</div></div>
+        <div class="stat-item buy"><div class="stat-val">24</div><div class="stat-lbl">BUY</div></div>
+        <div class="stat-item sell"><div class="stat-val">19</div><div class="stat-lbl">SELL</div></div>
+        <div class="stat-item wait"><div class="stat-val">5</div><div class="stat-lbl">WAIT</div></div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label">Avg Confidence</span>
+        <span class="avg-conf-val">75.8%</span>
+      </div>
+    </section>
+
+    <section class="card card-session-sched">
+      <div class="card-label-row">
+        <div class="card-label">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge active-sess">● LONDON</span>
+      </div>
+      <div class="sched-list">
+        <div class="sched-item is-current">
+          <div class="sched-info"><span class="sched-flag">🇬🇧</span><div><div class="sched-name">London</div><div class="sched-time">14:00 – 21:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇺🇸</span><div><div class="sched-name">New York</div><div class="sched-time">19:00 – 02:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇯🇵</span><div><div class="sched-name">Tokyo</div><div class="sched-time">06:00 – 13:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+        <div class="sched-item">
+          <div class="sched-info"><span class="sched-flag">🇦🇺</span><div><div class="sched-name">Sydney</div><div class="sched-time">04:00 – 09:59 WIB</div></div></div>
+          <button class="sched-toggle on"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
+        </div>
+      </div>
+      <div class="sched-status">● Sistem aktif — sesi London</div>
+    </section>
+  </aside>
+
+  <!-- CENTER PANEL -->
+  <section class="panel panel-center">
+    <div class="tab-nav">
+      <button class="tab-btn active"><span class="tab-label-full">📊 Signal &amp; Analisis</span><span class="tab-label-short">📊 Signal</span></button>
+      <button class="tab-btn"><span class="tab-label-full">📰 News Real Time</span><span class="tab-label-short">📰 News</span></button>
+      <button class="tab-btn"><span class="tab-label-full">🌐 Sentimen Scoring</span><span class="tab-label-short">🌐 Sentimen</span></button>
+    </div>
+
+    <div class="tab-content active">
+      <div class="signal-hero">
+        <div class="signal-result">
+          <div class="signal-top">
+            <div class="signal-badge-wrap">
+              <div class="signal-badge BUY">BUY</div>
+              <div class="signal-time">8/8/2026, 08.20.02</div>
+              <div class="sig-from-db" style="display:inline-block">📋 Data tersimpan</div>
+            </div>
+            <div class="signal-price-wrap">
+              <div class="signal-price-label">HARGA SEKARANG</div>
+              <div class="signal-price">$4,067.84</div>
+              <div class="signal-tf">M5 · Berkah Engine v2</div>
+              <div class="signal-tf" style="font-size:10px;margin-top:3px;color:var(--green)">MT5 Broker Live — Harga Identik</div>
+            </div>
+            <div class="signal-conf-wrap">
+              <div class="signal-price-label">CONFIDENCE</div>
+              <div class="conf-ring-wrap">
+                <svg class="conf-ring" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle class="ring-bg" cx="40" cy="40" r="32"/>
+                  <circle class="ring-fill" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="50"/>
+                </svg>
+                <div class="conf-pct">75%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rm-grid">
+            <div class="rm-item entry"><div class="rm-label">ENTRY ZONE</div><div class="rm-val">$4,061.34</div><div class="rm-sub">Market Order</div></div>
+            <div class="rm-item sl"><div class="rm-label">STOP LOSS</div><div class="rm-val red">$4,055.18</div></div>
+            <div class="rm-item tp1"><div class="rm-label">TP 1</div><div class="rm-val green">$4,067.50</div></div>
+            <div class="rm-item tp2"><div class="rm-label">TP 2</div><div class="rm-val green">$4,070.59</div></div>
+            <div class="rm-item tp3"><div class="rm-label">TP 3</div><div class="rm-val green">$4,073.68</div></div>
+            <div class="rm-item rr"><div class="rm-label">RISK / REWARD</div><div class="rm-val gold">1:2.0</div></div>
+          </div>
+
+          <div class="narrative-box">
+            <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+            <div class="narrative-text">Struktur H1 bullish terkonfirmasi — EMA50 masih di atas EMA200. Candle M5 terakhir membentuk pin bar di atas level support $4,058, diikuti liquidity sweep ke bawah dan reclaim yang kuat. ADX 28 menunjukkan momentum valid. Session London aktif, volatilitas optimal untuk entry BUY dengan target TP1 di $4,067.50.</div>
+          </div>
+
+          <div class="cf-grid">
+            <div class="cf-col">
+              <div class="card-label green-label">✓ CONFLUENCE</div>
+              <ul class="cf-list">
+                <li>HTF H1 bias BULLISH (EMA50 &gt; EMA200)</li>
+                <li>M5 Break of Structure ke atas</li>
+                <li>Liquidity sweep + reclaim terkonfirmasi</li>
+                <li>Pin bar reversal M5 di support</li>
+                <li>ADX 28 &gt; threshold 22</li>
+                <li>Harga di atas EMA21 M5</li>
+                <li>Sesi London aktif</li>
+              </ul>
+            </div>
+            <div class="cf-col">
+              <div class="card-label red-label">⚠ WARNING</div>
+              <ul class="cf-list warn">
+                <li>Mendekati resistance minor $4,075</li>
+                <li>NFP data besok 20:30 WIB</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timing-row">
+            <div class="timing-item"><span class="timing-label">Best Window</span><span class="timing-val">London/NY Overlap (14:00–04:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Hindari</span><span class="timing-val red">Sesi Asia (02:00–08:00 WIB)</span></div>
+            <div class="timing-item"><span class="timing-label">Review Berikutnya</span><span class="timing-val">5 menit</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-chart" style="display:block">
+        <div class="card-label">HISTORY CONFIDENCE</div>
+        <canvas id="conf-chart" height="80"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT PANEL -->
+  <aside class="panel panel-right">
+    <section class="card card-perf">
+      <div class="card-label-row">
+        <span class="card-label">📊 PERFORMA TRADE</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="card-label" style="color:var(--gold);font-size:8px">7 HARI</span>
+          <button style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;font-family:var(--mono)">↺ Reset</button>
+        </div>
+      </div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-val">20</div><div class="perf-lbl">Total</div></div>
+        <div class="perf-item win"><div class="perf-val">17</div><div class="perf-lbl">Win</div></div>
+        <div class="perf-item loss"><div class="perf-val">5</div><div class="perf-lbl">Loss</div></div>
+        <div class="perf-item rate"><div class="perf-val">85.0%</div><div class="perf-lbl">Win Rate</div></div>
+      </div>
+      <div class="perf-pips-row">
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Total PnL <span class="lot-note">(0.10 lot)</span></span>
+          <span class="perf-pips-val" style="color:var(--green)">+$342.80</span>
+        </div>
+        <div class="perf-pips-item">
+          <span class="perf-pips-lbl">Avg/Trade</span>
+          <span class="perf-pips-val">+$17.14</span>
+        </div>
+      </div>
+      <div class="perf-tp-row">
+        <div class="tp-badge tp1">TP1 9x</div>
+        <div class="tp-badge tp2">TP2 5x</div>
+        <div class="tp-badge tp3">TP3 3x</div>
+        <div class="tp-badge be">BE 3x</div>
+        <div class="tp-badge best">Best +$94.20</div>
+        <div class="tp-badge worst">Worst -$46.50</div>
+        <div class="tp-badge pf">PF 11.20</div>
+      </div>
+    </section>
+
+    <section class="card card-analytics">
+      <div class="card-label-row">
+        <span class="card-label">🔬 ANALITIK</span>
+        <span class="analytics-period">7 HARI</span>
+      </div>
+      <div class="analytics-body">
+        <div class="an-head">
+          <span class="an-label" style="color:var(--text-dim);font-size:8px;letter-spacing:0.08em">SEGMEN</span>
+          <span class="an-val">N</span><span class="an-val">WR%</span><span class="an-val">PNL</span><span class="an-val">PF</span>
+        </div>
+        <div class="an-section">ARAH</div>
+        <div class="an-row"><span class="an-label">BUY</span><span class="an-val">11x</span><span class="an-val pos">90.9%</span><span class="an-val pos">+$224.40</span><span class="an-val pos">14.2</span></div>
+        <div class="an-row"><span class="an-label">SELL</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$118.40</span><span class="an-val pos">7.4</span></div>
+        <div class="an-section">TIMEFRAME</div>
+        <div class="an-row"><span class="an-label">M1</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$138.20</span><span class="an-val pos">9.1</span></div>
+        <div class="an-row"><span class="an-label">M5</span><span class="an-val">12x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$204.60</span><span class="an-val pos">12.8</span></div>
+        <div class="an-section">SESI</div>
+        <div class="an-row"><span class="an-label">🇬🇧 London</span><span class="an-val">8x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$136.40</span><span class="an-val pos">10.4</span></div>
+        <div class="an-row"><span class="an-label">🇺🇸 New York</span><span class="an-val">8x</span><span class="an-val pos">87.5%</span><span class="an-val pos">+$112.80</span><span class="an-val pos">8.6</span></div>
+        <div class="an-row"><span class="an-label">🇯🇵 Tokyo</span><span class="an-val">5x</span><span class="an-val pos">83.3%</span><span class="an-val pos">+$93.60</span><span class="an-val pos">9.8</span></div>
+        <div class="an-insight">💡 BUY lebih konsisten dari SELL — prioritaskan BUY saat HTF bullish terkonfirmasi.</div>
+      </div>
+    </section>
+
+    <section class="card card-monitors">
+      <div class="card-label-row">
+        <span class="card-label">🔴 LIVE MONITORS</span>
+        <span class="monitor-count">1 aktif</span>
+      </div>
+      <div class="monitor-list">
+        <div class="monitor-item BUY">
+          <div class="mon-row1">
+            <span class="mon-dir BUY">BUY</span>
+            <span class="mon-price">Entry: $4,061.34</span>
+            <span class="mon-pnl pos">+$65.00</span>
+          </div>
+          <div class="mon-row2">
+            <div class="mon-level"><span style="color:var(--text-dim)">SL</span><span class="sl-val">$4,055.18</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP1</span><span class="tp-val">$4,067.50</span></div>
+            <div class="mon-level"><span style="color:var(--text-dim)">TP2</span><span class="tp-val">$4,070.59</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-trade-history">
+      <div class="card-label-row">
+        <span class="card-label">📋 TRADE OUTCOMES</span>
+        <button class="btn-clear">Refresh</button>
+      </div>
+      <div class="history-list">
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP3 HIT</span><span class="trade-pnl pos">+$94.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,031.20</span><span class="trade-meta tp-partial">✓ TP3 penuh</span><span class="trade-meta">08/08, 14.22</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP2 HIT</span><span class="trade-pnl pos">+$56.10</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,058.47</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">08/08, 11.05</span></div>
+        </div>
+        <div class="trade-item be">
+          <div class="trade-row1"><span class="trade-outcome be">BUY BREAKEVEN</span><span class="trade-pnl be">+$22.20</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,041.95</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">08/08, 09.48</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">SELL TP1 HIT</span><span class="trade-pnl pos">+$32.60</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,052.18</span><span class="trade-meta tp-partial">✓ TP1 partial</span><span class="trade-meta">07/08, 17.12</span></div>
+        </div>
+        <div class="trade-item win">
+          <div class="trade-row1"><span class="trade-outcome win">BUY TP2 HIT</span><span class="trade-pnl pos">+$49.80</span></div>
+          <div class="trade-row2"><span class="trade-meta">Entry: $4,019.72</span><span class="trade-meta tp-partial">✓ TP2 partial</span><span class="trade-meta">07/08, 22.30</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label">HISTORY SIGNAL</span>
+        <button class="btn-clear">Hapus</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-chips">
+          <div class="hist-chip active">Signal</div>
+          <div class="hist-chip">BUY</div>
+          <div class="hist-chip">SELL</div>
+          <div class="hist-chip">WAIT (5)</div>
+          <div class="hist-chip">Semua</div>
+        </div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,061.34</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 08.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,068.82</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 06.35.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,031.20</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 05.20.02</span><span class="hist-tf">M5</span><span class="hist-conf">82%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,041.95</span></div><div class="hist-row2"><span class="hist-time">8/8/2026, 02.40.01</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,058.47</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 22.00.03</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+        <div class="history-item BUY"><div class="hist-row1"><span class="hist-signal BUY">BUY</span><span class="hist-price">$4,019.72</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 20.30.02</span><span class="hist-tf">M1</span><span class="hist-conf">75%</span></div></div>
+        <div class="history-item SELL"><div class="hist-row1"><span class="hist-signal SELL">SELL</span><span class="hist-price">$4,052.18</span></div><div class="hist-row2"><span class="hist-time">7/8/2026, 18.15.01</span><span class="hist-tf">M5</span><span class="hist-conf">68%</span></div></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+}
+setInterval(updateClock, 1000); updateClock();
+
+// Confidence Chart
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('conf-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:20},(_,i)=>'#'+(i+1)),
+      datasets: [{
+        data: [75,68,82,75,68,75,82,68,75,75,68,82,75,68,75,82,75,68,75,75],
+        backgroundColor: 'rgba(38,193,126,0.55)',
+        borderColor: '#26c17e',
+        borderWidth: 1, borderRadius: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:0, max:100, ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'}, grid:{color:'#252836'} },
+        x: { ticks:{color:'#454860',font:{family:'JetBrains Mono',size:9}}, grid:{color:'#252836'} }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>

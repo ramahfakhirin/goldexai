@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Robust protection against modern browser environments / iframes where window.fetch has only a getter
+  (function() {
+    try {
+      let originalFetch = window.fetch;
+      Object.defineProperty(window, 'fetch', {
+        get: function() {
+          return originalFetch;
+        },
+        set: function(val) {
+          console.warn("[GOLDEX] External script attempted to override window.fetch");
+          originalFetch = val;
+        },
+        configurable: true,
+        enumerable: true
+      });
+    } catch (e) {
+      console.warn("[GOLDEX] Failed to define window.fetch property descriptor:", e);
+    }
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLDEX AI — Login</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="shortcut icon" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg0: #0a0b0d; --bg1: #0f1117; --bg2: #161820; --bg3: #1e2130;
+    --border: #252836; --border2: #2e3245;
+    --text-pri: #e8eaf0; --text-sec: #7b8099; --text-dim: #454860;
+    --gold: #f0b429; --green: #26c17e; --red: #e05252;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+  html, body {
+    background: var(--bg0);
+    color: var(--text-pri);
+    font-family: var(--sans);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── GRID BG ── */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,180,41,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,180,41,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .login-wrap {
+    width: 100%;
+    max-width: 380px;
+    padding: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── LOGO ── */
+  .logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo-icon {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--gold), #c48a00);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 14px;
+    box-shadow: 0 0 24px rgba(240,180,41,0.25);
+  }
+  .logo-title {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-pri);
+    letter-spacing: 0.06em;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-sec);
+    margin-top: 4px;
+    letter-spacing: 0.08em;
+  }
+  .live-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 5px;
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── CARD ── */
+  .login-card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+  }
+  .card-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  /* ── FORM ── */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-sec);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text-pri);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--gold); }
+
+  /* ── ERROR ── */
+  .error-box {
+    background: rgba(224,82,82,0.1);
+    border: 1px solid rgba(224,82,82,0.3);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--red);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── BUTTON ── */
+  .btn-login {
+    width: 100%;
+    padding: 12px;
+    background: var(--gold);
+    border: none;
+    border-radius: 7px;
+    color: #0a0b0d;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+  .btn-login:hover { background: #f5c842; transform: translateY(-1px); }
+  .btn-login:active { transform: translateY(0); }
+
+  /* ── FOOTER ── */
+  .login-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <!-- Logo -->
+  <div class="logo">
+    <div class="logo-icon">◈</div>
+    <div class="logo-title">GOLDEX AI</div>
+    <div class="logo-sub">
+      <span class="live-dot"></span>XAU/USD SIGNAL TERMINAL
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="login-card">
+    <div class="card-title">Masuk ke Dashboard</div>
+
+    <!-- Iframe Warning Box -->
+    <div id="iframe-warning" style="display: none; background: rgba(240, 180, 41, 0.08); border: 1px dashed rgba(240, 180, 41, 0.4); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 11.5px; line-height: 1.5; color: var(--text-pri);">
+      <div style="font-weight: 700; color: var(--gold); margin-bottom: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+        <span style="display:inline-block; width:6px; height:6px; background:var(--gold); border-radius:50%; animation: pulse 2s infinite;"></span>
+        ⚠️ DETEKSI IFRAME PREVIEW
+      </div>
+      Browser memblokir cookie masuk di dalam iframe editor AI Studio. Klik tombol di bawah untuk membukanya di Tab Baru agar bisa masuk secara lancar:
+      <a id="iframe-new-tab-btn" href="#" target="_blank" style="display: block; text-align: center; background: var(--gold); color: #0a0b0d; padding: 10px; border-radius: 6px; font-weight: 700; text-decoration: none; font-family: var(--mono); font-size: 11px; margin-top: 10px; transition: all 0.2s; box-shadow: 0 0 16px rgba(240,180,41,0.25);">
+        👉 BUKA DI TAB BARU (RECOMMENDED)
+      </a>
+    </div>
+
+    {% if error %}
+    <div class="error-box">⚠ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/login">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="admin"
+               autocomplete="username" autofocus required>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••"
+               autocomplete="current-password" required>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <input type="checkbox" name="remember" id="remember" value="on"
+               checked style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer">
+        <label for="remember" style="font-size:11px;color:var(--text-sec);cursor:pointer;letter-spacing:.03em;margin:0">
+          Ingat saya (30 hari)
+        </label>
+      </div>
+      <button type="submit" class="btn-login">▶ MASUK</button>
+    </form>
+  </div>
+
+
+
+  <div class="login-footer">
+    GOLDEX AI v2.0 · goldexai.com
+  </div>
+
+</div>
+
+<script>
+  // Detect if running inside an iframe
+  if (window.self !== window.top) {
+    const warningBox = document.getElementById('iframe-warning');
+    if (warningBox) {
+      warningBox.style.display = 'block';
+    }
+    const newTabBtn = document.getElementById('iframe-new-tab-btn');
+    if (newTabBtn) {
+      // Set to current URL to open the app in a new tab
+      newTabBtn.href = window.location.href;
+    }
+  }
+</script>
+
+</body>
+</html>
