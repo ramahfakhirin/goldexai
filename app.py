@@ -1232,11 +1232,11 @@ def run_scheduled_analysis():
             return None
 
         timeframe = os.getenv("DEFAULT_TIMEFRAME", "1m")  # M1 untuk Berkah Signal
-        api_key   = os.getenv("ANTHROPIC_API_KEY", "")
+        api_key   = os.getenv("ANTHROPIC_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
         twelve_key = os.getenv("TWELVE_DATA_KEY",  "")
 
         if not api_key:
-            print("[Scheduler] ANTHROPIC_API_KEY tidak diset, skip")
+            print("[Scheduler] AI API KEY (Anthropic/Gemini) tidak diset, skip")
             return None
 
         import xauusd_ai_analyst as analyst
@@ -2627,7 +2627,7 @@ def get_config():
 
     return jsonify({
         "ok":              True,
-        "has_anthropic":   bool(os.getenv("ANTHROPIC_API_KEY", "")),
+        "has_anthropic":   bool(os.getenv("ANTHROPIC_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")),
         "has_twelve":      bool(os.getenv("TWELVE_DATA_KEY", "")),
         "has_telegram":    bool(os.getenv("TELEGRAM_BOT_TOKEN", "")),
         "has_bridge":      has_bridge,
@@ -2654,13 +2654,13 @@ def analyze():
     try:
         body      = request.get_json() or {}
         timeframe = body.get("timeframe", "1h")
-        api_key   = body.get("api_key", os.getenv("ANTHROPIC_API_KEY", ""))
+        api_key   = body.get("api_key", "")
 
-        # Selalu fallback ke server env (use_server_keys=True dari client)
+        # Selalu fallback ke server env
         if not api_key or api_key in ("", "YOUR_API_KEY_HERE", "__FROM_SERVER__"):
-            api_key = os.getenv("ANTHROPIC_API_KEY", "")
+            api_key = os.getenv("ANTHROPIC_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
         if not api_key:
-            return jsonify({"error": "ANTHROPIC_API_KEY belum diset di Railway Variables"}), 400
+            return jsonify({"error": "AI API KEY (Anthropic/Gemini) belum diset di Variables"}), 400
 
         # Twelve Data key — selalu dari server env
         twelve_key = os.getenv("TWELVE_DATA_KEY", "") or body.get("twelve_key", "")
@@ -2673,7 +2673,6 @@ def analyze():
             detect_smc_structure,
             fetch_market_data,
         )
-        import anthropic
 
         # Inject Twelve Data key ke modul analyst secara runtime
         if twelve_key:
@@ -2685,23 +2684,49 @@ def analyze():
         smc        = detect_smc_structure(market)
         prompt     = build_analysis_prompt(market, indicators, smc, timeframe)
 
-        # Panggil Claude
-        client  = anthropic.Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=2000,
-            system=(
-                "Kamu adalah analis scalping XAU/USD profesional yang menggunakan "
-                "pendekatan multi-method: EMA trend filter, RSI momentum, Break & Retest, "
-                "Heiken Ashi bias, dan ATR-based risk management. "
-                "Fokus pada konfluensi minimum 3 metode. "
-                "PENTING: Selalu berikan respons dalam format JSON yang valid sesuai template. "
-                "Jangan tambahkan teks apapun di luar JSON."
-            ),
-            messages=[{"role": "user", "content": prompt}],
-        )
+        # Tentukan tipe Key (Gemini vs Anthropic)
+        is_gemini = api_key.startswith("AIzaSy") or "gemini" in api_key.lower()
 
-        raw = message.content[0].text.strip()
+        if is_gemini:
+            import requests
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "systemInstruction": {
+                    "parts": [{"text": (
+                        "Kamu adalah analis scalping XAU/USD profesional yang menggunakan "
+                        "pendekatan multi-method: EMA trend filter, RSI momentum, Break & Retest, "
+                        "Heiken Ashi bias, dan ATR-based risk management. "
+                        "Fokus pada konfluensi minimum 3 metode. "
+                        "PENTING: Selalu berikan respons dalam format JSON yang valid sesuai template. "
+                        "Jangan tambahkan teks apapun di luar JSON."
+                    )}]
+                },
+                "generationConfig": {"responseMimeType": "application/json"}
+            }
+            resp = requests.post(url, headers=headers, json=payload, timeout=30)
+            if resp.status_code != 200:
+                raise Exception(f"Gemini API returned error {resp.status_code}: {resp.text}")
+            raw = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+        else:
+            import anthropic
+            client  = anthropic.Anthropic(api_key=api_key)
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=2000,
+                system=(
+                    "Kamu adalah analis scalping XAU/USD profesional yang menggunakan "
+                    "pendekatan multi-method: EMA trend filter, RSI momentum, Break & Retest, "
+                    "Heiken Ashi bias, dan ATR-based risk management. "
+                    "Fokus pada konfluensi minimum 3 metode. "
+                    "PENTING: Selalu berikan respons dalam format JSON yang valid sesuai template. "
+                    "Jangan tambahkan teks apapun di luar JSON."
+                ),
+                messages=[{"role": "user", "content": prompt}],
+            )
+            raw = message.content[0].text.strip()
+
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):

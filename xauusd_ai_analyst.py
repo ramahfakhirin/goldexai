@@ -704,30 +704,62 @@ Balas JSON:
 
 
 def call_claude_api(prompt: str) -> dict:
-    """Kirim data ke Claude API dan parse hasilnya."""
-    print("  🤖 Mengirim data ke Claude API...")
+    """Kirim data ke Claude/Gemini API dan parse hasilnya."""
+    import requests
 
-    if ANTHROPIC_API_KEY == "YOUR_API_KEY_HERE":
+    # Resolving API key: prioritaskan environment variable, lalu fallback ke global variable
+    ant_key = os.getenv("ANTHROPIC_API_KEY", "")
+    gem_key = os.getenv("GEMINI_API_KEY", "")
+
+    if not ant_key and ANTHROPIC_API_KEY not in ("YOUR_API_KEY_HERE", "YOUR_ANTHROPIC_KEY"):
+        ant_key = ANTHROPIC_API_KEY
+
+    # Tentukan key dan apakah menggunakan Gemini
+    api_key = ant_key or gem_key
+    use_gemini = False
+
+    if not api_key:
         raise ValueError(
             "❌ API key belum diset!\n"
-            "   Set environment variable: export ANTHROPIC_API_KEY='sk-ant-...'\n"
-            "   Atau edit file ini: ANTHROPIC_API_KEY = 'sk-ant-...'"
+            "   Set environment variable ANTHROPIC_API_KEY atau GEMINI_API_KEY di dashboard."
         )
 
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    if api_key.startswith("AIzaSy") or "gemini" in api_key.lower():
+        use_gemini = True
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=2000,
-        system=(
-            "Kamu adalah analis trading profesional. Selalu berikan respons dalam format JSON "
-            "yang valid dan terstruktur sesuai template yang diminta. Jangan tambahkan teks "
-            "di luar JSON. Gunakan data yang diberikan secara akurat."
-        ),
-        messages=[{"role": "user", "content": prompt}],
-    )
-
-    raw_text = message.content[0].text.strip()
+    if use_gemini:
+        print("  🤖 Mengirim data ke Gemini API...")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "systemInstruction": {
+                "parts": [{"text": (
+                    "Kamu adalah analis trading profesional. Selalu berikan respons dalam format JSON "
+                    "yang valid dan terstruktur sesuai template yang diminta. Jangan tambahkan teks "
+                    "di luar JSON. Gunakan data yang diberikan secara akurat."
+                )}]
+            },
+            "generationConfig": {"responseMimeType": "application/json"}
+        }
+        resp = requests.post(url, headers=headers, json=payload, timeout=30)
+        if resp.status_code != 200:
+            raise Exception(f"Gemini API returned error {resp.status_code}: {resp.text}")
+        raw_text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    else:
+        print("  🤖 Mengirim data ke Claude API...")
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=2000,
+            system=(
+                "Kamu adalah analis trading profesional. Selalu berikan respons dalam format JSON "
+                "yang valid dan terstruktur sesuai template yang diminta. Jangan tambahkan teks "
+                "di luar JSON. Gunakan data yang diberikan secara akurat."
+            ),
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw_text = message.content[0].text.strip()
 
     # Bersihkan markdown code block jika ada
     if raw_text.startswith("```"):

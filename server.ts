@@ -1244,7 +1244,7 @@ app.get("/api/get_config", loginRequired, async (req, res) => {
   const twelvePrice = await fetchCurrentPriceServer();
   res.json({
     ok: true,
-    has_anthropic: !!process.env.GEMINI_API_KEY,
+    has_anthropic: !!(process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY),
     has_twelve: !!process.env.TWELVE_DATA_KEY,
     has_telegram: !!process.env.TELEGRAM_BOT_TOKEN,
     has_bridge: !!process.env.MT5_BRIDGE_URL,

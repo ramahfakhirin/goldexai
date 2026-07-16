@@ -49,13 +49,16 @@ def confirm_signal_vision(
         "combined_confidence": int,
     }
     """
-    import anthropic
+    import requests
+    import json
 
-    key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
+    # Resolving API key: prioritaskan parameter api_key, lalu ANTHROPIC_API_KEY, lalu GEMINI_API_KEY
+    key = api_key or os.getenv("ANTHROPIC_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
     if not key:
-        raise ValueError("ANTHROPIC_API_KEY tidak ditemukan")
+        raise ValueError("API Key AI tidak ditemukan (set ANTHROPIC_API_KEY atau GEMINI_API_KEY)")
 
-    client = anthropic.Anthropic(api_key=key)
+    # Deteksi tipe Key (Gemini diawali AIzaSy atau mengandung kata gemini)
+    is_gemini = key.startswith("AIzaSy") or "gemini" in key.lower()
 
     # Build prompt yang kaya konteks
     prompt = f"""Kamu adalah senior trader XAU/USD dengan keahlian SMC (Smart Money Concepts) dan price action.
@@ -132,29 +135,60 @@ Penjelasan verdict:
 - SKIP: Chart tidak mendukung signal, terlalu banyak risiko visual
 """
 
-    message = client.messages.create(
-        model      = "claude-sonnet-4-6",
-        max_tokens = 1000,
-        messages   = [{
-            "role": "user",
-            "content": [
+    if is_gemini:
+        # Panggil Gemini Vision API menggunakan requests
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={key}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [
                 {
-                    "type": "image",
-                    "source": {
-                        "type":       "base64",
-                        "media_type": "image/png",
-                        "data":       chart_b64,
-                    },
-                },
-                {
-                    "type": "text",
-                    "text": prompt,
-                },
+                    "parts": [
+                        {
+                            "inlineData": {
+                                "mimeType": "image/png",
+                                "data": chart_b64
+                            }
+                        },
+                        {
+                            "text": prompt
+                        }
+                    ]
+                }
             ],
-        }],
-    )
-
-    raw = message.content[0].text.strip()
+            "generationConfig": {
+                "responseMimeType": "application/json"
+            }
+        }
+        resp = requests.post(url, headers=headers, json=payload, timeout=45)
+        if resp.status_code != 200:
+            raise Exception(f"Gemini Vision API returned error {resp.status_code}: {resp.text}")
+        raw = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    else:
+        # Gunakan Anthropic
+        import anthropic
+        client = anthropic.Anthropic(api_key=key)
+        message = client.messages.create(
+            model      = "claude-sonnet-4-6",
+            max_tokens = 1000,
+            messages   = [{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type":       "base64",
+                            "media_type": "image/png",
+                            "data":       chart_b64,
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "text": prompt,
+                    },
+                ],
+            }],
+        )
+        raw = message.content[0].text.strip()
 
     # Bersihkan markdown jika ada
     if raw.startswith("```"):
