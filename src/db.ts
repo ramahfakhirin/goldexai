@@ -6,9 +6,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const BASE_DIR = process.cwd();
-const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
-  ? path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH)
-  : path.join(BASE_DIR, "data");
+const DATA_DIR = fs.existsSync("/data")
+  ? "/data"
+  : (process.env.RAILWAY_VOLUME_MOUNT_PATH
+    ? path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH)
+    : path.join(BASE_DIR, "data"));
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });

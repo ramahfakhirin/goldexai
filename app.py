@@ -100,8 +100,12 @@ def add_cors_headers(response):
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     return response
 
-# Railway menyimpan data di /tmp (ephemeral), lokal pakai folder data/
-DATA_DIR = Path(os.getenv("RAILWAY_VOLUME_MOUNT_PATH", BASE_DIR / "data"))
+# Cek persistent volume path (Coolify /data, atau Railway, atau local)
+if os.path.exists("/data") and os.path.isdir("/data"):
+    DATA_DIR = Path("/data")
+else:
+    DATA_DIR = Path(os.getenv("RAILWAY_VOLUME_MOUNT_PATH", BASE_DIR / "data"))
+
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH  = DATA_DIR / "signals.db"
 
@@ -1487,9 +1491,20 @@ def run_scheduled_analysis():
 
         elif sig in ("BUY", "SELL") and active_monitor:
             print(f"[Scheduler] ⏸ {sig} detected but monitor ACTIVE — skip save")
-            if _latest_signal_cache:
+            latest_cached_str = _cfg_get("latest_signal_cache", "")
+            if latest_cached_str:
+                try:
+                    cached_data = json.loads(latest_cached_str)
+                    cached_data["price"] = market.current_price
+                    cached_data["timestamp"] = now_wib_str("%Y-%m-%d %H:%M:%S")
+                    _latest_signal_cache = cached_data
+                    _cfg_set("latest_signal_cache", json.dumps(cached_data, ensure_ascii=False))
+                except Exception:
+                    pass
+            elif _latest_signal_cache:
                 _latest_signal_cache["price"]     = market.current_price
                 _latest_signal_cache["timestamp"] = now_wib_str("%Y-%m-%d %H:%M:%S")
+                _cfg_set("latest_signal_cache", json.dumps(_latest_signal_cache, ensure_ascii=False))
             signal_id = None
 
         return signal_id
@@ -1540,6 +1555,7 @@ def _set_latest_signal(signal_id, analysis, market, indicators, smc, timeframe):
             "ob_zones":   smc.ob_zones[:3],
         },
     }
+    _cfg_set("latest_signal_cache", json.dumps(_latest_signal_cache, ensure_ascii=False))
 
 
 def scheduled_analysis_loop():
@@ -1553,10 +1569,15 @@ def scheduled_analysis_loop():
     wait_sec  = next_tick - now_ts
     print(f"[Scheduler] First run in {wait_sec:.0f}s at "
           f"{datetime.fromtimestamp(next_tick, WIB).strftime('%H:%M:%S')} WIB")
+    
+    # Update heartbeat awal
+    _cfg_set("scheduler_heartbeat", datetime.now(WIB).timestamp())
+    
     time.sleep(wait_sec)
 
     while True:
         start = time.time()
+        _cfg_set("scheduler_heartbeat", datetime.now(WIB).timestamp())
         run_scheduled_analysis()
         elapsed = time.time() - start
         sleep_time = max(0, ANALYSIS_INTERVAL - elapsed)
@@ -2475,13 +2496,18 @@ def latest_signal():
     """Browser polling endpoint — ambil hasil analisis terbaru dari cache atau DB."""
     market_open = is_market_open()
 
-    # Cache ada → return langsung
-    if _latest_signal_cache:
-        return jsonify({
-            **_latest_signal_cache,
-            "market_open": market_open,
-            "market_closed_reason": "" if market_open else market_closed_reason(),
-        })
+    # Coba load cache dari SQLite (shared antar worker)
+    latest_cached_str = _cfg_get("latest_signal_cache", "")
+    if latest_cached_str:
+        try:
+            cached_data = json.loads(latest_cached_str)
+            return jsonify({
+                **cached_data,
+                "market_open": market_open,
+                "market_closed_reason": "" if market_open else market_closed_reason(),
+            })
+        except Exception:
+            pass
 
     # Cache kosong (baru restart) → coba ambil dari DB
     try:
@@ -2561,12 +2587,18 @@ def scheduler_status():
     next_tick = math.ceil(now_ts / ANALYSIS_INTERVAL) * ANALYSIS_INTERVAL
     secs_left = int(next_tick - now_ts)
     market_open = is_market_open()
+
+    # Check heartbeat dari SQLite (shared antar worker)
+    last_heartbeat = float(_cfg_get("scheduler_heartbeat", "0") or 0)
+    is_heartbeat_alive = (datetime.now(WIB).timestamp() - last_heartbeat) < max(120, ANALYSIS_INTERVAL * 2)
+    thread_alive = bool(_analysis_thread and _analysis_thread.is_alive()) or is_heartbeat_alive
+
     return jsonify({
         "ok":              True,
         "interval_sec":    ANALYSIS_INTERVAL,
         "next_run_sec":    secs_left,
         "next_run_time":   datetime.fromtimestamp(next_tick, WIB).strftime("%H:%M:%S WIB"),
-        "thread_alive":    bool(_analysis_thread and _analysis_thread.is_alive()),
+        "thread_alive":    thread_alive,
         "market_open":     market_open,
         "market_closed_reason": "" if market_open else market_closed_reason(),
         "timeframe":       os.getenv("DEFAULT_TIMEFRAME", "1m").upper(),
