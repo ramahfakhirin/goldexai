@@ -100,13 +100,51 @@ def add_cors_headers(response):
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     return response
 
-# Cek persistent volume path (Coolify /data, atau Railway, atau local)
-if os.path.exists("/data") and os.path.isdir("/data"):
-    DATA_DIR = Path("/data")
-else:
-    DATA_DIR = Path(os.getenv("RAILWAY_VOLUME_MOUNT_PATH", BASE_DIR / "data"))
+# Cek persistent volume path (Coolify /data, atau Railway, atau local) dengan validasi write permission
+def resolve_data_dir():
+    # 1. Cek /data
+    if os.path.exists("/data") and os.path.isdir("/data"):
+        p = Path("/data")
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+            # Test write permission dengan file sementara
+            test_file = p / f".write_test_{os.getpid()}"
+            test_file.touch()
+            test_file.unlink()
+            print("[Database] 💾 Menggunakan folder /data (Coolify Persistent Volume)")
+            return p
+        except Exception as e:
+            print(f"[Database] ⚠️ /data terdeteksi tapi tidak bisa ditulis: {e}. Falling back...")
 
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+    # 2. Cek RAILWAY_VOLUME_MOUNT_PATH
+    railway_vol = os.getenv("RAILWAY_VOLUME_MOUNT_PATH")
+    if railway_vol:
+        p = Path(railway_vol)
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+            test_file = p / f".write_test_{os.getpid()}"
+            test_file.touch()
+            test_file.unlink()
+            print(f"[Database] 💾 Menggunakan folder Railway Volume: {railway_vol}")
+            return p
+        except Exception as e:
+            print(f"[Database] ⚠️ Railway volume {railway_vol} tidak bisa ditulis: {e}. Falling back...")
+
+    # 3. Fallback ke local BASE_DIR / "data"
+    p = BASE_DIR / "data"
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+        print(f"[Database] ⚠️ Menggunakan folder lokal: {p}")
+        print("[Database] 🚨 PERINGATAN: Folder ini EPHEMERAL (data akan hilang saat redeploy/restart container jika tidak dikonfigurasi Persistent Volume!)")
+        return p
+    except Exception as e:
+        # 4. Ultimate fallback ke /tmp
+        p = Path("/tmp/data")
+        p.mkdir(parents=True, exist_ok=True)
+        print(f"[Database] ⚠️ Menggunakan folder /tmp: {p} (Temporary, akan hilang!)")
+        return p
+
+DATA_DIR = resolve_data_dir()
 DB_PATH  = DATA_DIR / "signals.db"
 
 
