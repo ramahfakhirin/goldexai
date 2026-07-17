@@ -345,6 +345,52 @@ def _cfg_set(key: str, value) -> None:
         pass
 
 
+def _atomic_reserve_candle(timeframe: str, candle_id: str) -> bool:
+    """Mencoba mengklaim/memesan pemrosesan candle_id untuk timeframe tertentu secara atomic di SQLite.
+    Mengembalikan True jika sukses mengklaim (belum pernah diproses), False jika sudah diklaim oleh worker lain."""
+    key = f"processed_candle_{timeframe}_{candle_id}"
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10.0)
+        conn.execute("BEGIN EXCLUSIVE TRANSACTION")
+        
+        # Cek apakah key sudah ada
+        row = conn.execute("SELECT value FROM config WHERE key=?", (key,)).fetchone()
+        if row is not None:
+            conn.rollback()
+            return False
+            
+        # Jika belum ada, masukkan key untuk menandai diklaim
+        conn.execute("INSERT INTO config (key, value) VALUES (?, ?)", (key, "claimed"))
+        
+        # Juga update last_signal_candle_id_{tf}
+        conn.execute(
+            "INSERT INTO config (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (f"last_signal_candle_id_{timeframe.lower()}", candle_id)
+        )
+        
+        # Pruning: batasi jumlah riwayat processed_candle agar DB tidak membesar
+        rows = conn.execute("SELECT key FROM config WHERE key LIKE 'processed_candle_%' ORDER BY key DESC").fetchall()
+        if len(rows) > 200:
+            keys_to_delete = [r[0] for r in rows[200:]]
+            conn.executemany("DELETE FROM config WHERE key=?", [(k,) for k in keys_to_delete])
+            
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[Database-Lock] ⚠️ Error mengklaim candle {candle_id}: {e}")
+        if conn:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
 def save_signal(data: dict, timeframe: str, price: float):
     """Simpan signal ke database."""
     conn = sqlite3.connect(DB_PATH)
@@ -1311,8 +1357,13 @@ def run_scheduled_analysis():
             if m5_candle_id == prev_candle:
                 print(f"[Scheduler] ⏭ Candle M5 sama ({m5_candle_id}) — skip re-scan")
                 return None
+            
+            # Coba klaim secara atomic di DB untuk mencegah duplikasi antar worker/proses
+            if not _atomic_reserve_candle("M5", m5_candle_id):
+                print(f"[Scheduler] ⏭ Candle M5 ({m5_candle_id}) sudah/sedang diproses oleh worker lain — skip re-scan")
+                return None
+                
             _LAST_SIGNAL_CANDLE_ID["M5"] = m5_candle_id
-            _cfg_set("last_signal_candle_id_m5", m5_candle_id)
 
         # ── Fetch H1 (HTF bias asli — bukan simulasi) ──
         df_h1 = None
