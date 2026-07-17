@@ -1070,7 +1070,7 @@ ANALYSIS_INTERVAL = int(os.getenv("ANALYSIS_INTERVAL_SEC", "60"))  # default 1 m
 _LAST_WAIT_SAVE_TS = 0  # timestamp unix terakhir WAIT disimpan
 
 # ── Deduplication state ──
-_LAST_SIGNAL_CANDLE_ID: dict = {}   # {timeframe: candle_timestamp_str}
+_LAST_SIGNAL_CANDLE_ID: dict = {"M5": _cfg_get("last_signal_candle_id_m5", "")}
 _LAST_SIGNAL_TS: float = 0.0        # unix timestamp sinyal BUY/SELL terakhir
 _SIGNAL_COOLDOWN_SEC: int = int(os.getenv("SIGNAL_COOLDOWN_SEC", "900"))  # default 15 menit
 
@@ -1312,6 +1312,7 @@ def run_scheduled_analysis():
                 print(f"[Scheduler] ⏭ Candle M5 sama ({m5_candle_id}) — skip re-scan")
                 return None
             _LAST_SIGNAL_CANDLE_ID["M5"] = m5_candle_id
+            _cfg_set("last_signal_candle_id_m5", m5_candle_id)
 
         # ── Fetch H1 (HTF bias asli — bukan simulasi) ──
         df_h1 = None

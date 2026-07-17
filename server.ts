@@ -148,7 +148,7 @@ function superadminRequired(req: express.Request, res: express.Response, next: e
 // ─────────────────────────────────────────────
 // STATE & SCHEDULER VARS
 // ─────────────────────────────────────────────
-let lastSignalCandleIdM5 = "";
+let lastSignalCandleIdM5 = db.configGet("last_signal_candle_id_m5", "");
 let lastSignalTs = parseFloat(db.configGet("last_signal_ts", "0"));
 let lastWaitSaveTs = parseFloat(db.configGet("last_wait_save_ts", "0"));
 const signalCooldownSec = parseInt(process.env.SIGNAL_COOLDOWN_SEC || "900"); // default 15 mins
@@ -353,6 +353,7 @@ async function runScheduledAnalysis() {
       return;
     }
     lastSignalCandleIdM5 = latestCandleTime;
+    db.configSet("last_signal_candle_id_m5", latestCandleTime);
 
     // Fetch M1
     const { data: candlesM1 } = await fetchOhlcvPrimary("1m", 500);

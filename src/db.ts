@@ -6,16 +6,57 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const BASE_DIR = process.cwd();
-const DATA_DIR = fs.existsSync("/data")
-  ? "/data"
-  : (process.env.RAILWAY_VOLUME_MOUNT_PATH
-    ? path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH)
-    : path.join(BASE_DIR, "data"));
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+function resolveDataDir(): string {
+  // 1. Check /data
+  if (fs.existsSync("/data")) {
+    try {
+      fs.mkdirSync("/data", { recursive: true });
+      const testFile = path.join("/data", `.write_test_${process.pid}`);
+      fs.writeFileSync(testFile, "test");
+      fs.unlinkSync(testFile);
+      console.log("[DB] 💾 Using /data (Coolify Persistent Volume)");
+      return "/data";
+    } catch (e: any) {
+      console.log(`[DB] ⚠️ /data exists but is not writable: ${e.message}. Falling back...`);
+    }
+  }
+
+  // 2. Check RAILWAY_VOLUME_MOUNT_PATH
+  const railwayVol = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+  if (railwayVol) {
+    try {
+      const p = path.resolve(railwayVol);
+      fs.mkdirSync(p, { recursive: true });
+      const testFile = path.join(p, `.write_test_${process.pid}`);
+      fs.writeFileSync(testFile, "test");
+      fs.unlinkSync(testFile);
+      console.log(`[DB] 💾 Using Railway Volume: ${railwayVol}`);
+      return p;
+    } catch (e: any) {
+      console.log(`[DB] ⚠️ Railway volume ${railwayVol} is not writable: ${e.message}. Falling back...`);
+    }
+  }
+
+  // 3. Fallback to local baseDir/data
+  const localDir = path.join(BASE_DIR, "data");
+  try {
+    fs.mkdirSync(localDir, { recursive: true });
+    const testFile = path.join(localDir, `.write_test_${process.pid}`);
+    fs.writeFileSync(testFile, "test");
+    fs.unlinkSync(testFile);
+    console.log(`[DB] ⚠️ Using local directory: ${localDir}`);
+    return localDir;
+  } catch (e: any) {
+    // 4. Ultimate fallback to /tmp/data
+    const tmpDir = path.join("/tmp", "data");
+    fs.mkdirSync(tmpDir, { recursive: true });
+    console.log(`[DB] ⚠️ Using /tmp/data directory: ${tmpDir} (Temporary!)`);
+    return tmpDir;
+  }
 }
 
+const DATA_DIR = resolveDataDir();
 const DB_PATH = path.join(DATA_DIR, "db.json");
 
 export interface User {
