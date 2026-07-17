@@ -323,11 +323,13 @@ async function runScheduledAnalysis() {
     console.log("[Scheduler] Running scheduled gold market scan...");
 
     // Fetch primary M5
-    const { data: candlesM5, source: sourceM5 } = await fetchOhlcvPrimary("5m", 500);
-    if (!candlesM5 || candlesM5.length === 0) {
+    const { data: rawCandlesM5, source: sourceM5 } = await fetchOhlcvPrimary("5m", 500);
+    if (!rawCandlesM5 || rawCandlesM5.length === 0) {
       console.log("[Scheduler] ⚠️ OHLCV M5 tidak tersedia — analisis dibatalkan");
       return;
     }
+    // Slice: Hanya gunakan closed candles untuk analisis (buang active candle terakhir)
+    const candlesM5 = rawCandlesM5.length > 1 ? rawCandlesM5.slice(0, -1) : rawCandlesM5;
 
     // 1. Economic News Grounding Suspension Check via Gemini Search Grounding
     try {
@@ -356,13 +358,16 @@ async function runScheduledAnalysis() {
     db.configSet("last_signal_candle_id_m5", latestCandleTime);
 
     // Fetch M1
-    const { data: candlesM1 } = await fetchOhlcvPrimary("1m", 500);
+    const { data: rawCandlesM1 } = await fetchOhlcvPrimary("1m", 500);
+    const candlesM1 = rawCandlesM1 && rawCandlesM1.length > 1 ? rawCandlesM1.slice(0, -1) : rawCandlesM1;
 
     // Fetch H1
     let candlesH1: any[] | null = null;
     try {
       const h1Result = await fetchOhlcvPrimary("1h", 300);
-      candlesH1 = h1Result.data;
+      if (h1Result && h1Result.data) {
+        candlesH1 = h1Result.data.length > 1 ? h1Result.data.slice(0, -1) : h1Result.data;
+      }
     } catch (e: any) {
       console.log(`[Scheduler] ⚠️ H1 fetch error: ${e.message} — fallback EMA lokal`);
     }
@@ -371,7 +376,9 @@ async function runScheduledAnalysis() {
     let candlesH4: any[] | null = null;
     try {
       const h4Result = await fetchOhlcvPrimary("4h", 200);
-      candlesH4 = h4Result.data;
+      if (h4Result && h4Result.data) {
+        candlesH4 = h4Result.data.length > 1 ? h4Result.data.slice(0, -1) : h4Result.data;
+      }
     } catch (e: any) {
       console.log(`[Scheduler] ⚠️ H4 fetch error: ${e.message}`);
     }

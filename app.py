@@ -1339,6 +1339,9 @@ def run_scheduled_analysis():
         if df_m5 is None or df_m5.empty:
             print("[Scheduler] ⚠️ OHLCV M5 tidak tersedia — analisis dibatalkan")
             return None
+        # Slice: Hanya gunakan closed candles untuk analisis (buang active candle terakhir)
+        if len(df_m5) > 1:
+            df_m5 = df_m5.iloc[:-1]
         print(f"[Scheduler] ✅ M5 OHLCV dari {data_source_m5}: {len(df_m5)} candles")
 
         # ── Fetch M1 (sinyal scalping cepat) ──
@@ -1347,6 +1350,8 @@ def run_scheduled_analysis():
             print("[Scheduler] ⚠️ OHLCV M1 tidak tersedia — hanya pakai M5")
             df_m1 = None
         else:
+            if len(df_m1) > 1:
+                df_m1 = df_m1.iloc[:-1]
             print(f"[Scheduler] ✅ M1 OHLCV dari {data_source_m1}: {len(df_m1)} candles")
 
         # ── Candle deduplication — skip jika candle M5 sama dengan scan sebelumnya ──
@@ -1370,6 +1375,8 @@ def run_scheduled_analysis():
         try:
             df_h1, data_source_h1 = fetch_ohlcv_primary("1h", 300)
             if df_h1 is not None and not df_h1.empty:
+                if len(df_h1) > 1:
+                    df_h1 = df_h1.iloc[:-1]
                 print(f"[Scheduler] ✅ H1 OHLCV dari {data_source_h1}: {len(df_h1)} candles")
             else:
                 df_h1 = None
