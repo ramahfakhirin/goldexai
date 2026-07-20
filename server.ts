@@ -190,6 +190,9 @@ function setLatestSignal(signalId: number | null, analysis: any, price: number, 
     },
   };
   
+  // Persist the latest signal cache in the shared SQLite config table
+  db.configSet("latest_signal_cache", JSON.stringify(latestSignalCache));
+  
   // Broadcast the latest signal cache immediately to all connected WebSocket clients
   broadcast({ type: "LATEST_SIGNAL", data: latestSignalCache });
 }
@@ -559,6 +562,22 @@ async function runScheduledAnalysis() {
   }
 }
 
+// Check if Python scheduler is already running by trying to acquire the same flock
+function isPythonSchedulerRunning(): boolean {
+  try {
+    const { execSync } = require("child_process");
+    execSync(
+      `python3 -c "import fcntl; f = open('/tmp/goldex_scheduler.lock', 'a'); fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)"`,
+      { stdio: ["ignore", "pipe", "ignore"] }
+    );
+    // If it succeeds, it means we can acquire the lock, so Python scheduler is NOT running
+    return false;
+  } catch (e) {
+    // If it fails (BlockingIOError or other), it means Python scheduler is running
+    return true;
+  }
+}
+
 // Start scheduler intervals on boot
 let checkInterval: NodeJS.Timeout | null = null;
 let scanInterval: NodeJS.Timeout | null = null;
@@ -570,6 +589,10 @@ function startBackgroundTasks() {
   // Trade monitor loop: runs every 60 seconds
   if (!checkInterval) {
     checkInterval = setInterval(async () => {
+      if (isPythonSchedulerRunning()) {
+        console.log("[Monitor] ⏭ Python scheduler is active (lock acquired) — skip Node.js monitor check (anti-duplicate)");
+        return;
+      }
       const updates = await runMonitorCheck();
       if (updates && updates.length > 0) {
         broadcast({ type: "MONITOR_UPDATE", data: updates });
@@ -581,6 +604,10 @@ function startBackgroundTasks() {
   // Market analysis scan loop: runs every 60 seconds
   if (!scanInterval) {
     scanInterval = setInterval(async () => {
+      if (isPythonSchedulerRunning()) {
+        console.log("[Scheduler] ⏭ Python scheduler is active (lock acquired) — skip Node.js market scan (anti-duplicate)");
+        return;
+      }
       lastScanTime = Date.now();
       await runScheduledAnalysis();
     }, 60000);
@@ -589,6 +616,10 @@ function startBackgroundTasks() {
 
   // Run first check immediately after boot
   setTimeout(async () => {
+    if (isPythonSchedulerRunning()) {
+      console.log("[Scheduler] ⏭ Python scheduler is active (lock acquired) — skip Node.js initial scans (anti-duplicate)");
+      return;
+    }
     const updates = await runMonitorCheck();
     if (updates && updates.length > 0) {
       broadcast({ type: "MONITOR_UPDATE", data: updates });
@@ -1191,6 +1222,20 @@ app.get("/api/economic_calendar", loginRequired, async (req, res) => {
 
 // GET latest signal
 app.get("/api/latest_signal", loginRequired, (req, res) => {
+  const latestCachedStr = db.configGet("latest_signal_cache", "");
+  if (latestCachedStr) {
+    try {
+      const cachedData = JSON.parse(latestCachedStr);
+      return res.json({
+        ...cachedData,
+        market_open: isMarketOpen(),
+        market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
+      });
+    } catch {
+      // ignore parse error, fallback to memory or history
+    }
+  }
+
   if (latestSignalCache.ok) {
     return res.json(latestSignalCache);
   }
