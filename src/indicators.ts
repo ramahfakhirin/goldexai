@@ -398,16 +398,16 @@ export function getBerkahSignal(
 
   let htf_bias_bull = false;
   let htf_bias_bear = false;
-  let htf_src = "EMA lokal (fallback)";
+  let htf_src = "H1 tidak tersedia (Locked)";
 
-  if (htfBiasOverride) {
+  if (htfBiasOverride === "BULL" || htfBiasOverride === "BEAR") {
     htf_bias_bull = htfBiasOverride === "BULL";
     htf_bias_bear = htfBiasOverride === "BEAR";
-    htf_src = "H1 asli";
+    htf_src = "H1 asli (Locked)";
   } else {
-    const min_gap = price * 0.002;
-    htf_bias_bull = ema_gap > min_gap;
-    htf_bias_bear = ema_gap < -min_gap;
+    htf_bias_bull = false;
+    htf_bias_bear = false;
+    htf_src = "H1 tidak tersedia atau RANGING (Locked)";
   }
 
   // Dynamic score scaling based on trend quality to safeguard winrate > 80%
@@ -701,16 +701,16 @@ export function getBerkahSignalOld(
 
   let htf_bias_bull = false;
   let htf_bias_bear = false;
-  let htf_src = "EMA lokal (fallback)";
+  let htf_src = "H1 tidak tersedia (Locked)";
 
-  if (htfBiasOverride) {
+  if (htfBiasOverride === "BULL" || htfBiasOverride === "BEAR") {
     htf_bias_bull = htfBiasOverride === "BULL";
     htf_bias_bear = htfBiasOverride === "BEAR";
-    htf_src = "H1 asli";
+    htf_src = "H1 asli (Locked)";
   } else {
-    const min_gap = price * 0.002;
-    htf_bias_bull = ema_gap > min_gap;
-    htf_bias_bear = ema_gap < -min_gap;
+    htf_bias_bull = false;
+    htf_bias_bear = false;
+    htf_src = "H1 tidak tersedia atau RANGING (Locked)";
   }
 
   if (!htf_bias_bull && !htf_bias_bear) {

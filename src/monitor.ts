@@ -92,6 +92,18 @@ export async function runMonitorCheck(): Promise<any[]> {
           outcome = `TP${new_tp_hit}_HIT`;
           pnl = Number(realized.toFixed(2));
         }
+      } else if (be_moved === 0 && tp1 > 0) {
+        const tp1_dist = Math.abs(tp1 - entry);
+        if (tp1_dist > 0) {
+          const traveled = gain(price);
+          const ratio = traveled / tp1_dist;
+          if (ratio >= 0.7) { // 70% progress towards TP1
+            new_sl = entry;
+            be_moved = 1;
+            outcome = "EARLY_BE_MOVE";
+            pnl = Number(realized.toFixed(2));
+          }
+        }
       }
 
       if (outcome) {
@@ -135,9 +147,10 @@ export async function runMonitorCheck(): Promise<any[]> {
             TP1_HIT: "TP1 HIT — SL pindah ke breakeven",
             TP2_HIT: "TP2 HIT — SL pindah ke TP1",
             TP3_HIT: "TP3 HIT — FULL TARGET",
+            EARLY_BE_MOVE: "MOVE TO BE — Harga mendekati TP1 (70%), SL dipindahkan ke entry untuk mengunci risiko",
           };
 
-          const emoji = pnl > 0 ? "✅" : outcome === "BE_HIT" ? "⚖️" : "🛑";
+          const emoji = outcome === "EARLY_BE_MOVE" ? "🛡️" : (pnl > 0 ? "✅" : outcome === "BE_HIT" ? "⚖️" : "🛑");
           const dirEmoji = direction === "BUY" ? "🟢" : "🔴";
 
           const parts = [
@@ -149,7 +162,7 @@ export async function runMonitorCheck(): Promise<any[]> {
             `📈 PnL     : <b>${pnl_str}</b>`,
           ];
 
-          if (outcome === "TP1_HIT" || outcome === "TP2_HIT") {
+          if (outcome === "TP1_HIT" || outcome === "TP2_HIT" || outcome === "EARLY_BE_MOVE") {
             parts.push(`🔒 Sisa posisi dilindungi — SL baru $${new_sl.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
           }
 

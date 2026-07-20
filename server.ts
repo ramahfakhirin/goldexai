@@ -360,9 +360,8 @@ async function runScheduledAnalysis() {
     lastSignalCandleIdM5 = latestCandleTime;
     db.configSet("last_signal_candle_id_m5", latestCandleTime);
 
-    // Fetch M1
-    const { data: rawCandlesM1 } = await fetchOhlcvPrimary("1m", 500);
-    const candlesM1 = rawCandlesM1 && rawCandlesM1.length > 1 ? rawCandlesM1.slice(0, -1) : rawCandlesM1;
+    // Fetch M1 (Disabled per user request)
+    const candlesM1: any[] | null = null;
 
     // Fetch H1
     let candlesH1: any[] | null = null;

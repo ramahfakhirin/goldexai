@@ -1012,6 +1012,17 @@ def run_monitor_check() -> list:
                         outcome = f"TP{new_tp_hit}_HIT"
                         pnl     = round(realized, 2)
 
+                elif be_moved == 0 and tp1 > 0:
+                    tp1_dist = abs(tp1 - entry)
+                    if tp1_dist > 0:
+                        traveled = _gain(price)
+                        ratio = traveled / tp1_dist
+                        if ratio >= 0.7:  # 70% progress towards TP1
+                            new_sl = entry
+                            be_moved = 1
+                            outcome = "EARLY_BE_MOVE"
+                            pnl = round(realized, 2)
+
                 if outcome:
                     status = "CLOSED" if should_close else "ACTIVE"
                     conn2  = sqlite3.connect(DB_PATH)
@@ -1056,8 +1067,10 @@ def run_monitor_check() -> list:
                             "TP1_HIT": "TP1 HIT — SL pindah ke breakeven",
                             "TP2_HIT": "TP2 HIT — SL pindah ke TP1",
                             "TP3_HIT": "TP3 HIT — FULL TARGET",
+                            "EARLY_BE_MOVE": "MOVE TO BE — Harga mendekati TP1 (70%), SL dipindahkan ke entry untuk mengunci risiko",
                         }
-                        emoji = ("✅" if pnl > 0 else
+                        emoji = ("🛡️" if outcome == "EARLY_BE_MOVE" else
+                                 "✅" if outcome in ("TP1_HIT", "TP2_HIT", "TP3_HIT") else
                                  "⚖️" if outcome == "BE_HIT" else "🛑")
                         pnl_usd   = _money(pnl)
                         pnl_str   = (f"{'+' if pnl_usd >= 0 else '-'}"
@@ -1071,7 +1084,7 @@ def run_monitor_check() -> list:
                             "💰 Harga   : $" + f"{price:,.2f}",
                             "📈 PnL     : <b>" + pnl_str + "</b>",
                         ]
-                        if outcome in ("TP1_HIT", "TP2_HIT"):
+                        if outcome in ("TP1_HIT", "TP2_HIT", "EARLY_BE_MOVE"):
                             parts.append(f"🔒 Sisa posisi dilindungi — SL baru ${new_sl:,.2f}")
                         parts += [
                             "━━━━━━━━━━━━━━━━━━",
@@ -1151,6 +1164,9 @@ def is_session_active() -> bool:
     """Cek apakah sesi saat ini diaktifkan oleh superadmin."""
     sess = get_current_session()
     if sess == "off":
+        return False
+    if sess == "tokyo":
+        # Tokyo Session is completely deactivated/disabled per user request
         return False
     return _SESSION_SCHEDULE.get(sess, True)
 
@@ -1344,15 +1360,8 @@ def run_scheduled_analysis():
             df_m5 = df_m5.iloc[:-1]
         print(f"[Scheduler] ✅ M5 OHLCV dari {data_source_m5}: {len(df_m5)} candles")
 
-        # ── Fetch M1 (sinyal scalping cepat) ──
-        df_m1, data_source_m1 = fetch_ohlcv_primary("1m", 500)
-        if df_m1 is None or df_m1.empty:
-            print("[Scheduler] ⚠️ OHLCV M1 tidak tersedia — hanya pakai M5")
-            df_m1 = None
-        else:
-            if len(df_m1) > 1:
-                df_m1 = df_m1.iloc[:-1]
-            print(f"[Scheduler] ✅ M1 OHLCV dari {data_source_m1}: {len(df_m1)} candles")
+        # ── Fetch M1 (Disabled per user request) ──
+        df_m1 = None
 
         # ── Candle deduplication — skip jika candle M5 sama dengan scan sebelumnya ──
         import time as _time_mod

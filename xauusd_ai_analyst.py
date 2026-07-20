@@ -842,18 +842,16 @@ def detect_berkah_signal(
     ema_200_val = float(indicators.ema_200)
     ema_gap     = ema_50_val - ema_200_val
 
-    if htf_bias_override in ("BULL", "BEAR", "RANGING"):
+    if htf_bias_override in ("BULL", "BEAR"):
         # ── HTF ASLI dari data H1 (bukan EMA timeframe lokal) ──
         htf_bias_bull = htf_bias_override == "BULL"
         htf_bias_bear = htf_bias_override == "BEAR"
-        htf_src = "H1 asli"
+        htf_src = "H1 asli (Locked)"
     else:
-        # Fallback lama: EMA50 vs EMA200 di timeframe lokal
-        # (di M1 ini hanya tren ~3.3 jam — bukan HTF sebenarnya)
-        min_gap = price * 0.002
-        htf_bias_bull = ema_gap >  min_gap
-        htf_bias_bear = ema_gap < -min_gap
-        htf_src = "EMA lokal (fallback)"
+        # Strictly lock H1 trend filter: no local fallback allowed!
+        htf_bias_bull = False
+        htf_bias_bear = False
+        htf_src = "H1 tidak tersedia atau RANGING (Locked)"
 
     # Kalau ranging (tidak ada bias jelas), return WAIT langsung
     if not htf_bias_bull and not htf_bias_bear:
@@ -864,8 +862,8 @@ def detect_berkah_signal(
             "lot_size":   0.0,
             "score":      0,
             "max_score":  7,
-            "confidence": "RANGING",
-            "reason":     f"HTF RANGING [{htf_src}] — tidak ada bias tren jelas, semua sinyal diblokir",
+            "confidence": "WAIT",
+            "reason":     f"Filter tren H1 tidak tersedia atau RANGING [{htf_src}] — transaksi diblokir demi keamanan arah (Multi-Timeframe Filter Locked)",
             "conditions": {"score_buy": 0, "score_sell": 0},
         }
 
@@ -1424,39 +1422,9 @@ def run_multi_timeframe_scan(
         print(f"  ⚠️  M5 scan error: {e}")
         results["m5"] = {"signal": "WAIT", "timeframe": "M5", "reason": str(e), "score": 0}
 
-    # ── SCAN M1 ──
-    try:
-        # M1 butuh inject df_m1 ke BRIDGE_DF
-        if bridge_df_m1 is not None and not bridge_df_m1.empty:
-            BRIDGE_DF = bridge_df_m1
-        else:
-            # Fetch M1 langsung dari Twelve Data
-            df_m1 = _fetch_twelve_data("1m")
-            if df_m1.empty:
-                raise ValueError("M1 data kosong dari Twelve Data")
-            BRIDGE_DF = df_m1
-
-        market_m1 = fetch_market_data("1m")
-        indic_m1  = calculate_indicators(market_m1)
-        sig_m1    = detect_berkah_signal(
-            market_m1, indic_m1,
-            max_extension_atr = float(os.getenv("MAX_EXTENSION_ATR", "1.5")),
-            score_threshold  = 4,     # M1 juga 4/7 untuk kualitas lebih baik
-            score_high_conf  = 5,
-            liquidity_lookback = 3,   # lookback lebih pendek untuk M1
-            adx_threshold    = 18,    # ADX lebih rendah di M1
-            htf_bias_override = htf_bias,   # HTF H1 asli (bukan EMA 3.3 jam)
-            htf_agg_factor    = 15,          # 15xM1 = struktur M15
-            capital          = capital,
-            risk_percent     = risk_percent,
-            value_per_lot    = value_per_lot,
-        )
-        sig_m1["timeframe"] = "M1"
-        results["m1"] = sig_m1
-        print(f"  📊 M1  → {sig_m1['signal']} | score={sig_m1.get('score', 0)}/7 | {sig_m1.get('confidence','')}")
-    except Exception as e:
-        print(f"  ⚠️  M1 scan error: {e}")
-        results["m1"] = {"signal": "WAIT", "timeframe": "M1", "reason": str(e), "score": 0}
+    # ── SCAN M1 ── (Disabled per user request: Menghapus timeframe M1 dari sistem pemindaian otomatis)
+    results["m1"] = {"signal": "WAIT", "timeframe": "M1", "reason": "Timeframe M1 dinonaktifkan dari sistem pemindaian otomatis", "score": 0}
+    print("  📊 M1  → WAIT | Timeframe M1 dinonaktifkan")
 
     # ── RESTORE BRIDGE_DF ke M5 (default) ──
     BRIDGE_DF = bridge_df_m5

@@ -60,6 +60,10 @@ export function getCurrentSession(): string {
 export function isSessionActive(): boolean {
   const sess = getCurrentSession();
   if (sess === "off") return false;
+  if (sess === "tokyo") {
+    // Tokyo Session is completely deactivated/disabled per user request
+    return false;
+  }
   
   const sched = getSessionSchedule();
   return (sched as any)[sess] ?? true;
