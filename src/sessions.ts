@@ -6,7 +6,7 @@ export const SESSION_HOURS: Record<string, number[]> = {
   sydney: [4, 5, 6, 7, 8, 9], // 04:00–09:59 WIB
   tokyo: [6, 7, 8, 9, 10, 11, 12, 13], // 06:00–13:59 WIB
   london: [14, 15, 16, 17, 18, 19, 20, 21], // 14:00–21:59 WIB
-  new_york: [19, 20, 21, 22, 23, 0, 1, 2], // 19:00–02:59 WIB
+  new_york: [19, 20, 21, 22, 23, 0, 1, 2, 3], // 19:00–03:59 WIB
 };
 
 export interface SessionSchedule {
@@ -60,10 +60,6 @@ export function getCurrentSession(): string {
 export function isSessionActive(): boolean {
   const sess = getCurrentSession();
   if (sess === "off") return false;
-  if (sess === "tokyo") {
-    // Tokyo Session is completely deactivated/disabled per user request
-    return false;
-  }
   
   const sched = getSessionSchedule();
   return (sched as any)[sess] ?? true;

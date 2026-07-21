@@ -1148,7 +1148,7 @@ SESSION_HOURS: dict = {
     "sydney":   list(range(4, 10)),    # 04:00–09:59 WIB
     "tokyo":    list(range(6, 14)),    # 06:00–13:59 WIB
     "london":   list(range(14, 22)),   # 14:00–21:59 WIB
-    "new_york": list(range(19, 24)) + list(range(0, 3)),  # 19:00–02:59 WIB
+    "new_york": list(range(19, 24)) + list(range(0, 4)),  # 19:00–03:59 WIB
 }
 
 def get_current_session() -> str:
@@ -1164,9 +1164,6 @@ def is_session_active() -> bool:
     """Cek apakah sesi saat ini diaktifkan oleh superadmin."""
     sess = get_current_session()
     if sess == "off":
-        return False
-    if sess == "tokyo":
-        # Tokyo Session is completely deactivated/disabled per user request
         return False
     return _SESSION_SCHEDULE.get(sess, True)
 
