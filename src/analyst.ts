@@ -156,7 +156,8 @@ export function runMultiTimeframeScan(
   candlesH4: Candle[] | null = null,
   capital: number = 2000.0,
   riskPercent: number = 1.5,
-  valuePerLot: number = 10.0
+  valuePerLot: number = 10.0,
+  martingaleMultiplier: number = 1
 ): MtfScanResult {
   const results: any = {};
 
@@ -179,7 +180,8 @@ export function runMultiTimeframeScan(
       capital,
       riskPercent,
       valuePerLot,
-      htfBias || undefined
+      htfBias || undefined,
+      martingaleMultiplier
     );
     sigM5.timeframe = "M5";
     results.m5 = sigM5;
@@ -189,9 +191,30 @@ export function runMultiTimeframeScan(
     results.m5 = { signal: "WAIT", timeframe: "M5", reason: err.message, score: 0 };
   }
 
-  // 3. Scan M1 (Disabled per user request: Menghapus timeframe M1 dari sistem pemindaian otomatis)
-  results.m1 = { signal: "WAIT", timeframe: "M1", reason: "Timeframe M1 dinonaktifkan dari sistem pemindaian otomatis", score: 0 };
-  console.log(`📊 M1  → WAIT | Timeframe M1 dinonaktifkan`);
+  // 3. Scan M1
+  try {
+    if (!candlesM1 || candlesM1.length === 0) {
+      throw new Error("M1 data kosong");
+    }
+    const indicM1 = getIndicators(candlesM1);
+    const sigM1 = getBerkahSignal(
+      candlesM1,
+      indicM1,
+      4, // scoreThreshold M1 = 4
+      5, // scoreHighConf M1 = 5
+      capital,
+      riskPercent,
+      valuePerLot,
+      htfBias || undefined,
+      martingaleMultiplier
+    );
+    sigM1.timeframe = "M1";
+    results.m1 = sigM1;
+    console.log(`📊 M1  → ${sigM1.signal} | score=${sigM1.score ?? 0}/7 | ${sigM1.confidence ?? ""}`);
+  } catch (err: any) {
+    console.error(`⚠️ M1 scan error: ${err.message}`);
+    results.m1 = { signal: "WAIT", timeframe: "M1", reason: err.message, score: 0 };
+  }
 
   // 4. M1 Subordinate Veto
   // M1 signal is only valid if M5 aligns, or M5 directional score is >= 4

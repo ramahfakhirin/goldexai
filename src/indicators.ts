@@ -380,7 +380,8 @@ export function getBerkahSignal(
   capital: number = 2000.0,
   riskPercent: number = 1.5,
   valuePerLot: number = 10.0,
-  htfBiasOverride?: "BULL" | "BEAR" | "RANGING"
+  htfBiasOverride?: "BULL" | "BEAR" | "RANGING",
+  martingaleMultiplier: number = 1
 ): any {
   const n = candles.length;
   if (n < 30) {
@@ -861,9 +862,16 @@ export function getBerkahSignalOld(
     narrative = `Menunggu setup market yang optimal. Confluence buy (${score_buy}/7) atau sell (${score_sell}/7) belum mencapai batas minimum ${scoreThreshold} poin.`;
   }
 
+  // Apply Martingale multiplier
+  lot_risk = lot_risk * martingaleMultiplier;
+  if (martingaleMultiplier > 1 && (signal === "BUY" || signal === "SELL")) {
+    narrative += ` [Martingale ${martingaleMultiplier}x Aktif]`;
+  }
+
   // Adjust lot size constraints
   if (lot_risk < 0.01) lot_risk = 0.01;
-  if (lot_risk > 10.0) lot_risk = 10.0;
+  const maxLot = martingaleMultiplier > 1 ? 100.0 : 10.0;
+  if (lot_risk > maxLot) lot_risk = maxLot;
 
   // Calculate swing high/low for structure
   const highs = candles.map((c) => c.high);

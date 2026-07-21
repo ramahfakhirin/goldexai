@@ -470,6 +470,28 @@ def get_performance_stats(days=7):
     except Exception as e:
         return {"error": str(e)}
 
+def get_martingale_multiplier():
+    try:
+        conn = get_db()
+        # Fetch the most recent closed trade monitors to trace back outcomes
+        rows = conn.execute("""
+            SELECT outcome FROM trade_monitors 
+            WHERE status = 'CLOSED' 
+            ORDER BY id DESC LIMIT 20
+        """).fetchall()
+        conn.close()
+        
+        multiplier = 1
+        for row in rows:
+            outcome = row['outcome']
+            if outcome == 'SL_HIT':
+                multiplier *= 2
+            elif outcome in ('TP1_HIT', 'TP2_HIT', 'TP3_HIT', 'BE_HIT'):
+                break
+        return multiplier
+    except Exception:
+        return 1
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({"error": "No action specified"}))
@@ -570,6 +592,9 @@ def main():
     elif action == "get_performance_stats":
         days = int(sys.argv[2]) if len(sys.argv) > 2 else 7
         print(json.dumps(get_performance_stats(days)))
+        
+    elif action == "get_martingale_multiplier":
+        print(json.dumps(get_martingale_multiplier()))
         
     else:
         print(json.dumps({"error": f"Unknown action: {action}"}))

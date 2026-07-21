@@ -226,7 +226,8 @@ export function formatTelegramVisionSignal(
   tp1: number,
   tp2: number,
   tp3: number,
-  rrRatio: string
+  rrRatio: string,
+  signalId?: number
 ): string {
   const signal = visionResult.original_signal || "WAIT";
   const verdict = visionResult.verdict || "SKIP";
@@ -249,7 +250,7 @@ export function formatTelegramVisionSignal(
   const tp2Str = hasRefined ? `<b>${visionResult.suggested_tp2}</b> (Refined 👁)` : `${tp2}`;
   const tp3Str = hasRefined ? `<b>${visionResult.suggested_tp3}</b> (Refined 👁)` : `${tp3}`;
 
-  let msg = `${sigEmoji} <b>XAU/USD ${signal}</b> — ${timeframe.toUpperCase()}
+  let msg = `${signalId ? `⚡️ <b>ID Signal: #${signalId}</b>\n` : ""}${sigEmoji} <b>XAU/USD ${signal}</b> — ${timeframe.toUpperCase()}
 ${verdictEmoji} Vision: <b>${verdict.replace(/_/g, " ")}</b>
 ━━━━━━━━━━━━━━━━━━
 💰 Harga   : <b>$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>

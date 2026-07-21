@@ -772,6 +772,45 @@ def call_claude_api(prompt: str) -> dict:
     return result
 
 
+def get_db_path():
+    import os
+    from pathlib import Path
+    # 1. Cek /data
+    if os.path.exists("/data"):
+        return Path("/data/signals.db")
+    # 2. Cek RAILWAY_VOLUME_MOUNT_PATH
+    railway_vol = os.getenv("RAILWAY_VOLUME_MOUNT_PATH")
+    if railway_vol:
+        return Path(railway_vol) / "signals.db"
+    # 3. Fallback ke local data directory
+    return Path(os.getcwd()) / "data" / "signals.db"
+
+def get_martingale_multiplier():
+    import sqlite3
+    try:
+        db_path = get_db_path()
+        if not db_path.exists():
+            return 1
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("""
+            SELECT outcome FROM trade_monitors 
+            WHERE status = 'CLOSED' 
+            ORDER BY id DESC LIMIT 20
+        """).fetchall()
+        conn.close()
+        
+        multiplier = 1
+        for row in rows:
+            outcome = row['outcome']
+            if outcome == 'SL_HIT':
+                multiplier *= 2
+            elif outcome in ('TP1_HIT', 'TP2_HIT', 'TP3_HIT', 'BE_HIT'):
+                break
+        return multiplier
+    except Exception:
+        return 1
+
 
 # ─────────────────────────────────────────────
 # 3C. BERKAH ENTRY SIGNAL — FULL REPLICATION
@@ -1074,6 +1113,11 @@ def detect_berkah_signal(
         tp2      = float(price + sl_dist * 1.5)   # RR 1:1.5
         tp_full  = float(price + sl_dist * 2.0)   # RR 1:2 (TP3)
         lot_risk = (capital * risk_percent / 100) / (sl_dist * value_per_lot) if sl_dist > 0 else 0.01
+        
+        # Martingale multiplication
+        mult = get_martingale_multiplier()
+        lot_risk = lot_risk * mult
+        
         signal   = "BUY"
         score    = score_buy
         conf_label = "HIGH_CONFIDENCE" if score >= score_high_conf else "NORMAL"
@@ -1084,6 +1128,8 @@ def detect_berkah_signal(
             f"HTF BULL [{htf_src}] | "
             + " | ".join(active_factors)
         )
+        if mult > 1:
+            reason += f" | Martingale {mult}x Aktif"
 
     elif can_sell:
         sl       = float(h_now + sl_buffer_points + atr_val * 0.8)
@@ -1092,6 +1138,11 @@ def detect_berkah_signal(
         tp2      = float(price - sl_dist * 1.5)   # RR 1:1.5
         tp_full  = float(price - sl_dist * 2.0)   # RR 1:2 (TP3)
         lot_risk = (capital * risk_percent / 100) / (sl_dist * value_per_lot) if sl_dist > 0 else 0.01
+        
+        # Martingale multiplication
+        mult = get_martingale_multiplier()
+        lot_risk = lot_risk * mult
+        
         signal   = "SELL"
         score    = score_sell
         conf_label = "HIGH_CONFIDENCE" if score >= score_high_conf else "NORMAL"
@@ -1102,6 +1153,8 @@ def detect_berkah_signal(
             f"HTF BEAR [{htf_src}] | "
             + " | ".join(active_factors)
         )
+        if mult > 1:
+            reason += f" | Martingale {mult}x Aktif"
 
     else:
         signal   = "WAIT"
@@ -1422,9 +1475,39 @@ def run_multi_timeframe_scan(
         print(f"  ⚠️  M5 scan error: {e}")
         results["m5"] = {"signal": "WAIT", "timeframe": "M5", "reason": str(e), "score": 0}
 
-    # ── SCAN M1 ── (Disabled per user request: Menghapus timeframe M1 dari sistem pemindaian otomatis)
-    results["m1"] = {"signal": "WAIT", "timeframe": "M1", "reason": "Timeframe M1 dinonaktifkan dari sistem pemindaian otomatis", "score": 0}
-    print("  📊 M1  → WAIT | Timeframe M1 dinonaktifkan")
+    # ── SCAN M1 ──
+    try:
+        # M1 butuh inject df_m1 ke BRIDGE_DF
+        if bridge_df_m1 is not None and not bridge_df_m1.empty:
+            BRIDGE_DF = bridge_df_m1
+        else:
+            # Fetch M1 langsung dari Twelve Data
+            df_m1 = _fetch_twelve_data("1m")
+            if df_m1.empty:
+                raise ValueError("M1 data kosong dari Twelve Data")
+            BRIDGE_DF = df_m1
+
+        market_m1 = fetch_market_data("1m")
+        indic_m1  = calculate_indicators(market_m1)
+        sig_m1    = detect_berkah_signal(
+            market_m1, indic_m1,
+            max_extension_atr = float(os.getenv("MAX_EXTENSION_ATR", "1.5")),
+            score_threshold  = 4,     # M1 juga 4/7 untuk kualitas lebih baik
+            score_high_conf  = 5,
+            liquidity_lookback = 3,   # lookback lebih pendek untuk M1
+            adx_threshold    = 18,    # ADX lebih rendah di M1
+            htf_bias_override = htf_bias,   # HTF H1 asli (bukan EMA 3.3 jam)
+            htf_agg_factor    = 15,          # 15xM1 = struktur M15
+            capital          = capital,
+            risk_percent     = risk_percent,
+            value_per_lot    = value_per_lot,
+        )
+        sig_m1["timeframe"] = "M1"
+        results["m1"] = sig_m1
+        print(f"  📊 M1  → {sig_m1['signal']} | score={sig_m1.get('score', 0)}/7 | {sig_m1.get('confidence','')}")
+    except Exception as e:
+        print(f"  ⚠️  M1 scan error: {e}")
+        results["m1"] = {"signal": "WAIT", "timeframe": "M1", "reason": str(e), "score": 0}
 
     # ── RESTORE BRIDGE_DF ke M5 (default) ──
     BRIDGE_DF = bridge_df_m5

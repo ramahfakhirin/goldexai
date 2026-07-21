@@ -1360,8 +1360,15 @@ def run_scheduled_analysis():
             df_m5 = df_m5.iloc[:-1]
         print(f"[Scheduler] ✅ M5 OHLCV dari {data_source_m5}: {len(df_m5)} candles")
 
-        # ── Fetch M1 (Disabled per user request) ──
-        df_m1 = None
+        # ── Fetch M1 (sinyal scalping cepat) ──
+        df_m1, data_source_m1 = fetch_ohlcv_primary("1m", 500)
+        if df_m1 is None or df_m1.empty:
+            print("[Scheduler] ⚠️ OHLCV M1 tidak tersedia — hanya pakai M5")
+            df_m1 = None
+        else:
+            if len(df_m1) > 1:
+                df_m1 = df_m1.iloc[:-1]
+            print(f"[Scheduler] ✅ M1 OHLCV dari {data_source_m1}: {len(df_m1)} candles")
 
         # ── Candle deduplication — skip jika candle M5 sama dengan scan sebelumnya ──
         import time as _time_mod
@@ -1588,7 +1595,7 @@ def run_scheduled_analysis():
                     tp3       = float(berkah["tp3"]),
                     timeframe = tf_label,
                 )
-                msg = format_signal_message(analysis, market.current_price, tf_label)
+                msg = format_signal_message(analysis, market.current_price, tf_label, signal_id=signal_id)
                 send_telegram_message(msg)
                 _LAST_SIGNAL_TS = _time_mod.time()
                 _cfg_set("last_signal_ts", _LAST_SIGNAL_TS)
@@ -1744,7 +1751,7 @@ def send_telegram_message(text: str, bot_token: str = "", chat_id: str = "") -> 
         return False
 
 
-def format_signal_message(analysis: dict, price: float, timeframe: str) -> str:
+def format_signal_message(analysis: dict, price: float, timeframe: str, signal_id: int = None) -> str:
     """Format pesan signal BUY/SELL untuk Telegram — narasi penuh, tidak terpotong."""
     sig  = analysis.get("signal", "WAIT")
     conf = analysis.get("confidence", 0)
@@ -1777,8 +1784,9 @@ def format_signal_message(analysis: dict, price: float, timeframe: str) -> str:
     lot = rm.get("recommended_lot", "-")
 
     # Bangun pesan
+    id_header = f" | ID #{signal_id}" if signal_id else ""
     lines = [
-        f"<b>XAUUSD AI Analyze</b>",
+        f"<b>XAUUSD AI Analyze{id_header}</b>",
         f"{sig_emoji} <b>XAU/USD {sig}</b> — {timeframe.upper()}",
         "─────────────────────",
         f"💰 Harga  : <b>${price:,.2f}</b>",
@@ -2869,7 +2877,7 @@ def analyze():
                 timeframe  = timeframe,
             )
             # Kirim Telegram hanya untuk signal BARU (bukan duplikat)
-            msg     = format_signal_message(analysis, market.current_price, timeframe)
+            msg     = format_signal_message(analysis, market.current_price, timeframe, signal_id=signal_id)
             tg_sent = send_telegram_message(msg)
             print(f"[Signal] NEW {sig} monitor created, Telegram: {tg_sent}")
         elif already_active:

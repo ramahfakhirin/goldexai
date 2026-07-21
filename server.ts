@@ -360,8 +360,16 @@ async function runScheduledAnalysis() {
     lastSignalCandleIdM5 = latestCandleTime;
     db.configSet("last_signal_candle_id_m5", latestCandleTime);
 
-    // Fetch M1 (Disabled per user request)
-    const candlesM1: any[] | null = null;
+    // Fetch M1
+    let candlesM1: any[] | null = null;
+    try {
+      const m1Result = await fetchOhlcvPrimary("1m", 500);
+      if (m1Result && m1Result.data) {
+        candlesM1 = m1Result.data.length > 1 ? m1Result.data.slice(0, -1) : m1Result.data;
+      }
+    } catch (e: any) {
+      console.log(`[Scheduler] ⚠️ M1 fetch error: ${e.message}`);
+    }
 
     // Fetch H1
     let candlesH1: any[] | null = null;
@@ -390,7 +398,17 @@ async function runScheduledAnalysis() {
     const riskPercent = parseFloat(process.env.RISK_PERCENT || "1.5");
     const valuePerLot = 10.0;
 
-    const mtf = runMultiTimeframeScan(candlesM1, candlesM5, candlesH1, candlesH4, capital, riskPercent, valuePerLot);
+    const martingaleMultiplier = db.getMartingaleMultiplier() || 1;
+    const mtf = runMultiTimeframeScan(
+      candlesM1,
+      candlesM5,
+      candlesH1,
+      candlesH4,
+      capital,
+      riskPercent,
+      valuePerLot,
+      martingaleMultiplier
+    );
     const best = mtf.best;
     const sig = best.signal;
     const tfLabel = best.timeframe || "M5";
@@ -543,7 +561,8 @@ async function runScheduledAnalysis() {
         best.tp1,
         best.tp2,
         best.tp3,
-        analysis.risk_management.risk_reward_ratio
+        analysis.risk_management.risk_reward_ratio,
+        signalId
       );
       await sendTelegramMessage(msg);
 

@@ -195,6 +195,10 @@ class BridgeDB {
   public getPerformanceStats(days: number = 7): any {
     return this.runBridge("get_performance_stats", days);
   }
+
+  public getMartingaleMultiplier(): number {
+    return this.runBridge("get_martingale_multiplier") || 1;
+  }
 }
 
 export const db = new BridgeDB();
