@@ -1129,7 +1129,7 @@ ANALYSIS_INTERVAL = int(os.getenv("ANALYSIS_INTERVAL_SEC", "60"))  # default 1 m
 _LAST_WAIT_SAVE_TS = 0  # timestamp unix terakhir WAIT disimpan
 
 # ── Deduplication state ──
-_LAST_SIGNAL_CANDLE_ID: dict = {"M5": _cfg_get("last_signal_candle_id_m5", "")}
+_LAST_SIGNAL_CANDLE_ID: dict = {"M5": _cfg_get("last_signal_candle_id_m5", ""), "M1": _cfg_get("last_signal_candle_id_m1", "")}
 _LAST_SIGNAL_TS: float = 0.0        # unix timestamp sinyal BUY/SELL terakhir
 _SIGNAL_COOLDOWN_SEC: int = int(os.getenv("SIGNAL_COOLDOWN_SEC", "900"))  # default 15 menit
 
@@ -1367,9 +1367,22 @@ def run_scheduled_analysis():
                 df_m1 = df_m1.iloc[:-1]
             print(f"[Scheduler] ✅ M1 OHLCV dari {data_source_m1}: {len(df_m1)} candles")
 
-        # ── Candle deduplication — skip jika candle M5 sama dengan scan sebelumnya ──
+        # ── Candle deduplication (M1 first, M5 fallback) ──
         import time as _time_mod
-        if df_m5 is not None and not df_m5.empty:
+        if df_m1 is not None and not df_m1.empty:
+            m1_candle_id = str(df_m1.index[-1])
+            prev_candle  = _LAST_SIGNAL_CANDLE_ID.get("M1", "")
+            if m1_candle_id == prev_candle:
+                print(f"[Scheduler] ⏭ Candle M1 sama ({m1_candle_id}) — skip re-scan")
+                return None
+            
+            # Coba klaim secara atomic di DB untuk mencegah duplikasi antar worker/proses
+            if not _atomic_reserve_candle("M1", m1_candle_id):
+                print(f"[Scheduler] ⏭ Candle M1 ({m1_candle_id}) sudah/sedang diproses oleh worker lain — skip re-scan")
+                return None
+                
+            _LAST_SIGNAL_CANDLE_ID["M1"] = m1_candle_id
+        elif df_m5 is not None and not df_m5.empty:
             m5_candle_id = str(df_m5.index[-1])
             prev_candle  = _LAST_SIGNAL_CANDLE_ID.get("M5", "")
             if m5_candle_id == prev_candle:
@@ -1597,7 +1610,7 @@ def run_scheduled_analysis():
                 _LAST_SIGNAL_TS = _time_mod.time()
                 _cfg_set("last_signal_ts", _LAST_SIGNAL_TS)
                 print(f"[Scheduler] ✅ NEW {sig} [{tf_label}] signal saved & sent @ ${market.current_price:.2f} | score={berkah.get('score',0)}/7 | cooldown {_SIGNAL_COOLDOWN_SEC}s aktif")
-            _set_latest_signal(signal_id, analysis, market, indicators, smc, timeframe)
+            _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
 
         elif sig in ("BUY", "SELL") and active_monitor:
             print(f"[Scheduler] ⏸ {sig} detected but monitor ACTIVE — skip save")

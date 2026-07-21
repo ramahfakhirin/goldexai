@@ -149,6 +149,7 @@ function superadminRequired(req: express.Request, res: express.Response, next: e
 // STATE & SCHEDULER VARS
 // ─────────────────────────────────────────────
 let lastSignalCandleIdM5 = db.configGet("last_signal_candle_id_m5", "");
+let lastSignalCandleIdM1 = db.configGet("last_signal_candle_id_m1", "");
 let lastSignalTs = parseFloat(db.configGet("last_signal_ts", "0"));
 let lastWaitSaveTs = parseFloat(db.configGet("last_wait_save_ts", "0"));
 const signalCooldownSec = parseInt(process.env.SIGNAL_COOLDOWN_SEC || "900"); // default 15 mins
@@ -351,15 +352,6 @@ async function runScheduledAnalysis() {
       console.error("[Scheduler] News suspension check error:", newsErr);
     }
 
-    // Deduplication check based on candle time
-    const latestCandleTime = candlesM5[candlesM5.length - 1].time;
-    if (latestCandleTime === lastSignalCandleIdM5) {
-      console.log(`[Scheduler] ⏭ Candle M5 sama (${latestCandleTime}) — skip re-scan`);
-      return;
-    }
-    lastSignalCandleIdM5 = latestCandleTime;
-    db.configSet("last_signal_candle_id_m5", latestCandleTime);
-
     // Fetch M1
     let candlesM1: any[] | null = null;
     try {
@@ -369,6 +361,25 @@ async function runScheduledAnalysis() {
       }
     } catch (e: any) {
       console.log(`[Scheduler] ⚠️ M1 fetch error: ${e.message}`);
+    }
+
+    // Deduplication check based on candle time (M1 first, M5 fallback)
+    if (candlesM1 && candlesM1.length > 0) {
+      const latestM1Time = candlesM1[candlesM1.length - 1].time;
+      if (latestM1Time === lastSignalCandleIdM1) {
+        console.log(`[Scheduler] ⏭ Candle M1 sama (${latestM1Time}) — skip re-scan`);
+        return;
+      }
+      lastSignalCandleIdM1 = latestM1Time;
+      db.configSet("last_signal_candle_id_m1", latestM1Time);
+    } else {
+      const latestM5Time = candlesM5[candlesM5.length - 1].time;
+      if (latestM5Time === lastSignalCandleIdM5) {
+        console.log(`[Scheduler] ⏭ Candle M5 sama (${latestM5Time}) — skip re-scan`);
+        return;
+      }
+      lastSignalCandleIdM5 = latestM5Time;
+      db.configSet("last_signal_candle_id_m5", latestM5Time);
     }
 
     // Fetch H1
