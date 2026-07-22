@@ -1624,10 +1624,10 @@ def run_scheduled_analysis():
                 return None
 
         if sig in ("BUY", "SELL"):
-            signal_id = save_signal(analysis, tf_label, market.current_price)
-            _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
+            if not active_monitor and berkah.get("sl") and berkah.get("entry"):
+                signal_id = save_signal(analysis, tf_label, market.current_price)
+                _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
 
-            if not active_monitor and berkah["sl"] and berkah["entry"]:
                 create_trade_monitor(
                     signal_id = signal_id,
                     direction = sig,
@@ -1643,10 +1643,10 @@ def run_scheduled_analysis():
                 _LAST_SIGNAL_TS = _time_mod.time()
                 _cfg_set("last_signal_ts", _LAST_SIGNAL_TS)
                 print(f"[Scheduler] ✅ NEW {sig} [{tf_label}] signal saved & sent @ ${market.current_price:.2f} | score={berkah.get('score',0)}/7 | cooldown {_SIGNAL_COOLDOWN_SEC}s aktif")
+                return signal_id
             elif active_monitor:
-                print(f"[Scheduler] ℹ️ {sig} saved to history, but trade monitor creation skipped (already monitoring active position)")
-
-            return signal_id
+                print(f"[Scheduler] ℹ️ {sig} detected but active trade monitor exists — skipping save & alert to maintain Telegram & Dashboard synchronization")
+                return None
 
     except Exception as e:
         print(f"[Scheduler] Error: {e}")
@@ -2647,7 +2647,7 @@ def latest_signal():
 
     # 1. Jika ada trade monitor ACTIVE, utamakan sinyal trade tersebut
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db()
         conn.row_factory = sqlite3.Row
         active_mon = conn.execute(
             "SELECT signal_id FROM trade_monitors WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1"
@@ -2693,7 +2693,7 @@ def latest_signal():
                     "signal_id": row_dict["id"],
                     "analysis": analysis_obj,
                     "price": row_dict.get("price", 0),
-                    "timeframe": row_dict.get("timeframe", "15m"),
+                    "timeframe": row_dict.get("timeframe", "M5"),
                     "timestamp": row_dict.get("timestamp", now_wib_str("%Y-%m-%d %H:%M:%S")),
                     "data_source": "MT5 Bridge (Broker Live)",
                     "indicators": analysis_obj.get("indicators", {}),
@@ -2701,8 +2701,8 @@ def latest_signal():
                     "market_open": market_open,
                     "market_closed_reason": "" if market_open else market_closed_reason(),
                 })
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[latest_signal DB fetch error]: {e}")
 
     # Coba load cache dari SQLite (shared antar worker)
     latest_cached_str = _cfg_get("latest_signal_cache", "")
@@ -2943,11 +2943,9 @@ def analyze():
 
         analysis = json.loads(raw)
 
-        # Simpan ke DB, dapatkan signal_id
-        signal_id = save_signal(analysis, timeframe, market.current_price)
-
         # Auto-create trade monitor untuk BUY/SELL — dengan dedup check
         monitor_id   = None
+        signal_id    = None
         tg_sent      = False
         already_active = False
         sig = analysis.get("signal", "WAIT")
@@ -2955,27 +2953,29 @@ def analyze():
         en  = analysis.get("entry", {})
 
         if sig in ("BUY", "SELL"):
-            # Block signal baru jika ADA monitor aktif apapun (BUY atau SELL)
-            # Mencegah signal berlawanan saat posisi masih terbuka
             already_active = has_active_monitor()
 
-        if sig in ("BUY", "SELL") and not already_active and rm.get("stop_loss") and en.get("ideal_price"):
-            monitor_id = create_trade_monitor(
-                signal_id  = signal_id,
-                direction  = sig,
-                entry      = float(en.get("ideal_price", market.current_price)),
-                sl         = float(rm.get("stop_loss", 0)),
-                tp1        = float(rm.get("take_profit_1", 0) or 0),
-                tp2        = float(rm.get("take_profit_2", 0) or 0),
-                tp3        = float(rm.get("take_profit_3", 0) or 0),
-                timeframe  = timeframe,
-            )
-            # Kirim Telegram hanya untuk signal BARU (bukan duplikat)
-            msg     = format_signal_message(analysis, market.current_price, timeframe, signal_id=signal_id)
-            tg_sent = send_telegram_message(msg)
-            print(f"[Signal] NEW {sig} monitor created, Telegram: {tg_sent}")
-        elif already_active:
-            print(f"[Signal] {sig} monitor already active — skip duplicate")
+            if not already_active and rm.get("stop_loss") and en.get("ideal_price"):
+                signal_id = save_signal(analysis, timeframe, market.current_price)
+                _set_latest_signal(signal_id, analysis, market, indicators, smc, timeframe)
+
+                monitor_id = create_trade_monitor(
+                    signal_id  = signal_id,
+                    direction  = sig,
+                    entry      = float(en.get("ideal_price", market.current_price)),
+                    sl         = float(rm.get("stop_loss", 0)),
+                    tp1        = float(rm.get("take_profit_1", 0) or 0),
+                    tp2        = float(rm.get("take_profit_2", 0) or 0),
+                    tp3        = float(rm.get("take_profit_3", 0) or 0),
+                    timeframe  = timeframe,
+                )
+                msg     = format_signal_message(analysis, market.current_price, timeframe, signal_id=signal_id)
+                tg_sent = send_telegram_message(msg)
+                print(f"[Signal] NEW {sig} monitor created, Telegram: {tg_sent}")
+            elif already_active:
+                print(f"[Signal] {sig} monitor already active — skip duplicate")
+        else:
+            signal_id = save_signal(analysis, timeframe, market.current_price)
 
         return jsonify({
             "tg_sent":       tg_sent,
