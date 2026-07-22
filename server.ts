@@ -152,6 +152,7 @@ let lastSignalCandleIdM5 = db.configGet("last_signal_candle_id_m5", "");
 let lastSignalCandleIdM1 = db.configGet("last_signal_candle_id_m1", "");
 let lastSignalTs = parseFloat(db.configGet("last_signal_ts", "0"));
 let lastWaitSaveTs = parseFloat(db.configGet("last_wait_save_ts", "0"));
+let lastSentTelegramSignalId: number | null = null;
 const signalCooldownSec = parseInt(process.env.SIGNAL_COOLDOWN_SEC || "900"); // default 15 mins
 
 // Memory cache for latest signal API polling
@@ -608,6 +609,10 @@ async function runScheduledAnalysis() {
 
     // 1. ALWAYS Save Signal to SQLite Database first to get unique signal ID
     const signalId = db.saveSignal(analysis, tfLabel, price);
+    if (!signalId || isNaN(signalId) || signalId <= 0) {
+      console.error("[Scheduler] Failed to save signal to database — skipping Telegram broadcast");
+      return;
+    }
 
     // 2. Auto-create Trade Monitor if no active monitor exists
     const hasActive = db.hasActiveMonitor();
@@ -628,26 +633,36 @@ async function runScheduledAnalysis() {
     }
 
     // 3. ALWAYS Format and Send Telegram Message with synchronized signalId
-    const { formatTelegramVisionSignal } = await import("./src/vision.js");
-    const msg = formatTelegramVisionSignal(
-      visionResult,
-      price,
-      tfLabel,
-      best.entry,
-      best.sl,
-      best.tp1,
-      best.tp2,
-      best.tp3,
-      analysis.risk_management?.risk_reward_ratio || "1:2",
-      signalId,
-      analysis.risk_management?.recommended_lot || best.lot_risk || 0.10,
-      martingaleMultiplier
-    );
-    await sendTelegramMessage(msg);
+    if (lastSentTelegramSignalId === signalId) {
+      console.log(`[Scheduler] ℹ️ Signal #${signalId} already broadcasted to Telegram — skipping duplicate`);
+    } else {
+      const { formatTelegramVisionSignal } = await import("./src/vision.js");
+      const msg = formatTelegramVisionSignal(
+        visionResult,
+        price,
+        tfLabel,
+        best.entry,
+        best.sl,
+        best.tp1,
+        best.tp2,
+        best.tp3,
+        analysis.risk_management?.risk_reward_ratio || "1:2",
+        signalId,
+        analysis.risk_management?.recommended_lot || best.lot_risk || 0.10,
+        martingaleMultiplier
+      );
+      if (msg) {
+        const sent = await sendTelegramMessage(msg);
+        if (sent) {
+          lastSentTelegramSignalId = signalId;
+          console.log(`[Scheduler] ✅ Broadcasted Signal #${signalId} to Telegram`);
+        }
+      }
+    }
 
     lastSignalTs = nowTs;
     db.configSet("last_signal_ts", nowTs);
-    console.log(`[Scheduler] ✅ NEW ${sig} [${tfLabel}] signal #${signalId} saved & broadcasted @ $${price.toFixed(2)}`);
+    console.log(`[Scheduler] ✅ NEW ${sig} [${tfLabel}] signal #${signalId} saved & confirmed @ $${price.toFixed(2)}`);
     setLatestSignal(signalId, analysis, price, tfLabel, currentIndicators, currentSMC);
 
   } catch (err) {
@@ -1201,48 +1216,58 @@ app.post("/api/vision_confirm", loginRequired, async (req, res) => {
     const chat_id = process.env.TELEGRAM_CHAT_ID;
 
     if (vision.verdict === "VALID" && bot_token && chat_id) {
-      const sigIdVal = req.body.signal_id ? parseInt(req.body.signal_id) : undefined;
-      const msg = formatTelegramVisionSignal(
-        vision,
-        parseFloat(price || chart.price || 0),
-        timeframe || "15m",
-        parseFloat(entry || 0),
-        parseFloat(stop_loss || 0),
-        parseFloat(tp1 || 0),
-        parseFloat(tp2 || 0),
-        parseFloat(tp3 || 0),
-        req.body.rr_ratio || "1:1.5",
-        sigIdVal
-      );
+      const rawSigId = req.body.signal_id ? parseInt(req.body.signal_id) : undefined;
+      
+      // STRICT GUARD: Do not send to Telegram if no valid signal_id from DB or if already sent
+      if (!rawSigId || isNaN(rawSigId) || rawSigId <= 0) {
+        console.log("[Vision Confirm] ℹ️ Vision analysis completed, but no signal_id from DB provided — skipping Telegram broadcast");
+      } else if (lastSentTelegramSignalId === rawSigId) {
+        console.log(`[Vision Confirm] ℹ️ Telegram message for Signal #${rawSigId} already broadcasted by server — skipping duplicate`);
+      } else {
+        const msg = formatTelegramVisionSignal(
+          vision,
+          parseFloat(price || chart.price || 0),
+          timeframe || "15m",
+          parseFloat(entry || 0),
+          parseFloat(stop_loss || 0),
+          parseFloat(tp1 || 0),
+          parseFloat(tp2 || 0),
+          parseFloat(tp3 || 0),
+          req.body.rr_ratio || "1:1.5",
+          rawSigId
+        );
 
-      // Send text message
-      const textSuccess = await sendTelegramMessage(msg);
-      if (textSuccess) {
-        tg_sent = true;
-      }
+        if (msg) {
+          const textSuccess = await sendTelegramMessage(msg);
+          if (textSuccess) {
+            tg_sent = true;
+            lastSentTelegramSignalId = rawSigId;
+          }
+        }
 
-      // Send photo chart
-      try {
-        const boundary = "----FormBoundaryExpressMultipart";
-        const photoUrl = `https://api.telegram.org/bot${bot_token}/sendPhoto`;
-        const chartBuffer = Buffer.from(chart.b64, "base64");
-        const caption = `📊 XAU/USD ${timeframe.toUpperCase()} Chart — ${signal} Signal`;
+        // Send photo chart
+        try {
+          const boundary = "----FormBoundaryExpressMultipart";
+          const photoUrl = `https://api.telegram.org/bot${bot_token}/sendPhoto`;
+          const chartBuffer = Buffer.from(chart.b64, "base64");
+          const caption = `📊 XAU/USD ${timeframe.toUpperCase()} Chart — ${signal} Signal #${rawSigId}`;
 
-        const bodyParts = Buffer.concat([
-          Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n${chat_id}\r\n`),
-          Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="caption"\r\n\r\n${caption}\r\n`),
-          Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="photo"; filename="chart.png"\r\nContent-Type: image/png\r\n\r\n`),
-          chartBuffer,
-          Buffer.from(`\r\n--${boundary}--\r\n`),
-        ]);
+          const bodyParts = Buffer.concat([
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n${chat_id}\r\n`),
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="caption"\r\n\r\n${caption}\r\n`),
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="photo"; filename="chart.png"\r\nContent-Type: image/png\r\n\r\n`),
+            chartBuffer,
+            Buffer.from(`\r\n--${boundary}--\r\n`),
+          ]);
 
-        await fetch(photoUrl, {
-          method: "POST",
-          headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
-          body: bodyParts,
-        });
-      } catch (photoErr) {
-        console.error("[Telegram] Photo delivery error:", photoErr);
+          await fetch(photoUrl, {
+            method: "POST",
+            headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+            body: bodyParts,
+          });
+        } catch (photoErr) {
+          console.error("[Telegram] Photo delivery error:", photoErr);
+        }
       }
     }
 

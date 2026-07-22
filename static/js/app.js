@@ -1389,12 +1389,14 @@ async function triggerVisionConfirm(data) {
   const tgToken = localStorage.getItem("xau_tg_token") || "";
   const tgChat  = localStorage.getItem("xau_tg_chat")  || "";
 
+  const activeSigId = data.signal_id || a.signal_id || null;
+
   try {
     const res = await fetch("/api/vision_confirm", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        signal_id:   data.monitor_id || null,
+        signal_id:   activeSigId,
         signal:      a.signal,
         timeframe:   data.timeframe,
         price:       data.price,

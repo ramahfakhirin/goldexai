@@ -231,8 +231,14 @@ export function formatTelegramVisionSignal(
   recommendedLot?: number | string,
   martingaleMult: number = 1
 ): string {
-  const signal = visionResult.original_signal || "WAIT";
-  const verdict = visionResult.verdict || "SKIP";
+  // STRICT GUARD: Telegram signal MUST NOT be sent without a confirmed signalId from DB
+  if (!signalId || isNaN(signalId) || signalId <= 0) {
+    console.warn("[Telegram] Cannot format signal message without a valid confirmed signalId from DB");
+    return "";
+  }
+
+  const signal = visionResult.original_signal || "BUY";
+  const verdict = visionResult.verdict || "VALID";
   const combined = visionResult.combined_confidence ?? 0;
   const paQual = visionResult.price_action_quality || "-";
   const timing = visionResult.entry_timing || "-";
@@ -257,7 +263,9 @@ export function formatTelegramVisionSignal(
     ? `🔥 <b>Martingale ${martingaleMult}x Active</b> (Recovery Step)` 
     : `🛡 <b>Normal Risk 1x</b> (Standard)`;
 
-  let msg = `${signalId ? `⚡️ <b>Signal ID: #${signalId}</b>\n` : ""}${sigEmoji} <b>XAU/USD ${signal}</b> — ${timeframe.toUpperCase()}
+  let msg = `<b>⚡️ GOLDEX AI SIGNAL | ID #${signalId}</b>
+🆔 <b>Signal ID: #${signalId}</b>
+${sigEmoji} <b>XAU/USD ${signal}</b> — ${timeframe.toUpperCase()}
 ${verdictEmoji} Vision: <b>${verdict.replace(/_/g, " ")}</b>
 ━━━━━━━━━━━━━━━━━━
 💰 Price   : <b>$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>

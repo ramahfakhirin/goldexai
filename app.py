@@ -1756,6 +1756,9 @@ def start_background_monitor():
 # ─────────────────────────────────────────────
 def send_telegram_message(text: str, bot_token: str = "", chat_id: str = "") -> bool:
     """Kirim pesan teks ke Telegram. Return True jika berhasil."""
+    if not text or not text.strip():
+        print("[Telegram] Skip send_telegram_message — text is empty")
+        return False
     token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN", "")
     chat  = chat_id  or os.getenv("TELEGRAM_CHAT_ID",   "")
     if not token or not chat:
@@ -1778,7 +1781,11 @@ def send_telegram_message(text: str, bot_token: str = "", chat_id: str = "") -> 
 
 
 def format_signal_message(analysis: dict, price: float, timeframe: str, signal_id: int = None) -> str:
-    """Format pesan signal BUY/SELL untuk Telegram — narasi penuh, tidak terpotong."""
+    """Format pesan signal BUY/SELL untuk Telegram — WAJIB memiliki signal_id dari DB."""
+    if not signal_id:
+        print("[Telegram] Skip formatting message — missing signal_id from DB confirmation")
+        return ""
+
     sig  = analysis.get("signal", "WAIT")
     conf = analysis.get("confidence", 0)
     rm   = analysis.get("risk_management", {})

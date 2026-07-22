@@ -355,6 +355,10 @@ export async function fetchForexCalendar(): Promise<any[]> {
 
 // Telegram messaging
 export async function sendTelegramMessage(text: string): Promise<boolean> {
+  if (!text || !text.trim()) {
+    console.warn("[Telegram] Skipping send — empty text (likely missing signalId from DB confirmation)");
+    return false;
+  }
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chat = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chat) return false;
