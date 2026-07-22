@@ -233,6 +233,18 @@ def save_signal(signal_data, timeframe, price):
         entry = signal_data.get("entry", {})
         ms = signal_data.get("market_structure", {})
 
+        conf_raw = signal_data.get("confidence", 0)
+        if isinstance(conf_raw, (int, float)):
+            conf_val = int(conf_raw)
+        elif str(conf_raw).isdigit():
+            conf_val = int(conf_raw)
+        elif conf_raw == "HIGH_CONFIDENCE":
+            conf_val = 80
+        elif conf_raw == "MEDIUM_CONFIDENCE":
+            conf_val = 65
+        else:
+            conf_val = 50
+
         cursor = conn.execute("""
             INSERT INTO signals
             (timestamp, timeframe, price, signal, confidence, bias,
@@ -243,7 +255,7 @@ def save_signal(signal_data, timeframe, price):
             timeframe,
             float(price),
             signal_data.get("signal", "WAIT"),
-            int(signal_data.get("confidence", 0)),
+            conf_val,
             signal_data.get("bias", "NEUTRAL"),
             float(entry.get("ideal_price") or 0) if entry.get("ideal_price") is not None else None,
             float(rm.get("stop_loss") or 0) if rm.get("stop_loss") is not None else None,

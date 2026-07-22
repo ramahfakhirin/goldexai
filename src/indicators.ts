@@ -438,7 +438,9 @@ export function getBerkahSignal(
     }
   }
 
-  // Real RSI Momentum check to safeguard >80% winrate instead of dummy ADX
+  // ADX & RSI Momentum check
+  const adx_threshold = 22;
+  const adx_current = indicators.adx || 25;
   const rsi_val = indicators.rsi;
   const rsi_bull_ok = rsi_val >= 42 && rsi_val <= 72;
   const rsi_bear_ok = rsi_val >= 28 && rsi_val <= 58;

@@ -20,7 +20,10 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 
-import anthropic
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 import numpy as np
 import pandas as pd
 import requests
