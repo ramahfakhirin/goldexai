@@ -43,29 +43,29 @@ export interface NewsSuspensionResult {
  */
 export async function checkEconomicNewsSuspension(): Promise<NewsSuspensionResult> {
   const currentWib = nowWibStr();
-  const prompt = `Kamu adalah sistem pemantau kalender ekonomi real-time untuk bot trading gold.
-Lakukan pencarian Google (search grounding) untuk kalender ekonomi hari ini (terutama USD dan Emas/XAU) dari sumber terpercaya seperti Forex Factory, Investing.com, atau DailyFX.
+  const prompt = `You are a real-time economic calendar monitoring system for a gold trading bot.
+Perform a Google Search (search grounding) for today's economic calendar (specifically USD and Gold/XAU) from reliable sources like Forex Factory, Investing.com, or DailyFX.
 
-Waktu saat ini adalah: ${currentWib} (WIB / Western Indonesian Time, UTC+7).
+Current time is: ${currentWib} (WIB / Western Indonesian Time, UTC+7).
 
-Tugasmu adalah memeriksa apakah ada rilis berita ekonomi HIGH-IMPACT (seperti NFP - Non-Farm Payrolls, CPI - Consumer Price Index, Keputusan Suku Bunga FOMC/Fed, PDB/GDP, atau Unemployment Claims) yang dijadwalkan dalam waktu 15 menit sebelum atau 15 menit sesudah waktu sekarang.
+Your task is to check if there are HIGH-IMPACT economic news releases (such as NFP - Non-Farm Payrolls, CPI - Consumer Price Index, FOMC/Fed Rate Decision, GDP, or Unemployment Claims) scheduled within 15 minutes before or 15 minutes after the current time.
 
-Format balasan dalam bentuk JSON saja (HANYA JSON, jangan dibungkus markdown \`\`\`json atau \`\`\`, tanpa teks pembuka atau penutup):
+Format response as JSON only (ONLY JSON, do not wrap in markdown \`\`\`json or \`\`\`, no opening or closing text):
 {
-  "should_pause": true atau false,
-  "reason": "Alasan jika should_pause adalah true (nama berita dan jam rilisnya dalam format WIB), kosongkan atau beri '-' jika false",
+  "should_pause": true or false,
+  "reason": "Reason in English if should_pause is true (news name and release time), empty or '-' if false",
   "upcoming_events": [
     {
-      "event": "Nama berita ekonomi",
-      "impact": "High" atau "Medium",
-      "time": "Jam rilis dalam format WIB"
+      "event": "Economic news name",
+      "impact": "High" or "Medium",
+      "time": "Release time"
     }
   ]
 }
 
-Aturan keputusan:
-- should_pause diatur ke true JIKA rilis berita berdampak tinggi (High Impact) USD terjadi dalam rentang [Waktu Sekarang - 15 Menit] hingga [Waktu Sekarang + 15 Menit].
-- Balasan HARUS berupa raw JSON murni tanpa pembungkus markdown markdown \`\`\`json atau \`\`\`.`;
+Decision rules:
+- should_pause is set to true IF a High-Impact USD release occurs within [Current Time - 15 Mins] to [Current Time + 15 Mins].
+- Response MUST be raw pure JSON without markdown code blocks.`;
 
   try {
     const aiClient = getAIClient();
@@ -98,7 +98,7 @@ Aturan keputusan:
     // Fallback on API error to not interrupt general operations but log warning
     return {
       should_pause: false,
-      reason: "Gagal memantau berita: " + (err instanceof Error ? err.message : String(err)),
+      reason: "Failed to monitor news: " + (err instanceof Error ? err.message : String(err)),
       upcoming_events: [],
     };
   }

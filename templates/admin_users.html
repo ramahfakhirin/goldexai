@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,39 +59,39 @@ body{background:var(--bg0);color:var(--text);font-family:var(--body);padding:0;m
       <div class="admin-title">👥 User Management</div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px">GOLDEX AI — Superadmin Panel</div>
     </div>
-    <a href="/" class="admin-back">← Kembali ke Dashboard</a>
+    <a href="/" class="admin-back">← Back to Dashboard</a>
   </div>
 
-  <!-- Form Tambah User -->
+  <!-- Add User Form -->
   <div class="form-card">
-    <h3>➕ Tambah User Baru</h3>
+    <h3>➕ Add New User</h3>
     <div class="form-row">
       <div class="form-group">
-        <label>Nama Lengkap *</label>
-        <input type="text" id="f-fullname" placeholder="Nama lengkap user">
+        <label>Full Name *</label>
+        <input type="text" id="f-fullname" placeholder="Full name">
       </div>
       <div class="form-group">
-        <label>Username Login *</label>
-        <input type="text" id="f-username" placeholder="username (tanpa spasi)">
+        <label>Login Username *</label>
+        <input type="text" id="f-username" placeholder="username (no spaces)">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Password Login *</label>
-        <input type="password" id="f-password" placeholder="Min. 6 karakter">
+        <label>Login Password *</label>
+        <input type="password" id="f-password" placeholder="Min. 6 characters">
       </div>
       <div class="form-group">
-        <label>Kota</label>
-        <input type="text" id="f-kota" placeholder="Jakarta, Surabaya, dll">
+        <label>City</label>
+        <input type="text" id="f-kota" placeholder="New York, London, etc.">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>No. WhatsApp</label>
+        <label>WhatsApp Number</label>
         <input type="text" id="f-wa" placeholder="08123456789">
       </div>
       <div class="form-group">
-        <label>Username Telegram</label>
+        <label>Telegram Username</label>
         <input type="text" id="f-telegram" placeholder="@username">
       </div>
     </div>
@@ -103,32 +103,32 @@ body{background:var(--bg0);color:var(--text);font-family:var(--body);padding:0;m
           <option value="superadmin">Superadmin</option>
         </select>
       </div>
-      <button class="btn-add" onclick="createUser()">+ Buat User</button>
+      <button class="btn-add" onclick="createUser()">+ Create User</button>
     </div>
     <div class="form-msg" id="form-msg"></div>
   </div>
 
-  <!-- Daftar User -->
+  <!-- User List -->
   <div class="user-table-wrap">
     <table class="user-table">
       <thead>
         <tr>
           <th>User</th>
-          <th>Kontak</th>
+          <th>Contact</th>
           <th>Role</th>
           <th>Status</th>
-          <th>Login Terakhir</th>
+          <th>Last Login</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="user-tbody">
-        <tr><td colspan="6" class="empty-users">Memuat data...</td></tr>
+        <tr><td colspan="6" class="empty-users">Loading data...</td></tr>
       </tbody>
     </table>
   </div>
 
   <p style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:12px;text-align:center">
-    Total: <span id="user-count">0</span> user aktif · Hapus = nonaktifkan (data tetap tersimpan)
+    Total: <span id="user-count">0</span> active users · Delete = deactivate (data is retained)
   </p>
 </div>
 
@@ -144,7 +144,7 @@ async function loadUsers() {
   document.getElementById('user-count').textContent = active;
 
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-users">Belum ada user</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-users">No users yet</td></tr>';
     return;
   }
 
@@ -160,10 +160,10 @@ async function loadUsers() {
         ${u.telegram ? `<div class="user-meta">✈ ${u.telegram}</div>` : ''}
       </td>
       <td><span class="badge-role ${u.role}">${u.role}</span></td>
-      <td><span class="badge-active ${u.is_active ? 'on' : 'off'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+      <td><span class="badge-active ${u.is_active ? 'on' : 'off'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
       <td style="color:var(--text-dim);font-size:11px">${u.last_login ? u.last_login.substring(0,16).replace('T',' ') : '-'}</td>
       <td>
-        ${u.role !== 'superadmin' ? `<button class="btn-del" onclick="deleteUser(${u.id}, '${u.username}')">Nonaktifkan</button>` : ''}
+        ${u.role !== 'superadmin' ? `<button class="btn-del" onclick="deleteUser(${u.id}, '${u.username}')">Deactivate</button>` : ''}
       </td>
     </tr>
   `).join('');
@@ -182,7 +182,7 @@ async function createUser() {
   };
 
   if (!body.full_name || !body.username || !body.password) {
-    showMsg('Nama lengkap, username, dan password wajib diisi', false);
+    showMsg('Full name, username, and password are required', false);
     return;
   }
 
@@ -201,12 +201,12 @@ async function createUser() {
     document.getElementById('f-role').value = 'user';
     loadUsers();
   } else {
-    showMsg('✗ ' + (data.error || 'Gagal'), false);
+    showMsg('✗ ' + (data.error || 'Failed'), false);
   }
 }
 
 async function deleteUser(id, username) {
-  if (!confirm(`Nonaktifkan user "${username}"? User tidak bisa login tapi data tersimpan.`)) return;
+  if (!confirm(`Deactivate user "${username}"? User will not be able to log in, but data will be preserved.`)) return;
   const res  = await fetch(`/api/admin/users/${id}`, {method: 'DELETE'});
   const data = await res.json();
   if (data.ok) { showMsg('✓ ' + data.message, true); loadUsers(); }

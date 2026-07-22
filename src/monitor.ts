@@ -144,10 +144,10 @@ export async function runMonitorCheck(): Promise<any[]> {
           const labelMap: Record<string, string> = {
             SL_HIT: "STOP LOSS",
             BE_HIT: "BREAKEVEN STOP",
-            TP1_HIT: "TP1 HIT — SL pindah ke breakeven",
-            TP2_HIT: "TP2 HIT — SL pindah ke TP1",
+            TP1_HIT: "TP1 HIT — SL moved to breakeven",
+            TP2_HIT: "TP2 HIT — SL moved to TP1",
             TP3_HIT: "TP3 HIT — FULL TARGET",
-            EARLY_BE_MOVE: "MOVE TO BE — Harga mendekati TP1 (70%), SL dipindahkan ke entry untuk mengunci risiko",
+            EARLY_BE_MOVE: "MOVE TO BE — Price near TP1 (70%), SL moved to entry to lock risk",
           };
 
           const emoji = outcome === "EARLY_BE_MOVE" ? "🛡️" : (pnl > 0 ? "✅" : outcome === "BE_HIT" ? "⚖️" : "🛑");
@@ -157,13 +157,13 @@ export async function runMonitorCheck(): Promise<any[]> {
             `${emoji} <b>TRADE UPDATE</b>`,
             "━━━━━━━━━━━━━━━━━━",
             `${dirEmoji} ${direction} XAU/USD`,
-            `📊 Hasil   : <b>${labelMap[outcome] || outcome.replace("_", " ")}</b>`,
-            `💰 Harga   : $${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            `📊 Outcome : <b>${labelMap[outcome] || outcome.replace("_", " ")}</b>`,
+            `💰 Price   : $${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             `📈 PnL     : <b>${pnl_str}</b>`,
           ];
 
           if (outcome === "TP1_HIT" || outcome === "TP2_HIT" || outcome === "EARLY_BE_MOVE") {
-            parts.push(`🔒 Sisa posisi dilindungi — SL baru $${new_sl.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+            parts.push(`🔒 Remaining position protected — New SL $${new_sl.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
           }
 
           parts.push("━━━━━━━━━━━━━━━━━━");

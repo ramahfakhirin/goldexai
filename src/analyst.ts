@@ -20,12 +20,16 @@ export function computeHtfBiasFromH1(candlesH1: Candle[] | null): { bias: "BULL"
       fastPeriod = 50;
       slowPeriod = 200;
       pair = "EMA50/200 H1";
-    } else if (n >= 60) {
+    } else if (n >= 50) {
       fastPeriod = 20;
       slowPeriod = 50;
       pair = "EMA20/50 H1";
+    } else if (n >= 20) {
+      fastPeriod = 10;
+      slowPeriod = 20;
+      pair = "EMA10/20 H1";
     } else {
-      return { bias: null, note: `H1 hanya ${n} candle (butuh >=60)` };
+      return { bias: null, note: `H1 hanya ${n} candle (butuh >=20)` };
     }
 
     const emaFast = calculateEMA(closes, fastPeriod);
@@ -36,7 +40,7 @@ export function computeHtfBiasFromH1(candlesH1: Candle[] | null): { bias: "BULL"
 
     const priceH1 = closes[closes.length - 1];
     const gap = lastFast - lastSlow;
-    const minGap = priceH1 * 0.001; // 0.1% of price
+    const minGap = priceH1 * 0.0005; // 0.05% sensitivity threshold
 
     if (gap > minGap) {
       return { bias: "BULL", note: `${pair} bull, gap ${gap >= 0 ? "+" : ""}${gap.toFixed(2)}` };
@@ -66,7 +70,7 @@ export function computeHtfBiasFromH4(candlesH4: Candle[] | null): { bias: "BULL"
     let slowPeriod = 200;
     let pair = "EMA50/200 H4";
 
-    if (n >= 60) {
+    if (n >= 50) {
       fastPeriod = 20;
       slowPeriod = 50;
       pair = "EMA20/50 H4";
@@ -74,8 +78,12 @@ export function computeHtfBiasFromH4(candlesH4: Candle[] | null): { bias: "BULL"
       fastPeriod = 10;
       slowPeriod = 20;
       pair = "EMA10/20 H4";
+    } else if (n >= 10) {
+      fastPeriod = 5;
+      slowPeriod = 10;
+      pair = "EMA5/10 H4";
     } else {
-      return { bias: null, note: `H4 hanya ${n} candle (butuh >=20)` };
+      return { bias: null, note: `H4 hanya ${n} candle (butuh >=10)` };
     }
 
     const emaFast = calculateEMA(closes, fastPeriod);
@@ -86,7 +94,7 @@ export function computeHtfBiasFromH4(candlesH4: Candle[] | null): { bias: "BULL"
 
     const priceH4 = closes[closes.length - 1];
     const gap = lastFast - lastSlow;
-    const minGap = priceH4 * 0.001; // 0.1% of price
+    const minGap = priceH4 * 0.0005; // 0.05% threshold
 
     if (gap > minGap) {
       return { bias: "BULL", note: `${pair} bull, gap ${gap >= 0 ? "+" : ""}${gap.toFixed(2)}` };

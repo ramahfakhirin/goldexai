@@ -392,31 +392,39 @@ export function getBerkahSignal(
   const price = lastCandle.close;
   const atr_val = indicators.atr;
 
-  // Layer 1: HTF Bias (Non-Negotiable)
+  // Layer 1: HTF Bias Alignment
   const ema50 = indicators.ema_50;
   const ema200 = indicators.ema_200;
-  const ema_gap = ema50 - ema200;
 
   let htf_bias_bull = false;
   let htf_bias_bear = false;
-  let htf_src = "H1 tidak tersedia (Locked)";
+  let htf_src = "HTF Aligned";
 
-  if (htfBiasOverride === "BULL" || htfBiasOverride === "BEAR") {
-    htf_bias_bull = htfBiasOverride === "BULL";
-    htf_bias_bear = htfBiasOverride === "BEAR";
-    htf_src = "H1 asli (Locked)";
-  } else {
-    htf_bias_bull = false;
+  if (htfBiasOverride === "BULL") {
+    htf_bias_bull = true;
     htf_bias_bear = false;
-    htf_src = "H1 tidak tersedia atau RANGING (Locked)";
+    htf_src = "HTF H1/H4 BULL";
+  } else if (htfBiasOverride === "BEAR") {
+    htf_bias_bull = false;
+    htf_bias_bear = true;
+    htf_src = "HTF H1/H4 BEAR";
+  } else {
+    // Fallback if HTF bias is RANGING or undefined: calculate from local EMA structure
+    htf_src = "Local EMA Structure (Strict 5/7 Confluence Required)";
+    if (price >= ema50 || ema50 >= ema200) {
+      htf_bias_bull = true;
+    }
+    if (price <= ema50 || ema50 <= ema200) {
+      htf_bias_bear = true;
+    }
   }
 
-  // Dynamic score scaling based on trend quality to safeguard winrate > 80%
+  // Dynamic score scaling: aligned HTF requires score 4/7, ranging/fallback requires score 5/7
   let dynamicThreshold = scoreThreshold;
   if (htfBiasOverride === "BULL" || htfBiasOverride === "BEAR") {
-    dynamicThreshold = 4; // Strong fully-aligned trend requires score of 4/7
+    dynamicThreshold = 4;
   } else {
-    dynamicThreshold = 5; // Ranging or unaligned trend requires a strict high confluence score of 5/7
+    dynamicThreshold = 5;
   }
 
   // Veto overextension

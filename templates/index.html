@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <script>
@@ -50,7 +50,7 @@
     <a href="/admin/users" class="logout-btn" title="User Management" style="color:var(--gold)">👥 Admin</a>
     <span class="topbar-divider">|</span>
     {% endif %}
-    <a href="/logout" class="logout-btn" title="Logout">⏻ Keluar</a>
+    <a href="/logout" class="logout-btn" title="Logout">⏻ Logout</a>
   </div>
 </header>
 
@@ -60,7 +60,7 @@
   <!-- ════ LEFT PANEL ════ -->
   <aside class="panel panel-left">
 
-    <!-- API keys hidden — diambil dari server env -->
+    <!-- API keys hidden — retrieved from server env -->
     <input type="hidden" id="api-key-input" value="">
     <input type="hidden" id="twelve-key-input" value="">
     <div id="key-status" style="display:none"></div>
@@ -76,10 +76,10 @@
         <div class="dt-price" id="dt-price">-.--</div>
         <div class="dt-chg" id="dt-chg">+$0.00 (0.00%)</div>
       </div>
-      <div class="dt-source" id="dt-source">● Memuat harga live...</div>
+      <div class="dt-source" id="dt-source">● Loading live price...</div>
       <div class="dt-candles" id="dt-candles"></div>
       <div class="dt-signal-bar">
-        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-signal-label">GOLDEX SIGNAL ENGINE</div>
         <div class="dt-status" id="dt-status">● SCANNING · --</div>
       </div>
     </section>
@@ -89,7 +89,7 @@
       <div class="card-label">SERVER SCHEDULER</div>
       <div class="server-info-row">
         <span class="server-dot" id="server-dot">●</span>
-        <span class="server-label" id="server-label">Menghubungkan...</span>
+        <span class="server-label" id="server-label">Connecting...</span>
       </div>
       <div class="server-tf-row">
         <span class="ind-name">Timeframe</span>
@@ -97,13 +97,13 @@
       </div>
       <div class="server-tf-row">
         <span class="ind-name">Interval</span>
-        <span class="ind-val" id="server-interval">5 menit</span>
+        <span class="ind-val" id="server-interval">5 minutes</span>
       </div>
     </section>
 
-        <!-- Auto-Refresh Panel (hidden — digantikan server scheduler) -->
+    <!-- Auto-Refresh Panel (hidden) -->
     <section class="card card-auto" style="display:none">
-      <div class="card-label">AUTO ANALISIS</div>
+      <div class="card-label">AUTO ANALYSIS</div>
       <div class="auto-row">
         <div class="auto-toggle-wrap">
           <span class="auto-label">Auto Mode</span>
@@ -113,28 +113,28 @@
           </label>
         </div>
         <select id="auto-interval" class="input-field select-field" style="width:auto;font-size:11px">
-          <option value="5" selected>5 menit ✦</option>
-          <option value="15">15 menit</option>
-          <option value="30">30 menit</option>
-          <option value="60">1 jam</option>
+          <option value="5" selected>5 minutes ✦</option>
+          <option value="15">15 minutes</option>
+          <option value="30">30 minutes</option>
+          <option value="60">1 hour</option>
         </select>
       </div>
       <div class="auto-status" id="auto-status">
         <span class="auto-idle">● Idle — Auto mode off</span>
       </div>
       <div class="countdown-wrap" id="countdown-wrap" style="display:none">
-        <div class="countdown-label">Analisis berikutnya</div>
+        <div class="countdown-label">Next analysis</div>
         <div class="countdown-val" id="countdown-val">--:--</div>
         <div class="countdown-bar-bg"><div class="countdown-bar" id="countdown-bar"></div></div>
       </div>
       <div class="smart-pause-info" id="smart-pause-info" style="display:none">
-        ⏸ Smart pause aktif — WAIT berulang, jeda 30 menit
+        ⏸ Smart pause active — Repeated WAIT, 30 min pause
       </div>
     </section>
 
-    <!-- Telegram Panel (hidden — dikonfigurasi via Railway Variables) -->
+    <!-- Telegram Panel (hidden) -->
     <section class="card card-telegram" style="display:none">
-      <div class="card-label">📱 TELEGRAM NOTIFIKASI (GRUP)</div>
+      <div class="card-label">📱 TELEGRAM NOTIFICATION (GROUP)</div>
       <div class="input-group">
         <label class="input-label">Bot Token</label>
         <input type="password" id="tg-token" class="input-field"
@@ -146,12 +146,12 @@
                placeholder="123456789">
       </div>
       <div class="tg-controls">
-        <button class="btn-save-key" onclick="saveTelegram()">Simpan</button>
-        <button class="btn-save-key" onclick="testTelegram()">Test Kirim</button>
+        <button class="btn-save-key" onclick="saveTelegram()">Save</button>
+        <button class="btn-save-key" onclick="testTelegram()">Test Send</button>
       </div>
       <div class="key-status" id="tg-status"></div>
       <div class="tg-notify-row">
-        <label class="input-label">Kirim notifikasi untuk:</label>
+        <label class="input-label">Send notifications for:</label>
         <div class="tg-checks">
           <label class="tg-check"><input type="checkbox" id="tg-buy" checked> BUY</label>
           <label class="tg-check"><input type="checkbox" id="tg-sell" checked> SELL</label>
@@ -162,7 +162,7 @@
 
     <!-- Stats Bar -->
     <section class="card card-stats">
-      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="card-label">SIGNAL STATS</div>
       <div class="stats-grid">
         <div class="stat-item">
           <div class="stat-val" id="stat-total">0</div>
@@ -191,7 +191,7 @@
     <!-- ═══ SESSION SCHEDULE (superadmin only) ═══ -->
     <section class="card card-session-sched" id="session-sched-panel">
       <div class="card-label-row">
-        <div class="card-label">⏱ JADWAL SESI</div>
+        <div class="card-label">⏱ SESSION SCHEDULE</div>
         <span class="sched-curr-badge" id="sched-curr-badge">--</span>
       </div>
       <div class="sched-list">
@@ -249,13 +249,13 @@
         </div>
 
       </div>
-      <div class="sched-status" id="sched-status">Memuat jadwal...</div>
+      <div class="sched-status" id="sched-status">Loading schedule...</div>
     </section>
     {% else %}
     <!-- ═══ SESSION STATUS (user read-only) ═══ -->
     <section class="card card-session-sched" id="session-status-panel">
       <div class="card-label-row">
-        <div class="card-label">⏱ STATUS SESI</div>
+        <div class="card-label">⏱ SESSION STATUS</div>
         <span class="sched-curr-badge" id="user-sess-badge">--</span>
       </div>
       <div class="sched-list" id="user-sess-list">
@@ -300,13 +300,13 @@
           <span class="sess-status-dot" id="user-dot-sydney">○</span>
         </div>
       </div>
-      <div class="sched-status" id="user-sess-status">Memuat status sesi...</div>
+      <div class="sched-status" id="user-sess-status">Loading session status...</div>
     </section>
     {% endif %}
 
     <!-- Indicators Panel -->
     <section class="card card-indicators" id="indicators-card" style="display:none">
-      <div class="card-label">INDIKATOR TEKNIKAL</div>
+      <div class="card-label">TECHNICAL INDICATORS</div>
       <div class="ind-row">
         <span class="ind-name">EMA 21</span>
         <span class="ind-val" id="ind-ema21">-</span>
@@ -363,7 +363,7 @@
         <span class="ind-val green" id="atr-rr">1.5:1</span>
       </div>
       <div class="atr-warn" id="atr-warn" style="display:none">
-        ⚠ SL terlalu sempit!
+        ⚠ SL too narrow!
       </div>
     </section>
 
@@ -399,20 +399,20 @@
     <!-- Tab Navigation -->
     <div class="tab-nav">
       <button class="tab-btn active" id="tab-signal-btn" onclick="switchTab('signal')">
-        <span class="tab-label-full">📊 Signal & Analisis</span>
+        <span class="tab-label-full">📊 Signal & Analysis</span>
         <span class="tab-label-short">📊 Signal</span>
       </button>
       <button class="tab-btn" id="tab-news-btn" onclick="switchTab('news')">
-        <span class="tab-label-full">📰 News Real Time</span>
+        <span class="tab-label-full">📰 Real-Time News</span>
         <span class="tab-label-short">📰 News</span>
       </button>
       <button class="tab-btn" id="tab-sentimen-btn" onclick="switchTab('sentimen')">
-        <span class="tab-label-full">🌐 Sentimen Scoring</span>
-        <span class="tab-label-short">🌐 Sentimen</span>
+        <span class="tab-label-full">🌐 Sentiment Scoring</span>
+        <span class="tab-label-short">🌐 Sentiment</span>
       </button>
     </div>
 
-    <!-- Mobile Info Bar (hanya tampil di mobile, menggantikan panel-left) -->
+    <!-- Mobile Info Bar -->
     <div class="mobile-info-bar" id="mobile-info-bar">
       <div class="mib-item">
         <span class="mib-dot" id="mib-dot">●</span>
@@ -440,8 +440,8 @@
     <div class="market-closed-banner" id="market-closed-banner" style="display:none">
       <div class="mcb-icon">🌙</div>
       <div class="mcb-text">
-        <div class="mcb-title">Market Gold/Forex Tutup</div>
-        <div class="mcb-sub" id="mcb-reason">Buka kembali Senin 06:00 WIB</div>
+        <div class="mcb-title">Gold/Forex Market Closed</div>
+        <div class="mcb-sub" id="mcb-reason">Reopens Monday 06:00 WIB</div>
       </div>
     </div>
 
@@ -449,18 +449,19 @@
     <div class="signal-hero" id="signal-hero">
       <div class="signal-empty" id="signal-empty">
         <div class="empty-icon">◈</div>
-        <div class="empty-title">Memuat signal terakhir...</div>
-        <div class="empty-sub" id="signal-empty-sub">Menghubungkan ke server</div>
+        <div class="empty-title">Loading latest signal...</div>
+        <div class="empty-sub" id="signal-empty-sub">Connecting to server</div>
       </div>
       <div class="signal-result" id="signal-result" style="display:none">
         <div class="signal-top">
           <div class="signal-badge-wrap">
             <div class="signal-badge" id="sig-badge">BUY</div>
+            <div class="sig-id-tag" id="sig-id-tag" style="display:inline-block; font-weight:700; color:var(--gold,#f1c40f); font-size:13px; background:rgba(241,196,15,0.12); border:1px solid rgba(241,196,15,0.3); padding:2px 8px; border-radius:4px; margin-left:6px; vertical-align:middle;">ID #--</div>
             <div class="signal-time" id="sig-time">-</div>
-            <div class="sig-from-db" id="sig-from-db" style="display:none">📋 Data tersimpan</div>
+            <div class="sig-from-db" id="sig-from-db" style="display:none">📋 Saved record</div>
           </div>
           <div class="signal-price-wrap">
-            <div class="signal-price-label">HARGA SEKARANG</div>
+            <div class="signal-price-label">CURRENT PRICE</div>
             <div class="signal-price" id="sig-price">$-</div>
             <div class="signal-tf" id="sig-tf">-</div>
           <div class="signal-tf" id="data-source-badge" style="font-size:10px;margin-top:3px">-</div>
@@ -514,7 +515,7 @@
 
         <!-- Narrative -->
         <div class="narrative-box">
-          <div class="card-label" style="margin-bottom:8px">ANALISIS AI</div>
+          <div class="card-label" style="margin-bottom:8px">AI ANALYSIS</div>
           <div class="narrative-text" id="sig-narrative">-</div>
         </div>
 
@@ -537,11 +538,11 @@
             <span class="timing-val" id="timing-best">-</span>
           </div>
           <div class="timing-item">
-            <span class="timing-label">Hindari</span>
+            <span class="timing-label">Avoid</span>
             <span class="timing-val red" id="timing-avoid">-</span>
           </div>
           <div class="timing-item">
-            <span class="timing-label">Review Berikutnya</span>
+            <span class="timing-label">Next Review</span>
             <span class="timing-val" id="timing-next">-</span>
           </div>
         </div>
@@ -550,14 +551,14 @@
 
     <!-- Confidence History Chart -->
     <div class="card card-chart" id="chart-card" style="display:none">
-      <div class="card-label">HISTORY CONFIDENCE</div>
+      <div class="card-label">CONFIDENCE HISTORY</div>
       <canvas id="conf-chart" height="80"></canvas>
     </div>
 
     </div><!-- end tab-signal -->
 
     <!-- Tab: News & Sentiment -->
-    <!-- Tab: News Real Time (TradingView Widgets) -->
+    <!-- Tab: Real-Time News (TradingView Widgets) -->
     <div id="tab-news" class="tab-content">
       <div class="myfxbook-wrap">
         <div class="myfxbook-tabs">
@@ -565,9 +566,9 @@
           <button class="mfx-tab" onclick="switchMfxTab('news', this)">📰 Market News</button>
         </div>
 
-        <!-- Economic Calendar — TradingView Script Widget (lebih banyak kontrol) -->
+        <!-- Economic Calendar — TradingView Script Widget -->
         <div id="mfx-calendar" class="mfx-panel active" style="min-height:500px">
-          <!-- Legenda impact -->
+          <!-- Legend impact -->
           <div style="display:flex;gap:16px;align-items:center;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px">
             <span style="color:var(--text-dim)">IMPACT:</span>
             <span style="display:flex;align-items:center;gap:4px"><span style="color:#E05252;font-size:14px">▮▮▮</span> HIGH</span>
@@ -610,20 +611,20 @@
       </div>
     </div><!-- end tab-news -->
 
-    <!-- Tab: Sentimen Scoring (dari MarketWatch RSS) -->
+    <!-- Tab: Sentiment Scoring -->
     <div id="tab-sentimen" class="tab-content">
 
       <!-- Sentiment Overview -->
       <div class="card card-sentiment" id="sentiment-card">
         <div class="card-label-row">
-          <span class="card-label">🌐 SENTIMEN PASAR EMAS</span>
+          <span class="card-label">🌐 GOLD MARKET SENTIMENT</span>
           <div style="display:flex;gap:6px;align-items:center">
             <span style="font-size:9px;color:var(--text-dim)" id="news-source-label">MarketWatch RSS</span>
             <button class="btn-clear" onclick="loadNewsSentiment(true)" id="btn-refresh-news">↻ Refresh</button>
           </div>
         </div>
         <div id="sentiment-loading" style="text-align:center;padding:20px;color:var(--text-dim)">
-          Memuat analisis sentimen...
+          Loading sentiment analysis...
         </div>
         <div id="sentiment-content" style="display:none">
           <div class="sentiment-top">
@@ -643,24 +644,24 @@
 
       <!-- Key Factors -->
       <div class="card card-factors" id="factors-card" style="display:none">
-        <div class="card-label">⚡ FAKTOR KUNCI</div>
+        <div class="card-label">⚡ KEY FACTORS</div>
         <div class="factors-list" id="factors-list"></div>
       </div>
 
       <!-- Headlines -->
       <div class="card card-headlines" id="headlines-card" style="display:none">
-        <div class="card-label">📰 HEADLINES TERKINI (48 Jam)</div>
+        <div class="card-label">📰 LATEST HEADLINES (48 Hours)</div>
         <div class="headlines-list" id="headlines-list"></div>
       </div>
 
-      <!-- Economic Calendar (ForexFactory) -->
+      <!-- Economic Calendar -->
       <div class="card card-calendar">
         <div class="card-label-row">
-          <span class="card-label">📅 ECONOMIC CALENDAR (Minggu Ini)</span>
+          <span class="card-label">📅 ECONOMIC CALENDAR (This Week)</span>
           <button class="btn-clear" onclick="loadCalendar(true)">↻ Refresh</button>
         </div>
         <div id="calendar-loading" style="text-align:center;padding:16px;color:var(--text-dim)">
-          Memuat jadwal...
+          Loading calendar...
         </div>
         <div class="calendar-list" id="calendar-list" style="display:none"></div>
       </div>
@@ -675,10 +676,10 @@
     <!-- Performance Stats -->
     <section class="card card-perf" id="perf-card">
       <div class="card-label-row">
-        <span class="card-label">📊 PERFORMA TRADE</span>
+        <span class="card-label">📊 TRADE PERFORMANCE</span>
         <div style="display:flex;align-items:center;gap:6px">
-          <span class="card-label" id="perf-period-label" style="color:var(--gold);font-size:8px">7 HARI</span>
-          <button onclick="resetPerformance()" title="Reset data performa"
+          <span class="card-label" id="perf-period-label" style="color:var(--gold);font-size:8px">7 DAYS</span>
+          <button onclick="resetPerformance()" title="Reset performance data"
             style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all .2s"
             onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
             onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-dim)'">
@@ -718,21 +719,21 @@
         <div class="tp-badge tp1">TP1 <span id="perf-tp1">0</span>x</div>
         <div class="tp-badge tp2">TP2 <span id="perf-tp2">0</span>x</div>
         <div class="tp-badge tp3">TP3 <span id="perf-tp3">0</span>x</div>
-        <div class="tp-badge be" title="Trade ditutup di breakeven setelah TP1 tercapai">BE <span id="perf-be">0</span>x</div>
+        <div class="tp-badge be" title="Trade closed at breakeven after TP1 reached">BE <span id="perf-be">0</span>x</div>
         <div class="tp-badge best">Best <span id="perf-best">$0</span></div>
         <div class="tp-badge worst">Worst <span id="perf-worst">$0</span></div>
         <div class="tp-badge pf" title="Profit Factor = gross profit ÷ gross loss">PF <span id="perf-pf">—</span></div>
       </div>
     </section>
 
-    <!-- Analitik Diagnosis -->
+    <!-- Analytics Diagnosis -->
     <section class="card card-analytics">
       <div class="card-label-row">
-        <span class="card-label">🔬 ANALITIK</span>
-        <span class="analytics-period" id="analytics-period">7 HARI</span>
+        <span class="card-label">🔬 ANALYTICS</span>
+        <span class="analytics-period" id="analytics-period">7 DAYS</span>
       </div>
       <div class="analytics-body" id="analytics-body">
-        <div class="history-empty">Belum ada data trade</div>
+        <div class="history-empty">No trade data yet</div>
       </div>
     </section>
 
@@ -740,10 +741,10 @@
     <section class="card card-monitors">
       <div class="card-label-row">
         <span class="card-label">🔴 LIVE MONITORS</span>
-        <span class="monitor-count" id="monitor-count">0 aktif</span>
+        <span class="monitor-count" id="monitor-count">0 active</span>
       </div>
       <div class="monitor-list" id="monitor-list">
-        <div class="history-empty">Tidak ada posisi dipantau</div>
+        <div class="history-empty">No monitored positions</div>
       </div>
     </section>
 
@@ -754,24 +755,24 @@
         <button class="btn-clear" onclick="loadTradeHistory()">Refresh</button>
       </div>
       <div class="history-list" id="trade-history-list">
-        <div class="history-empty">Belum ada trade selesai</div>
+        <div class="history-empty">No completed trades yet</div>
       </div>
     </section>
 
     <!-- History Log -->
     <section class="card card-history">
       <div class="card-label-row">
-        <span class="card-label">HISTORY SIGNAL</span>
-        <button class="btn-clear" onclick="clearHistory()">Hapus</button>
+        <span class="card-label">SIGNAL HISTORY</span>
+        <button class="btn-clear" onclick="clearHistory()">Clear</button>
       </div>
       <div class="history-list" id="history-list">
-        <div class="history-empty">Belum ada signal tersimpan</div>
+        <div class="history-empty">No saved signals yet</div>
       </div>
     </section>
 
   </aside>
 
-  <!-- ════ MOBILE SECTIONS (tampil di bawah signal card, hanya di mobile) ════ -->
+  <!-- ════ MOBILE SECTIONS ════ -->
   <div class="mobile-sections" id="mobile-sections">
 
     <!-- Live Terminal Widget (mobile) -->
@@ -784,17 +785,17 @@
         <div class="dt-price" id="m-dt-price">-.--</div>
         <div class="dt-chg" id="m-dt-chg">+$0.00 (0.00%)</div>
       </div>
-      <div class="dt-source" id="m-dt-source">● Memuat harga live...</div>
+      <div class="dt-source" id="m-dt-source">● Loading live price...</div>
       <div class="dt-candles" id="m-dt-candles"></div>
       <div class="dt-signal-bar">
-        <div class="dt-signal-label">BERKAH SIGNAL ENGINE</div>
+        <div class="dt-signal-label">GOLDEX SIGNAL ENGINE</div>
         <div class="dt-status" id="m-dt-status">● SCANNING · --</div>
       </div>
     </section>
 
-    <!-- Statistik Signal -->
+    <!-- Signal Stats -->
     <section class="card mobile-card">
-      <div class="card-label">STATISTIK SIGNAL</div>
+      <div class="card-label">SIGNAL STATS</div>
       <div class="stats-grid">
         <div class="stat-item"><div class="stat-val" id="m-stat-total">0</div><div class="stat-lbl">Total</div></div>
         <div class="stat-item buy"><div class="stat-val" id="m-stat-buy">0</div><div class="stat-lbl">BUY</div></div>
@@ -808,10 +809,10 @@
     </section>
 
     {% if session.get('role') == 'superadmin' %}
-    <!-- Jadwal Sesi (superadmin mobile) -->
+    <!-- Session Schedule (superadmin mobile) -->
     <section class="card mobile-card card-session-sched" id="m-session-sched-panel">
       <div class="card-label-row">
-        <div class="card-label">⏱ JADWAL SESI</div>
+        <div class="card-label">⏱ SESSION SCHEDULE</div>
         <span class="sched-curr-badge" id="m-sched-curr-badge">--</span>
       </div>
       <div class="sched-list">
@@ -832,13 +833,13 @@
           <button class="sched-toggle" id="m-sched-toggle-sydney" onclick="toggleSession('sydney')"><span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span></button>
         </div>
       </div>
-      <div class="sched-status" id="m-sched-status">Memuat jadwal...</div>
+      <div class="sched-status" id="m-sched-status">Loading schedule...</div>
     </section>
     {% else %}
-    <!-- Status Sesi (user mobile read-only) -->
+    <!-- Session Status (user mobile read-only) -->
     <section class="card mobile-card card-session-sched" id="m-session-status-panel">
       <div class="card-label-row">
-        <div class="card-label">⏱ STATUS SESI</div>
+        <div class="card-label">⏱ SESSION STATUS</div>
         <span class="sched-curr-badge" id="m-user-sess-badge">--</span>
       </div>
       <div class="sched-list">
@@ -859,13 +860,13 @@
           <span class="sess-status-dot" id="m-user-dot-sydney">○</span>
         </div>
       </div>
-      <div class="sched-status" id="m-user-sess-status">Memuat status sesi...</div>
+      <div class="sched-status" id="m-user-sess-status">Loading session status...</div>
     </section>
     {% endif %}
 
-    <!-- Performa Trade -->
+    <!-- Trade Performance -->
     <section class="card mobile-card">
-      <div class="card-label">📊 PERFORMA TRADE</div>
+      <div class="card-label">📊 TRADE PERFORMANCE</div>
       <div class="perf-grid">
         <div class="perf-item"><div class="perf-val" id="m-perf-total">0</div><div class="perf-lbl">Total</div></div>
         <div class="perf-item win"><div class="perf-val" id="m-perf-wins">0</div><div class="perf-lbl">Win</div></div>
@@ -883,21 +884,21 @@
     <section class="card mobile-card">
       <div class="card-label-row">
         <span class="card-label">🔴 LIVE MONITORS</span>
-        <span class="monitor-count" id="m-monitor-count">0 aktif</span>
+        <span class="monitor-count" id="m-monitor-count">0 active</span>
       </div>
       <div class="monitor-list" id="m-monitor-list">
-        <div class="history-empty">Tidak ada posisi dipantau</div>
+        <div class="history-empty">No monitored positions</div>
       </div>
     </section>
 
-    <!-- Analitik (mobile) -->
+    <!-- Analytics (mobile) -->
     <section class="card mobile-card">
       <div class="card-label-row">
-        <span class="card-label">🔬 ANALITIK</span>
-        <span class="analytics-period">7 HARI</span>
+        <span class="card-label">🔬 ANALYTICS</span>
+        <span class="analytics-period">7 DAYS</span>
       </div>
       <div class="analytics-body" id="m-analytics-body">
-        <div class="history-empty">Belum ada data trade</div>
+        <div class="history-empty">No trade data yet</div>
       </div>
     </section>
 
@@ -908,18 +909,18 @@
         <button class="btn-clear" onclick="loadTradeHistory()">Refresh</button>
       </div>
       <div class="history-list" id="m-trade-history-list">
-        <div class="history-empty">Belum ada trade selesai</div>
+        <div class="history-empty">No completed trades yet</div>
       </div>
     </section>
 
-    <!-- History Signal -->
+    <!-- Signal History -->
     <section class="card mobile-card">
       <div class="card-label-row">
-        <span class="card-label">HISTORY SIGNAL</span>
-        <button class="btn-clear" onclick="clearHistory()">Hapus</button>
+        <span class="card-label">SIGNAL HISTORY</span>
+        <button class="btn-clear" onclick="clearHistory()">Clear</button>
       </div>
       <div class="history-list" id="m-history-list">
-        <div class="history-empty">Belum ada signal tersimpan</div>
+        <div class="history-empty">No saved signals yet</div>
       </div>
     </section>
 
@@ -935,10 +936,10 @@
   <div class="loading-box">
     <div class="loading-spinner"></div>
     <div class="loading-steps">
-      <div class="lstep" id="ls1">📡 Mengambil data XAU/USD...</div>
-      <div class="lstep" id="ls2">📊 Menghitung indikator teknikal...</div>
-      <div class="lstep" id="ls3">🔍 Mendeteksi struktur SMC...</div>
-      <div class="lstep" id="ls4">🤖 Mengirim ke Gemini AI...</div>
+      <div class="lstep" id="ls1">📡 Fetching XAU/USD data...</div>
+      <div class="lstep" id="ls2">📊 Calculating technical indicators...</div>
+      <div class="lstep" id="ls3">🔍 Detecting SMC structure...</div>
+      <div class="lstep" id="ls4">🤖 Processing with Gemini AI...</div>
     </div>
   </div>
 </div>

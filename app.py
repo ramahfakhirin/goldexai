@@ -58,7 +58,7 @@ def market_closed_reason() -> str:
     now = datetime.now(WIB)
     wd  = now.weekday()
     if wd == 5 or wd == 6 or (wd == 0 and now.hour < 6):
-        return "Market gold/forex tutup — buka kembali Senin 06:00 WIB"
+        return "Gold/forex market closed — reopens Monday 06:00 WIB"
     return ""
 
 # ── Tambahkan path ke folder ini agar bisa import analyst ──
@@ -426,13 +426,37 @@ def save_signal(data: dict, timeframe: str, price: float):
     return signal_id
 
 
-def get_history(limit: int = 50) -> list:
-    """Ambil history signal dari database."""
+def get_history(limit: int = 50, signal_filter: str = "ALL") -> list:
+    """Ambil history signal dari database dengan prioritas trade signals agar tidak tertutup WAIT."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    rows = conn.execute(
-        "SELECT * FROM signals ORDER BY id DESC LIMIT ?", (limit,)
-    ).fetchall()
+    
+    if signal_filter in ("TRADE", "BUY_SELL"):
+        rows = conn.execute(
+            "SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+    elif signal_filter in ("BUY", "SELL", "WAIT"):
+        rows = conn.execute(
+            "SELECT * FROM signals WHERE signal=? ORDER BY id DESC LIMIT ?",
+            (signal_filter, limit)
+        ).fetchall()
+    else:
+        # Default ALL: Ambil BUY/SELL trade signals DAN scan WAIT terbaru
+        rows = conn.execute(
+            """
+            SELECT * FROM (
+                SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ?
+            )
+            UNION
+            SELECT * FROM (
+                SELECT * FROM signals ORDER BY id DESC LIMIT 20
+            )
+            ORDER BY id DESC LIMIT ?
+            """,
+            (limit, limit)
+        ).fetchall()
+
     conn.close()
     return [dict(r) for r in rows]
 
@@ -1311,8 +1335,8 @@ def _save_wait_ratelimited(reason: str, market, indicators, smc, timeframe: str)
         },
         "next_analysis": "1 menit",
     }
-    save_signal(wait_analysis, timeframe, market.current_price)
-    _set_latest_signal(None, wait_analysis, market, indicators, smc, timeframe)
+    wait_signal_id = save_signal(wait_analysis, timeframe, market.current_price)
+    _set_latest_signal(wait_signal_id, wait_analysis, market, indicators, smc, timeframe)
 
 
 def run_scheduled_analysis():
@@ -1574,6 +1598,12 @@ def run_scheduled_analysis():
         # ── Cek monitor aktif SEBELUM simpan apapun ──
         active_monitor = has_active_monitor()
 
+        # ── Confluence score filter ──
+        score_val = berkah.get("score", 0) if isinstance(berkah, dict) else 0
+        if sig in ("BUY", "SELL") and score_val < 5 and analysis.get("confidence") != "HIGH_CONFIDENCE":
+            print(f"[Scheduler] ⚠️ Skor {score_val}/7 < 5 — skip sinyal low-confluence {sig}")
+            return None
+
         # ── Signal cooldown — jangan emit sinyal baru terlalu cepat ──
         if sig in ("BUY", "SELL"):
             global _LAST_SIGNAL_TS
@@ -1792,12 +1822,17 @@ def format_signal_message(analysis: dict, price: float, timeframe: str, signal_i
     tp3 = rm.get("take_profit_3", "-")
     rr  = rm.get("risk_reward_ratio", "1:1")
     lot = rm.get("recommended_lot", "-")
+    mult = get_martingale_multiplier()
+    lot_str = f"{lot} Lot" if lot != "-" else "0.10 Lot"
+    mart_str = f"🔥 <b>Martingale {mult}x Active</b> (Recovery Step)" if mult > 1 else "🛡 <b>Normal Risk 1x</b> (Standard)"
 
     # Bangun pesan
     id_header = f" | ID #{signal_id}" if signal_id else ""
+    id_line   = f"🆔 <b>Signal ID: #{signal_id}</b>" if signal_id else None
     lines = [
-        f"<b>XAUUSD AI Analyze{id_header}</b>",
+        f"<b>⚡ GOLDEX AI SIGNAL{id_header}</b>",
         f"{sig_emoji} <b>XAU/USD {sig}</b> — {timeframe.upper()}",
+        id_line,
         "─────────────────────",
         f"💰 Harga  : <b>${price:,.2f}</b>",
         f"🎯 Entry  : {entry_zone}",
@@ -1806,9 +1841,12 @@ def format_signal_message(analysis: dict, price: float, timeframe: str, signal_i
         f"✅ TP2    : <b>${tp2}</b>",
         f"✅ TP3    : <b>${tp3}</b>",
         f"📊 RR     : {rr}",
+        f"📦 Lot Rec: <b>{lot_str}</b>",
+        f"🎲 Mode   : {mart_str}",
         f"🔥 Conf.  : {conf}%",
         "─────────────────────",
     ]
+    lines = [l for l in lines if l is not None]
 
     # Narasi AI — penuh, tidak dipotong
     if narr:
@@ -2236,6 +2274,7 @@ def vision_confirm():
                 tp2           = tp2,
                 tp3           = tp3,
                 rr_ratio      = rr_ratio,
+                signal_id     = body.get("signal_id"),
             )
             tg_url  = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             payload = json.dumps({
@@ -2620,6 +2659,65 @@ def latest_signal():
     """Browser polling endpoint — ambil hasil analisis terbaru dari cache atau DB."""
     market_open = is_market_open()
 
+    # 1. Jika ada trade monitor ACTIVE, utamakan sinyal trade tersebut
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        active_mon = conn.execute(
+            "SELECT signal_id FROM trade_monitors WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        
+        row = None
+        if active_mon and active_mon["signal_id"]:
+            row = conn.execute("SELECT * FROM signals WHERE id=?", (active_mon["signal_id"],)).fetchone()
+        
+        if not row:
+            row = conn.execute("SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT 1").fetchone()
+            
+        conn.close()
+
+        if row:
+            row_dict = dict(row)
+            analysis_raw = row_dict.get("raw_json") or "{}"
+            if isinstance(analysis_raw, str):
+                import json as _json
+                try:
+                    analysis_obj = _json.loads(analysis_raw)
+                except Exception:
+                    analysis_obj = {}
+            else:
+                analysis_obj = analysis_raw or {}
+
+            if not analysis_obj.get("signal"):
+                analysis_obj["signal"]     = row_dict.get("signal", "WAIT")
+                analysis_obj["confidence"] = row_dict.get("confidence", 0)
+
+            if not analysis_obj.get("risk_management"):
+                analysis_obj["risk_management"] = {
+                    "stop_loss":      row_dict.get("stop_loss"),
+                    "take_profit_1": row_dict.get("tp1"),
+                    "take_profit_2": row_dict.get("tp2"),
+                    "take_profit_3": row_dict.get("tp3"),
+                    "risk_reward_ratio": row_dict.get("rr_ratio", "-"),
+                }
+
+            if row_dict.get("signal") in ("BUY", "SELL"):
+                return jsonify({
+                    "ok": True,
+                    "signal_id": row_dict["id"],
+                    "analysis": analysis_obj,
+                    "price": row_dict.get("price", 0),
+                    "timeframe": row_dict.get("timeframe", "15m"),
+                    "timestamp": row_dict.get("timestamp", now_wib_str("%Y-%m-%d %H:%M:%S")),
+                    "data_source": "MT5 Bridge (Broker Live)",
+                    "indicators": analysis_obj.get("indicators", {}),
+                    "smc": analysis_obj.get("smc", {"trend": row_dict.get("trend", "SIDEWAYS")}),
+                    "market_open": market_open,
+                    "market_closed_reason": "" if market_open else market_closed_reason(),
+                })
+    except Exception:
+        pass
+
     # Coba load cache dari SQLite (shared antar worker)
     latest_cached_str = _cfg_get("latest_signal_cache", "")
     if latest_cached_str:
@@ -2897,6 +2995,7 @@ def analyze():
             "tg_sent":       tg_sent,
             "already_active": already_active,
             "monitor_id": monitor_id,
+            "signal_id":  signal_id,
             "ok":         True,
             "analysis":   analysis,
             "price":      market.current_price,
@@ -2937,7 +3036,8 @@ def analyze():
 def history():
     """Endpoint: ambil history signal."""
     limit = int(request.args.get("limit", 50))
-    return jsonify({"ok": True, "data": get_history(limit)})
+    signal_filter = request.args.get("filter") or request.args.get("type") or "ALL"
+    return jsonify({"ok": True, "data": get_history(limit, signal_filter)})
 
 
 @app.route("/api/stats")

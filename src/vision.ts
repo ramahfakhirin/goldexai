@@ -59,17 +59,17 @@ export async function confirmSignalVision(
   indicators: Record<string, any>,
   smc: Record<string, any>
 ): Promise<VisionResult> {
-  const prompt = `Kamu adalah senior trader XAU/USD dengan keahlian SMC (Smart Money Concepts) dan price action.
+  const prompt = `You are a senior XAU/USD trader with expertise in SMC (Smart Money Concepts) and price action.
 
-Aku akan kirimkan chart XAU/USD timeframe ${timeframe.toUpperCase()} beserta data analisis dari sistem trading.
+I will send you a chart for XAU/USD timeframe ${timeframe.toUpperCase()} along with analysis data from the trading system.
 
 ═══════════════════════════════════
-DATA SISTEM (dari kalkulasi teknikal)
+SYSTEM DATA (from technical calculations)
 ═══════════════════════════════════
 
 Signal   : ${signal}
 Timeframe: ${timeframe.toUpperCase()}
-Harga    : $${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Price    : $${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 Confidence: ${confidence}%
 
 ENTRY PLAN:
@@ -79,8 +79,8 @@ ENTRY PLAN:
 • TP2     : ${tp2}
 • TP3     : ${tp3}
 
-INDIKATOR:
-• EMA 21  : ${indicators.ema_21 ?? "-"} ${price > parseFloat(indicators.ema_21 ?? price) ? "(price di atas = bullish)" : "(price di bawah = bearish)"}
+INDICATORS:
+• EMA 21  : ${indicators.ema_21 ?? "-"} ${price > parseFloat(indicators.ema_21 ?? price) ? "(price above = bullish)" : "(price below = bearish)"}
 • EMA 50  : ${indicators.ema_50 ?? "-"}
 • EMA 200 : ${indicators.ema_200 ?? "-"}
 • RSI     : ${indicators.rsi ?? "-"}
@@ -95,49 +95,49 @@ SMC STRUCTURE:
 • Swing L : ${smc.swing_low ?? "-"}
 
 ═══════════════════════════════════
-TUGASMU
+YOUR TASK
 ═══════════════════════════════════
 
-Lihat chart yang aku kirim dengan seksama. Perhatikan:
+Examine the provided chart carefully. Pay attention to:
 
-1. **Price action visual** — bentuk candle, momentum, apakah ada rejection/acceptance
-2. **Posisi terhadap EMA** — apakah harga respek EMA atau ignore?
-3. **Struktur market visual** — apakah terlihat jelas bullish/bearish/ranging dari chart?
-4. **Kualitas entry zone** — apakah entry price berada di area yang logis secara visual?
-5. **Support & Resistance Visual & Swing High/Low** — Temukan level Support/Resistance utama terdekat dan Swing High/Low secara visual dari sumbu Y grafik.
-6. **Optimasi SL & TP** — Hitung SL dan TP yang jauh lebih logis secara teknikal berdasarkan level S/R dan Swing High/Low visual tersebut (misal SL ditaruh sedikit di bawah support untuk BUY, atau di atas resistance untuk SELL).
-7. **Konfirmasi atau kontradiksi** — apakah visual chart MENDUKUNG atau BERTENTANGAN dengan signal sistem?
+1. **Visual price action** — candle shapes, momentum, rejection/acceptance
+2. **Position relative to EMAs** — does price respect or ignore EMAs?
+3. **Visual market structure** — is bullish/bearish/ranging clearly visible?
+4. **Entry zone quality** — is the entry price at a logically sound area visually?
+5. **Visual Support & Resistance & Swing High/Low** — Find nearest key Support/Resistance and Swing High/Low visually from the Y-axis.
+6. **SL & TP Optimization** — Calculate technically sound SL and TP based on visual S/R and Swing High/Low.
+7. **Confirmation or contradiction** — does the visual chart SUPPORT or CONTRADICT the system signal?
 
-Berikan analisis dalam format JSON (HANYA JSON, tanpa teks markdown atau pembungkus lain diluar JSON):
+Provide analysis in English in JSON format (ONLY JSON, without markdown blocks or outside text):
 
 {
   "verdict": "VALID" | "SKIP" | "WAIT_FOR_PULLBACK",
-  "confidence_vision": <angka 0-100>,
-  "reasoning": "<2-3 kalimat alasan utama keputusanmu berdasarkan visual chart>",
+  "confidence_vision": <number 0-100>,
+  "reasoning": "<2-3 sentence main reasoning for your decision in English>",
   "key_observations": [
-    "<observasi visual penting 1>",
-    "<observasi visual penting 2>",
-    "<observasi visual penting 3>"
+    "<important visual observation 1 in English>",
+    "<important visual observation 2 in English>",
+    "<important visual observation 3 in English>"
   ],
   "risk_notes": [
-    "<risiko visual yang terlihat 1>",
-    "<risiko visual yang terlihat 2>"
+    "<visual risk note 1 in English>",
+    "<visual risk note 2 in English>"
   ],
   "price_action_quality": "STRONG" | "MODERATE" | "WEAK",
   "entry_timing": "IDEAL" | "ACCEPTABLE" | "PREMATURE" | "LATE",
   "visual_trend": "BULLISH" | "BEARISH" | "RANGING",
-  "visual_support_level": <angka support visual terdekat dari sumbu Y chart, desimal maks 2 angka belakang koma>,
-  "visual_resistance_level": <angka resistance visual terdekat dari sumbu Y chart, desimal maks 2 angka belakang koma>,
-  "suggested_sl": <angka SL baru yang jauh lebih logis secara teknikal berdasarkan level visual S/R>,
-  "suggested_tp1": <angka TP1 baru yang jauh lebih logis secara teknikal>,
-  "suggested_tp2": <angka TP2 baru yang jauh lebih logis secara teknikal>,
-  "suggested_tp3": <angka TP3 baru yang jauh lebih logis secara teknikal>
+  "visual_support_level": <nearest visual support from Y-axis, max 2 decimals>,
+  "visual_resistance_level": <nearest visual resistance from Y-axis, max 2 decimals>,
+  "suggested_sl": <new technically logical SL based on visual S/R>,
+  "suggested_tp1": <new technically logical TP1>,
+  "suggested_tp2": <new technically logical TP2>,
+  "suggested_tp3": <new technically logical TP3>
 }
 
-Penjelasan verdict:
-- VALID: Chart mendukung signal, entry masuk akal, eksekusi bisa dilakukan
-- WAIT_FOR_PULLBACK: Arah benar tapi entry terlalu agresif, tunggu pullback ke zona lebih baik
-- SKIP: Chart tidak mendukung signal, terlalu banyak risiko visual`;
+Verdict explanations:
+- VALID: Chart supports signal, entry makes sense, execution recommended
+- WAIT_FOR_PULLBACK: Direction is correct but entry is too aggressive, wait for pullback to a better zone
+- SKIP: Chart does not support signal, too many visual risks`;
 
   const aiClient = getAIClient();
 
@@ -200,9 +200,9 @@ Penjelasan verdict:
     return {
       verdict: "SKIP",
       confidence_vision: 0,
-      reasoning: "Gagal memproses gambar melalui AI Vision: " + (err instanceof Error ? err.message : String(err)),
-      key_observations: ["Koneksi Gemini API bermasalah"],
-      risk_notes: ["Verifikasi visual tidak tersedia"],
+      reasoning: "Failed to process image via AI Vision: " + (err instanceof Error ? err.message : String(err)),
+      key_observations: ["Gemini API connection issue"],
+      risk_notes: ["Visual verification unavailable"],
       price_action_quality: "WEAK",
       entry_timing: "LATE",
       visual_trend: "RANGING",
@@ -227,7 +227,9 @@ export function formatTelegramVisionSignal(
   tp2: number,
   tp3: number,
   rrRatio: string,
-  signalId?: number
+  signalId?: number,
+  recommendedLot?: number | string,
+  martingaleMult: number = 1
 ): string {
   const signal = visionResult.original_signal || "WAIT";
   const verdict = visionResult.verdict || "SKIP";
@@ -250,16 +252,23 @@ export function formatTelegramVisionSignal(
   const tp2Str = hasRefined ? `<b>${visionResult.suggested_tp2}</b> (Refined 👁)` : `${tp2}`;
   const tp3Str = hasRefined ? `<b>${visionResult.suggested_tp3}</b> (Refined 👁)` : `${tp3}`;
 
-  let msg = `${signalId ? `⚡️ <b>ID Signal: #${signalId}</b>\n` : ""}${sigEmoji} <b>XAU/USD ${signal}</b> — ${timeframe.toUpperCase()}
+  const lotDisplay = recommendedLot ? `${recommendedLot} Lot` : "0.10 Lot";
+  const martDisplay = martingaleMult > 1 
+    ? `🔥 <b>Martingale ${martingaleMult}x Active</b> (Recovery Step)` 
+    : `🛡 <b>Normal Risk 1x</b> (Standard)`;
+
+  let msg = `${signalId ? `⚡️ <b>Signal ID: #${signalId}</b>\n` : ""}${sigEmoji} <b>XAU/USD ${signal}</b> — ${timeframe.toUpperCase()}
 ${verdictEmoji} Vision: <b>${verdict.replace(/_/g, " ")}</b>
 ━━━━━━━━━━━━━━━━━━
-💰 Harga   : <b>$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>
+💰 Price   : <b>$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>
 🎯 Entry   : ${entry}
 🛑 SL      : ${slStr}
 ✅ TP1     : ${tp1Str}
 ✅ TP2     : ${tp2Str}
 ✅ TP3     : ${tp3Str}
 📊 RR      : ${rrRatio}
+📦 Lot Rec : <b>${lotDisplay}</b>
+🎲 Mode    : ${martDisplay}
 🔥 Conf    : ${combined}% (Vision+AI)
 ━━━━━━━━━━━━━━━━━━`;
 
@@ -270,12 +279,12 @@ ${verdictEmoji} Vision: <b>${verdict.replace(/_/g, " ")}</b>
     msg += `\n━━━━━━━━━━━━━━━━━━`;
   }
 
-  msg += `\n👁 <b>Analisis Visual:</b>
+  msg += `\n👁 <b>Visual Analysis:</b>
 ${reasoning}
 `;
 
   if (obsText) {
-    msg += `\n📌 <b>Observasi:</b>\n${obsText}\n`;
+    msg += `\n📌 <b>Observations:</b>\n${obsText}\n`;
   }
 
   if (riskText) {

@@ -46,6 +46,88 @@ DB_PATH = DATA_DIR / "signals.db"
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS signals (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp   TEXT    NOT NULL,
+            timeframe   TEXT    NOT NULL,
+            price       REAL    NOT NULL,
+            signal      TEXT    NOT NULL,
+            confidence  INTEGER NOT NULL,
+            bias        TEXT    NOT NULL,
+            entry       REAL,
+            stop_loss   REAL,
+            tp1         REAL,
+            tp2         REAL,
+            tp3         REAL,
+            rr_ratio    TEXT,
+            trend       TEXT,
+            narrative   TEXT,
+            raw_json    TEXT
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS trade_monitors (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            signal_id     INTEGER NOT NULL,
+            timestamp     TEXT    NOT NULL,
+            timeframe     TEXT    NOT NULL,
+            direction     TEXT    NOT NULL,
+            entry_price   REAL    NOT NULL,
+            stop_loss     REAL    NOT NULL,
+            tp1           REAL,
+            tp2           REAL,
+            tp3           REAL,
+            status        TEXT    DEFAULT 'ACTIVE',
+            outcome       TEXT,
+            outcome_price REAL,
+            outcome_time  TEXT,
+            closed_at     TEXT,
+            pnl_pips      REAL,
+            tp_hit        INTEGER DEFAULT 0,
+            created_at    TEXT,
+            realized_pnl  REAL DEFAULT 0,
+            be_moved      INTEGER DEFAULT 0,
+            mfe           REAL DEFAULT 0,
+            mae           REAL DEFAULT 0,
+            FOREIGN KEY (signal_id) REFERENCES signals(id)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS performance (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            date        TEXT    NOT NULL,
+            total_trades INTEGER DEFAULT 0,
+            wins        INTEGER DEFAULT 0,
+            losses      INTEGER DEFAULT 0,
+            win_rate    REAL    DEFAULT 0,
+            total_pips  REAL    DEFAULT 0,
+            best_trade  REAL    DEFAULT 0,
+            worst_trade REAL    DEFAULT 0
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS config (
+            key   TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            username      TEXT    NOT NULL UNIQUE,
+            password_hash TEXT    NOT NULL,
+            full_name     TEXT    NOT NULL DEFAULT '',
+            kota          TEXT    DEFAULT '',
+            no_wa         TEXT    DEFAULT '',
+            telegram      TEXT    DEFAULT '',
+            role          TEXT    DEFAULT 'user',
+            is_active     INTEGER DEFAULT 1,
+            created_at    TEXT    NOT NULL,
+            last_login    TEXT
+        )
+    """)
+    conn.commit()
     return conn
 
 def config_get(key, default=""):
@@ -180,14 +262,74 @@ def save_signal(signal_data, timeframe, price):
     except Exception as e:
         return {"error": str(e)}
 
-def get_history(limit=50):
+def get_history(limit=50, signal_filter="ALL"):
     try:
         conn = get_db()
-        rows = conn.execute("SELECT * FROM signals ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        conn.row_factory = sqlite3.Row
+        
+        if signal_filter in ("TRADE", "BUY_SELL"):
+            rows = conn.execute(
+                "SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ?",
+                (limit,)
+            ).fetchall()
+        elif signal_filter in ("BUY", "SELL", "WAIT"):
+            rows = conn.execute(
+                "SELECT * FROM signals WHERE signal=? ORDER BY id DESC LIMIT ?",
+                (signal_filter, limit)
+            ).fetchall()
+        else:
+            # Default "ALL": Always fetch BUY/SELL trade signals AND recent WAIT signals
+            # so trade signals are never lost or buried by 1-minute WAIT checks!
+            rows = conn.execute(
+                """
+                SELECT * FROM (
+                    SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ?
+                )
+                UNION
+                SELECT * FROM (
+                    SELECT * FROM signals ORDER BY id DESC LIMIT 20
+                )
+                ORDER BY id DESC LIMIT ?
+                """,
+                (limit, limit)
+            ).fetchall()
+            
         conn.close()
         return [dict(r) for r in rows]
-    except Exception:
+    except Exception as e:
+        print(f"[DB Bridge get_history error]: {e}", file=sys.stderr)
         return []
+
+def get_latest_signal_db():
+    try:
+        conn = get_db()
+        conn.row_factory = sqlite3.Row
+        
+        # 1. First priority: if there's an ACTIVE trade monitor, return its signal
+        active_mon = conn.execute(
+            "SELECT signal_id FROM trade_monitors WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        if active_mon and active_mon["signal_id"]:
+            row = conn.execute("SELECT * FROM signals WHERE id=?", (active_mon["signal_id"],)).fetchone()
+            if row:
+                conn.close()
+                return dict(row)
+
+        # 2. Second priority: latest BUY or SELL trade signal
+        trade_row = conn.execute(
+            "SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        if trade_row:
+            conn.close()
+            return dict(trade_row)
+
+        # 3. Fallback: absolute latest signal
+        last_row = conn.execute("SELECT * FROM signals ORDER BY id DESC LIMIT 1").fetchone()
+        conn.close()
+        return dict(last_row) if last_row else None
+    except Exception as e:
+        print(f"[DB Bridge get_latest_signal_db error]: {e}", file=sys.stderr)
+        return None
 
 def clear_history():
     try:
@@ -539,7 +681,11 @@ def main():
         
     elif action == "get_history":
         limit = int(sys.argv[2]) if len(sys.argv) > 2 else 50
-        print(json.dumps(get_history(limit)))
+        signal_filter = sys.argv[3] if len(sys.argv) > 3 else "ALL"
+        print(json.dumps(get_history(limit, signal_filter)))
+        
+    elif action == "get_latest_signal_db":
+        print(json.dumps(get_latest_signal_db()))
         
     elif action == "clear_history":
         print(json.dumps(clear_history()))

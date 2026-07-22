@@ -128,7 +128,7 @@ app.use((req, res, next) => {
 function loginRequired(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!req.session || !(req.session as any).user_id) {
     if (req.xhr || req.path.startsWith("/api/")) {
-      return res.status(401).json({ error: "Silakan login terlebih dahulu" });
+      return res.status(401).json({ error: "Please log in first" });
     }
     return res.redirect("/login");
   }
@@ -138,9 +138,9 @@ function loginRequired(req: express.Request, res: express.Response, next: expres
 function superadminRequired(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!req.session || (req.session as any).role !== "superadmin") {
     if (req.xhr || req.path.startsWith("/api/")) {
-      return res.status(403).json({ error: "Akses ditolak: Hanya superadmin" });
+      return res.status(403).json({ error: "Access denied: Superadmin only" });
     }
-    return res.status(403).send("Akses ditolak: Hanya superadmin yang dapat mengakses halaman ini.");
+    return res.status(403).send("Access denied: Only superadmin can access this page.");
   }
   next();
 }
@@ -201,22 +201,22 @@ function setLatestSignal(signalId: number | null, analysis: any, price: number, 
 // Humanize WAIT signal reasons
 function humanizeReason(raw: string, rsiVal: number): string {
   if (!raw || raw === "-") {
-    return "Kondisi pasar belum memenuhi semua filter konfluensi.";
+    return "Market conditions do not meet all confluence filters yet.";
   }
 
   const missingMap: Record<string, string> = {
-    pin_bar: "Pin bar belum terkonfirmasi",
-    htf_bos: "HTF Break of Structure belum terjadi",
-    bos_bull: "Break of Structure bullish belum terkonfirmasi",
-    bos_bear: "Break of Structure bearish belum terkonfirmasi",
-    liq_buy: "Belum ada liquidity sweep ke bawah",
-    liq_sell: "Belum ada liquidity sweep ke atas",
-    adx: `RSI ${rsiVal.toFixed(0)} — momentum belum cukup kuat`,
-    bullish_engulfing: "Belum ada pola bullish engulfing",
-    bearish_engulfing: "Belum ada pola bearish engulfing",
-    stable_candle: "Candle tidak cukup solid (doji/small body)",
-    decrease_over_10: "Harga belum turun dari 10 candle lalu",
-    increase_over_10: "Harga belum naik dari 10 candle lalu",
+    pin_bar: "Pin bar not yet confirmed",
+    htf_bos: "HTF Break of Structure has not occurred",
+    bos_bull: "Bullish Break of Structure not confirmed",
+    bos_bear: "Bearish Break of Structure not confirmed",
+    liq_buy: "No liquidity sweep downwards",
+    liq_sell: "No liquidity sweep upwards",
+    adx: `RSI ${rsiVal.toFixed(0)} — momentum not strong enough`,
+    bullish_engulfing: "No bullish engulfing pattern",
+    bearish_engulfing: "No bearish engulfing pattern",
+    stable_candle: "Candle not solid enough (doji/small body)",
+    decrease_over_10: "Price has not dropped from 10 candles ago",
+    increase_over_10: "Price has not risen from 10 candles ago",
   };
 
   const rawLower = raw.toLowerCase();
@@ -228,14 +228,14 @@ function humanizeReason(raw: string, rsiVal: number): string {
   }
 
   if (found.length > 0) {
-    return "Menunggu konfluensi: " + found.slice(0, 3).join(" · ") + ".";
+    return "Awaiting confluence: " + found.slice(0, 3).join(" · ") + ".";
   }
 
   if (raw.length < 80 && !raw.includes("miss") && !raw.includes("['")) {
     return raw;
   }
 
-  return "Kondisi pasar belum memenuhi semua filter konfluensi Berkah Signal.";
+  return "Market conditions do not meet all confluence filters yet.";
 }
 
 function saveWaitRatelimited(reason: string, price: number, indicators: any, smc: any, timeframe: string) {
@@ -267,11 +267,11 @@ function saveWaitRatelimited(reason: string, price: number, indicators: any, smc
     bias: "NEUTRAL",
     narrative: readableReason,
     method_confluence: {
-      ema_trend: "Menunggu",
+      ema_trend: "Waiting",
       rsi_momentum: `RSI ${rsiValue.toFixed(0)}`,
       macd: "NEUTRAL",
       heiken_ashi: indicators?.ha_bias || "NEUTRAL",
-      break_retest: "Belum",
+      break_retest: "None",
       session: "SCANNING",
       aligned_methods: 0,
     },
@@ -292,16 +292,16 @@ function saveWaitRatelimited(reason: string, price: number, indicators: any, smc
       key_support: smc?.support_levels?.[0] || 0,
       key_resistance: smc?.resistance_levels?.[0] || 0,
       price_position: `$${price.toFixed(2)}`,
-      current_phase: "Menunggu setup",
+      current_phase: "Awaiting setup",
       invalidation: "-",
     },
     confluence_factors: [],
     warning_signs: [],
     session_timing: {
       best_entry_window: "London/NY Overlap (14:00–04:00 WIB)",
-      avoid_trading: "Sesi Asia (02:00–08:00 WIB)",
+      avoid_trading: "Asian Session (02:00–08:00 WIB)",
     },
-    next_analysis: "1 menit",
+    next_analysis: "1 minute",
   };
 
   const signalId = db.saveSignal(waitAnalysis, timeframe, price);
@@ -345,7 +345,7 @@ async function runScheduledAnalysis() {
         const { getIndicators, getSMCStructure } = await import("./src/indicators.js");
         const currentIndicators = getIndicators(candlesM5);
         const currentSMC = getSMCStructure(candlesM5, price);
-        saveWaitRatelimited(`PENGHENTIAN SEMENTARA (NEWS SUSPENSION): ${newsStatus.reason}`, price, currentIndicators, currentSMC, "5m");
+        saveWaitRatelimited(`TEMPORARY SUSPENSION (NEWS): ${newsStatus.reason}`, price, currentIndicators, currentSMC, "5m");
         return;
       }
     } catch (newsErr) {
@@ -432,7 +432,7 @@ async function runScheduledAnalysis() {
     const price = candlesM5[candlesM5.length - 1].close;
 
     if (sig === "WAIT") {
-      saveWaitRatelimited(best.reason || "Kondisi konfluensi belum terpenuhi", price, currentIndicators, currentSMC, tfLabel === "BOTH" ? "5m" : tfLabel);
+      saveWaitRatelimited(best.reason || "Confluence conditions not met yet", price, currentIndicators, currentSMC, tfLabel === "BOTH" ? "5m" : tfLabel);
       return;
     }
 
@@ -461,24 +461,24 @@ async function runScheduledAnalysis() {
     let warningSigns: string[] = [];
 
     if (sig === "BUY") {
-      narrative = `Pasar XAU/USD [${tfLabel}] menunjukkan konfirmasi BUY ${conf} dengan skor confluence ${score}/7 — EMA50 di atas EMA200 mengonfirmasi bias bullish, ADX ${adxVal.toFixed(1)} menandakan momentum trend kuat. Level kritis: pertahankan SL di $${best.sl.toFixed(2)} (jarak ${slDist.toFixed(2)} poin dari entry), target bertahap TP1 $${best.tp1.toFixed(2)} → TP2 $${best.tp2.toFixed(2)} → TP3 $${best.tp3.toFixed(2)}.`;
+      narrative = `XAU/USD [${tfLabel}] market shows BUY confirmation ${conf} with confluence score ${score}/7 — EMA50 above EMA200 confirms bullish bias, ADX ${adxVal.toFixed(1)} indicates strong trend momentum. Critical level: hold SL at $${best.sl.toFixed(2)} (distance ${slDist.toFixed(2)} pts from entry), targets TP1 $${best.tp1.toFixed(2)} → TP2 $${best.tp2.toFixed(2)} → TP3 $${best.tp3.toFixed(2)}.`;
       warningSigns = [
-        `Waspadai reversal jika harga close di bawah $${best.sl.toFixed(2)}`,
-        `Hindari entry jika spread melebihi batas wajar`,
-        "Perhatikan rilis news high-impact yang bisa invalidate struktur",
+        `Watch out for reversal if price closes below $${best.sl.toFixed(2)}`,
+        `Avoid entry if spread exceeds acceptable limit`,
+        "Pay attention to high-impact news releases that could invalidate structure",
       ];
     } else {
-      narrative = `Pasar XAU/USD [${tfLabel}] menunjukkan konfirmasi SELL ${conf} dengan skor confluence ${score}/7 — EMA50 di bawah EMA200 mengonfirmasi bias bearish, ADX ${adxVal.toFixed(1)} menandakan tekanan jual masih kuat. Level kritis: pertahankan SL di $${best.sl.toFixed(2)} (jarak ${slDist.toFixed(2)} poin dari entry), target bertahap TP1 $${best.tp1.toFixed(2)} → TP2 $${best.tp2.toFixed(2)} → TP3 $${best.tp3.toFixed(2)}.`;
+      narrative = `XAU/USD [${tfLabel}] market shows SELL confirmation ${conf} with confluence score ${score}/7 — EMA50 below EMA200 confirms bearish bias, ADX ${adxVal.toFixed(1)} indicates selling pressure remains strong. Critical level: hold SL at $${best.sl.toFixed(2)} (distance ${slDist.toFixed(2)} pts from entry), targets TP1 $${best.tp1.toFixed(2)} → TP2 $${best.tp2.toFixed(2)} → TP3 $${best.tp3.toFixed(2)}.`;
       warningSigns = [
-        `Waspadai reversal jika harga close di atas $${best.sl.toFixed(2)}`,
-        `Hindari entry jika spread melebihi batas wajar`,
-        "Perhatikan rilis news high-impact yang bisa invalidate struktur",
+        `Watch out for reversal if price closes above $${best.sl.toFixed(2)}`,
+        `Avoid entry if spread exceeds acceptable limit`,
+        "Pay attention to high-impact news releases that could invalidate structure",
       ];
     }
 
     const confidenceNote = conf === "HIGH_CONFIDENCE" 
-      ? `HIGH CONFIDENCE — ${score}/7 kondisi terpenuhi, prioritaskan sinyal ini.`
-      : `NORMAL — ${score}/7 kondisi terpenuhi, manajemen risiko ketat.`;
+      ? `HIGH CONFIDENCE — ${score}/7 conditions met, prioritize this signal.`
+      : `NORMAL — ${score}/7 conditions met, strict risk management.`;
 
     const analysis = {
       signal: sig,
@@ -509,8 +509,8 @@ async function runScheduledAnalysis() {
         take_profit_3: best.tp3,
         risk_reward_ratio: best.rrr || "1:1.5",
         recommended_lot: `${best.lot_size ?? "0.10"} lot`,
-        max_lot_warning: "Buka maksimal 1 posisi",
-        partial_close_guide: "TP1 hit → close 50%, SL ke BE | TP2 hit → close 30% | TP3 hit → close sisa 20%",
+        max_lot_warning: "Open maximum 1 position",
+        partial_close_guide: "TP1 hit → close 50%, SL to BE | TP2 hit → close 30% | TP3 hit → close remaining 20%",
       },
       market_structure: {
         primary_trend: currentSMC.trend,
@@ -518,25 +518,100 @@ async function runScheduledAnalysis() {
         key_resistance: currentSMC.resistance_levels[0] || 0,
         price_position: `$${price.toFixed(2)} | ADX=${adxVal.toFixed(1)}`,
         current_phase: currentSMC.bos || currentSMC.choch || "Normal",
-        invalidation: `${sig === "BUY" ? "Close di bawah" : "Close di atas"} SL ${best.sl}`,
+        invalidation: `${sig === "BUY" ? "Close below" : "Close above"} SL ${best.sl}`,
       },
       confluence_factors: [best.reason],
       warning_signs: warningSigns,
       narrative: narrative,
       session_timing: {
         best_entry_window: getCurrentSession().toUpperCase(),
-        avoid_trading: "Sesi Asia (02:00–08:00 WIB)",
+        avoid_trading: "Asian Session (02:00–08:00 WIB)",
       },
-      next_analysis: "1 menit",
+      next_analysis: "1 minute",
       berkah_raw: best,
     };
 
-    // Skip if there is an active monitor already
+    let visionResult: any = null;
+    let isApproved = false;
+
+    const apiKey = process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY;
+
+    if (apiKey) {
+      try {
+        const { generateChart } = await import("./src/chart.js");
+        const { confirmSignalVision } = await import("./src/vision.js");
+
+        const chart = await generateChart({
+          timeframe: tfLabel === "BOTH" ? "5m" : tfLabel.toLowerCase(),
+          signal: sig,
+          entry: best.entry,
+          stop_loss: best.sl,
+          tp1: best.tp1,
+          tp2: best.tp2,
+          tp3: best.tp3,
+          confidence: best.confidence === "HIGH_CONFIDENCE" || (best.score || 0) >= 5 ? 75 : 60,
+        });
+
+        if (chart.ok && chart.b64) {
+          visionResult = await confirmSignalVision(
+            chart.b64,
+            sig,
+            price,
+            tfLabel,
+            best.entry,
+            best.sl,
+            best.tp1,
+            best.tp2,
+            best.tp3,
+            best.score ? Math.round((best.score / 7) * 100) : 60,
+            currentIndicators,
+            currentSMC
+          );
+
+          if (visionResult && visionResult.verdict === "VALID") {
+            isApproved = true;
+          } else {
+            console.log(`[Scheduler] 👁 Vision AI verdict: ${visionResult?.verdict || "SKIP"} — signal rejected`);
+            saveWaitRatelimited(`Vision AI rejected signal (${visionResult?.verdict || "SKIP"})`, price, currentIndicators, currentSMC, tfLabel === "BOTH" ? "5m" : tfLabel);
+            return;
+          }
+        } else {
+          console.warn("[Scheduler] Chart rendering failed, falling back to strict technical rules:", chart.error);
+        }
+      } catch (vErr) {
+        console.error("[Scheduler] Vision AI check error, falling back to strict technical rules:", vErr);
+      }
+    }
+
+    // Fallback if Vision AI is unavailable or key missing: require strict score >= 5
+    if (!isApproved) {
+      if ((best.score || 0) >= 5 || conf === "HIGH_CONFIDENCE") {
+        isApproved = true;
+        visionResult = {
+          verdict: "VALID" as const,
+          confidence_vision: 75,
+          reasoning: "Strict technical confluence criteria met (Score >= 5/7).",
+          key_observations: [`Score: ${score}/7`, `HTF Bias: ${mtf.htf?.bias || "RANGING"}`],
+          risk_notes: ["Maintain strict risk management"],
+          price_action_quality: "STRONG" as const,
+          entry_timing: "IDEAL" as const,
+          visual_trend: (sig === "BUY" ? "BULLISH" : "BEARISH") as const,
+          original_signal: sig,
+          combined_confidence: 75,
+        };
+      } else {
+        console.log(`[Scheduler] ⚠️ Technical score ${best.score}/7 < 5 without Vision AI approval — skipping low-confluence signal`);
+        saveWaitRatelimited(`Low confluence score (${best.score}/7 < 5)`, price, currentIndicators, currentSMC, tfLabel === "BOTH" ? "5m" : tfLabel);
+        return;
+      }
+    }
+
+    // 1. ALWAYS Save Signal to SQLite Database first to get unique signal ID
+    const signalId = db.saveSignal(analysis, tfLabel, price);
+
+    // 2. Auto-create Trade Monitor if no active monitor exists
     const hasActive = db.hasActiveMonitor();
     if (!hasActive) {
-      const signalId = db.saveSignal(analysis, tfLabel, price);
-      
-      // Auto-create Trade Monitor
       db.createTradeMonitor(
         signalId,
         sig,
@@ -547,44 +622,33 @@ async function runScheduledAnalysis() {
         best.tp3,
         tfLabel
       );
-
-      // Telegram Send Message
-      const { formatTelegramVisionSignal } = await import("./src/vision.js");
-      const fakeVision = {
-        verdict: "VALID" as const,
-        confidence_vision: 80,
-        reasoning: "Analisis teknikal confluence tinggi terkonfirmasi valid.",
-        key_observations: ["Struktur searah EMA", "Momentum RSI solid"],
-        risk_notes: ["Waspadai volatility News"],
-        price_action_quality: "STRONG" as const,
-        entry_timing: "IDEAL" as const,
-        visual_trend: (sig === "BUY" ? "BULLISH" : "BEARISH") as const,
-        original_signal: sig,
-        combined_confidence: 75,
-      };
-      
-      const msg = formatTelegramVisionSignal(
-        fakeVision,
-        price,
-        tfLabel,
-        best.entry,
-        best.sl,
-        best.tp1,
-        best.tp2,
-        best.tp3,
-        analysis.risk_management.risk_reward_ratio,
-        signalId
-      );
-      await sendTelegramMessage(msg);
-
-      lastSignalTs = nowTs;
-      db.configSet("last_signal_ts", nowTs);
-      console.log(`[Scheduler] ✅ NEW ${sig} [${tfLabel}] signal saved & broadcasted @ $${price.toFixed(2)}`);
-      setLatestSignal(signalId, analysis, price, tfLabel, currentIndicators, currentSMC);
+      console.log(`[Scheduler] 🚀 New trade monitor created for Signal #${signalId}`);
     } else {
-      console.log(`[Scheduler] ⏸ ${sig} detected but active trade monitor present — skip signal emission`);
-      setLatestSignal(null, analysis, price, tfLabel, currentIndicators, currentSMC);
+      console.log(`[Scheduler] ℹ️ Active trade monitor running — Signal #${signalId} recorded in database & report`);
     }
+
+    // 3. ALWAYS Format and Send Telegram Message with synchronized signalId
+    const { formatTelegramVisionSignal } = await import("./src/vision.js");
+    const msg = formatTelegramVisionSignal(
+      visionResult,
+      price,
+      tfLabel,
+      best.entry,
+      best.sl,
+      best.tp1,
+      best.tp2,
+      best.tp3,
+      analysis.risk_management?.risk_reward_ratio || "1:2",
+      signalId,
+      analysis.risk_management?.recommended_lot || best.lot_risk || 0.10,
+      martingaleMultiplier
+    );
+    await sendTelegramMessage(msg);
+
+    lastSignalTs = nowTs;
+    db.configSet("last_signal_ts", nowTs);
+    console.log(`[Scheduler] ✅ NEW ${sig} [${tfLabel}] signal #${signalId} saved & broadcasted @ $${price.toFixed(2)}`);
+    setLatestSignal(signalId, analysis, price, tfLabel, currentIndicators, currentSMC);
 
   } catch (err) {
     console.error("[Scheduler] Error in background analysis:", err);
@@ -691,7 +755,7 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
-    return res.render("login.html", { error: "Username dan password wajib diisi" });
+    return res.render("login.html", { error: "Username and password are required" });
   }
 
   const cleanUsername = username.trim();
@@ -743,7 +807,7 @@ app.post("/login", (req, res) => {
     };
 
     return res.render("login.html", { 
-      error: "Username atau password salah / akun nonaktif",
+      error: "Invalid username or password / account inactive",
       activeEnvUser: currentEnvUser,
       activeEnvPassMasked: maskText(currentEnvPass),
       isDefaultCreds: currentEnvUser === "admin" && currentEnvPass === "nano2026"
@@ -854,7 +918,7 @@ app.get("/login_proposal", (req, res) => {
 app.post("/login_proposal", (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
-    return res.render("login_proposal.html", { error: "Username dan password wajib diisi" });
+    return res.render("login_proposal.html", { error: "Username and password are required" });
   }
 
   const cleanUsername = username.trim();
@@ -906,7 +970,7 @@ app.post("/login_proposal", (req, res) => {
     };
 
     return res.render("login_proposal.html", { 
-      error: "Username atau password salah / akun nonaktif",
+      error: "Invalid username or password / account inactive",
       activeEnvUser: currentEnvUser,
       activeEnvPassMasked: maskText(currentEnvPass),
       isDefaultCreds: currentEnvUser === "admin" && currentEnvPass === "nano2026"
@@ -957,12 +1021,12 @@ app.post("/api/admin/users", superadminRequired, (req, res) => {
   const { username, password, full_name, kota, no_wa, telegram, role } = req.body;
   
   if (!username || !password || !full_name) {
-    return res.status(400).json({ error: "Username, password, dan nama lengkap wajib diisi" });
+    return res.status(400).json({ error: "Username, password, and full name are required" });
   }
 
   const exists = db.getUsers().some((u) => u.username === username);
   if (exists) {
-    return res.status(400).json({ error: "Username sudah terdaftar" });
+    return res.status(400).json({ error: "Username already registered" });
   }
 
   const hash = crypto.createHash("sha256").update(password).digest("hex");
@@ -996,14 +1060,14 @@ app.put("/api/admin/users/:user_id", superadminRequired, (req, res) => {
   if (password && password.trim().length >= 6) {
     updates.password_hash = crypto.createHash("sha256").update(password.trim()).digest("hex");
   } else if (password && password.trim().length > 0) {
-    return res.status(400).json({ error: "Password minimal 6 karakter" });
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
   }
 
   const success = db.updateUser(userId, updates);
   if (success) {
-    res.json({ ok: true, message: "User berhasil diupdate" });
+    res.json({ ok: true, message: "User updated successfully" });
   } else {
-    res.status(404).json({ error: "User tidak ditemukan" });
+    res.status(404).json({ error: "User not found" });
   }
 });
 
@@ -1011,14 +1075,14 @@ app.put("/api/admin/users/:user_id", superadminRequired, (req, res) => {
 app.delete("/api/admin/users/:user_id", superadminRequired, (req, res) => {
   const userId = parseInt(req.params.user_id);
   if (userId === (req.session as any).user_id) {
-    return res.status(400).json({ error: "Tidak bisa menghapus akun sendiri" });
+    return res.status(400).json({ error: "Cannot delete your own account" });
   }
 
   const success = db.deleteUser(userId);
   if (success) {
-    res.json({ ok: true, message: "User dinonaktifkan" });
+    res.json({ ok: true, message: "User disabled" });
   } else {
-    res.status(404).json({ error: "User tidak ditemukan" });
+    res.status(404).json({ error: "User not found" });
   }
 });
 
@@ -1096,7 +1160,7 @@ app.post("/api/vision_confirm", loginRequired, async (req, res) => {
     } = req.body;
 
     if (!signal || signal === "WAIT") {
-      return res.status(400).json({ ok: false, error: "Vision hanya untuk BUY/SELL" });
+      return res.status(400).json({ ok: false, error: "Vision is only for BUY/SELL" });
     }
 
     // 1. Generate chart image b64 via Python Bridge
@@ -1112,7 +1176,7 @@ app.post("/api/vision_confirm", loginRequired, async (req, res) => {
     });
 
     if (!chart.ok || !chart.b64) {
-      return res.status(500).json({ ok: false, error: "Gagal me-render chart: " + chart.error });
+      return res.status(500).json({ ok: false, error: "Failed to render chart: " + chart.error });
     }
 
     // 2. Query Gemini Vision SDK
@@ -1137,6 +1201,7 @@ app.post("/api/vision_confirm", loginRequired, async (req, res) => {
     const chat_id = process.env.TELEGRAM_CHAT_ID;
 
     if (vision.verdict === "VALID" && bot_token && chat_id) {
+      const sigIdVal = req.body.signal_id ? parseInt(req.body.signal_id) : undefined;
       const msg = formatTelegramVisionSignal(
         vision,
         parseFloat(price || chart.price || 0),
@@ -1146,7 +1211,8 @@ app.post("/api/vision_confirm", loginRequired, async (req, res) => {
         parseFloat(tp1 || 0),
         parseFloat(tp2 || 0),
         parseFloat(tp3 || 0),
-        req.body.rr_ratio || "1:1.5"
+        req.body.rr_ratio || "1:1.5",
+        sigIdVal
       );
 
       // Send text message
@@ -1251,6 +1317,36 @@ app.get("/api/economic_calendar", loginRequired, async (req, res) => {
 
 // GET latest signal
 app.get("/api/latest_signal", loginRequired, (req, res) => {
+  const activeMonitors = db.getActiveMonitors();
+  
+  // 1. If an active monitor exists, prioritize returning the active trade signal
+  if (activeMonitors && activeMonitors.length > 0) {
+    const dbSignal = db.getLatestSignalFromDB();
+    if (dbSignal && (dbSignal.signal === "BUY" || dbSignal.signal === "SELL")) {
+      let analysisObj: any = {};
+      try {
+        analysisObj = JSON.parse(dbSignal.raw_json);
+      } catch {
+        analysisObj = dbSignal;
+      }
+      return res.json({
+        ok: true,
+        signal_id: dbSignal.id,
+        analysis: analysisObj,
+        price: dbSignal.price,
+        timeframe: dbSignal.timeframe,
+        timestamp: getWIBDate(new Date(dbSignal.timestamp)).toISOString().replace("T", " ").substring(0, 19),
+        data_source: "MT5 Bridge (Broker Live)",
+        indicators: analysisObj.indicators || {},
+        smc: analysisObj.smc || { trend: dbSignal.trend },
+        market_open: isMarketOpen(),
+        market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
+        active_monitor: activeMonitors[0],
+      });
+    }
+  }
+
+  // 2. Check cached signal
   const latestCachedStr = db.configGet("latest_signal_cache", "");
   if (latestCachedStr) {
     try {
@@ -1261,7 +1357,7 @@ app.get("/api/latest_signal", loginRequired, (req, res) => {
         market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
       });
     } catch {
-      // ignore parse error, fallback to memory or history
+      // ignore parse error, fallback
     }
   }
 
@@ -1269,31 +1365,32 @@ app.get("/api/latest_signal", loginRequired, (req, res) => {
     return res.json(latestSignalCache);
   }
 
-  // Fallback to database
-  const history = db.getHistory(1);
-  if (history.length > 0) {
-    const s = history[0];
-    let analysisObj = {};
+  // 3. Fallback to database
+  const dbSignal = db.getLatestSignalFromDB();
+  if (dbSignal) {
+    let analysisObj: any = {};
     try {
-      analysisObj = JSON.parse(s.raw_json);
+      analysisObj = JSON.parse(dbSignal.raw_json);
     } catch {
-      analysisObj = s;
+      analysisObj = dbSignal;
     }
 
     return res.json({
       ok: true,
-      signal_id: s.id,
+      signal_id: dbSignal.id,
       analysis: analysisObj,
-      price: s.price,
-      timeframe: s.timeframe,
-      timestamp: getWIBDate(new Date(s.timestamp)).toISOString().replace("T", " ").substring(0, 19),
+      price: dbSignal.price,
+      timeframe: dbSignal.timeframe,
+      timestamp: getWIBDate(new Date(dbSignal.timestamp)).toISOString().replace("T", " ").substring(0, 19),
       data_source: "MT5 Bridge (Broker Live)",
-      indicators: {}, // fallback stub
-      smc: { trend: s.trend },
+      indicators: analysisObj.indicators || {},
+      smc: analysisObj.smc || { trend: dbSignal.trend },
+      market_open: isMarketOpen(),
+      market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
     });
   }
 
-  res.json({ ok: false, error: "Belum ada sinyal yang di-generate" });
+  res.json({ ok: false, error: "No signal generated yet" });
 });
 
 // GET scheduler interval status
@@ -1310,8 +1407,8 @@ app.get("/api/scheduler_status", loginRequired, (req, res) => {
     ok: true,
     interval_sec: 60,
     active_loops: ["MonitorCheck", "ScheduledAnalysis"],
-    status: isMarketOpen() ? "RUNNING" : "STOPPED (Market Tutup)",
-    next_run: "1 menit",
+    status: isMarketOpen() ? "RUNNING" : "STOPPED (Market Closed)",
+    next_run: "1 minute",
     next_run_sec: next_run_sec,
     next_run_time: next_run_time,
     thread_alive: true,
@@ -1344,7 +1441,7 @@ app.get("/api/get_config", loginRequired, async (req, res) => {
 app.post("/api/analyze", loginRequired, async (req, res) => {
   if (process.env.ALLOW_MANUAL_ANALYZE !== "true") {
     return res.status(403).json({
-      error: "Analisis manual dinonaktifkan. Server scheduler berjalan otomatis.",
+      error: "Manual analysis is disabled. Server scheduler runs automatically.",
       next_run: 60,
     });
   }
@@ -1359,7 +1456,9 @@ app.post("/api/analyze", loginRequired, async (req, res) => {
 
 // GET historical signals
 app.get("/api/history", loginRequired, (req, res) => {
-  res.json({ ok: true, data: db.getHistory(50) });
+  const limit = parseInt((req.query.limit as string) || "50");
+  const filter = (req.query.filter as string) || (req.query.type as string) || "ALL";
+  res.json({ ok: true, data: db.getHistory(limit, filter) });
 });
 
 // GET database signal stats
@@ -1370,21 +1469,21 @@ app.get("/api/stats", loginRequired, (req, res) => {
 // POST clear signals history
 app.post("/api/clear_history", superadminRequired, (req, res) => {
   db.clearHistory();
-  res.json({ ok: true, message: "History berhasil dibersihkan" });
+  res.json({ ok: true, message: "History cleared successfully" });
 });
 
 // POST send manual test Telegram alert
 app.post("/api/send_telegram", loginRequired, async (req, res) => {
   const { text } = req.body;
   if (!text) {
-    return res.status(400).json({ error: "Pesan tidak boleh kosong" });
+    return res.status(400).json({ error: "Message cannot be empty" });
   }
 
   const success = await sendTelegramMessage(text);
   if (success) {
-    res.json({ ok: true, message: "Pesan berhasil dikirim ke Telegram" });
+    res.json({ ok: true, message: "Message sent successfully to Telegram" });
   } else {
-    res.status(500).json({ error: "Gagal mengirim pesan ke Telegram — periksa bot_token dan chat_id" });
+    res.status(500).json({ error: "Failed to send message to Telegram — check bot_token and chat_id" });
   }
 });
 
@@ -1407,7 +1506,7 @@ app.post("/api/reset_performance", superadminRequired, (req, res) => {
   // Clear monitors
   (db as any).data.trade_monitors = [];
   db.save();
-  res.json({ ok: true, message: "Semua performance monitors berhasil di-reset" });
+  res.json({ ok: true, message: "All performance monitors successfully reset" });
 });
 
 // GET analytics with period filter

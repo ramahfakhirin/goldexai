@@ -132,8 +132,12 @@ class BridgeDB {
     return this.runBridge("save_signal", signalData, timeframe, price);
   }
 
-  public getHistory(limit: number = 50): Signal[] {
-    return this.runBridge("get_history", limit) || [];
+  public getHistory(limit: number = 50, filter?: string): Signal[] {
+    return this.runBridge("get_history", limit, filter || "ALL") || [];
+  }
+
+  public getLatestSignalFromDB(): any {
+    return this.runBridge("get_latest_signal_db");
   }
 
   public clearHistory(): void {

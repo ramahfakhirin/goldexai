@@ -61,17 +61,17 @@ def confirm_signal_vision(
     is_gemini = key.startswith("AIzaSy") or "gemini" in key.lower()
 
     # Build prompt yang kaya konteks
-    prompt = f"""Kamu adalah senior trader XAU/USD dengan keahlian SMC (Smart Money Concepts) dan price action.
+    prompt = f"""You are a senior XAU/USD trader with expertise in SMC (Smart Money Concepts) and price action.
 
-Aku akan kirimkan chart XAU/USD timeframe {timeframe.upper()} beserta data analisis dari sistem trading.
+I will send you a chart for XAU/USD timeframe {timeframe.upper()} along with analysis data from the trading system.
 
 ═══════════════════════════════════
-DATA SISTEM (dari kalkulasi teknikal)
+SYSTEM DATA (from technical calculations)
 ═══════════════════════════════════
 
 Signal   : {signal}
 Timeframe: {timeframe.upper()}
-Harga    : ${price:,.2f}
+Price    : ${price:,.2f}
 Confidence: {confidence}%
 
 ENTRY PLAN:
@@ -81,8 +81,8 @@ ENTRY PLAN:
 • TP2     : {tp2}
 • TP3     : {tp3}
 
-INDIKATOR:
-• EMA 21  : {indicators.get('ema_21', '-')} {'(price di atas = bullish)' if price > float(indicators.get('ema_21', price)) else '(price di bawah = bearish)'}
+INDICATORS:
+• EMA 21  : {indicators.get('ema_21', '-')} {'(price above = bullish)' if price > float(indicators.get('ema_21', price)) else '(price below = bearish)'}
 • EMA 50  : {indicators.get('ema_50', '-')}
 • EMA 200 : {indicators.get('ema_200', '-')}
 • RSI     : {indicators.get('rsi', '-')}
@@ -97,42 +97,42 @@ SMC STRUCTURE:
 • Swing L : {smc.get('swing_low', '-')}
 
 ═══════════════════════════════════
-TUGASMU
+YOUR TASK
 ═══════════════════════════════════
 
-Lihat chart yang aku kirim dengan seksama. Perhatikan:
+Examine the provided chart carefully. Pay attention to:
 
-1. **Price action visual** — bentuk candle, momentum, apakah ada rejection/acceptance
-2. **Posisi terhadap EMA** — apakah harga respek EMA atau ignore?
-3. **Struktur market visual** — apakah terlihat jelas bullish/bearish/ranging dari chart?
-4. **Kualitas entry zone** — apakah entry price berada di area yang logis secara visual?
-5. **Risk area** — apakah ada resistance/support kuat yang bisa halangi pergerakan menuju TP?
-6. **Konfirmasi atau kontradiksi** — apakah visual chart MENDUKUNG atau BERTENTANGAN dengan signal sistem?
+1. **Visual price action** — candle shapes, momentum, rejection/acceptance
+2. **Position relative to EMAs** — does price respect or ignore EMAs?
+3. **Visual market structure** — is bullish/bearish/ranging clearly visible?
+4. **Entry zone quality** — is the entry price at a logically sound area visually?
+5. **Risk area** — are there strong support/resistance levels blocking movement towards TP?
+6. **Confirmation or contradiction** — does the visual chart SUPPORT or CONTRADICT the system signal?
 
-Berikan analisis dalam format JSON (HANYA JSON, tanpa teks lain):
+Provide analysis in English in JSON format (ONLY JSON, without other text):
 
 {{
   "verdict": "VALID" | "SKIP" | "WAIT_FOR_PULLBACK",
-  "confidence_vision": <angka 0-100>,
-  "reasoning": "<2-3 kalimat alasan utama keputusanmu berdasarkan visual chart>",
+  "confidence_vision": <number 0-100>,
+  "reasoning": "<2-3 sentence main reasoning for your decision in English>",
   "key_observations": [
-    "<observasi visual penting 1>",
-    "<observasi visual penting 2>",
-    "<observasi visual penting 3>"
+    "<important visual observation 1 in English>",
+    "<important visual observation 2 in English>",
+    "<important visual observation 3 in English>"
   ],
   "risk_notes": [
-    "<risiko visual yang terlihat 1>",
-    "<risiko visual yang terlihat 2>"
+    "<visual risk note 1 in English>",
+    "<visual risk note 2 in English>"
   ],
   "price_action_quality": "STRONG" | "MODERATE" | "WEAK",
   "entry_timing": "IDEAL" | "ACCEPTABLE" | "PREMATURE" | "LATE",
   "visual_trend": "BULLISH" | "BEARISH" | "RANGING"
 }}
 
-Penjelasan verdict:
-- VALID: Chart mendukung signal, entry masuk akal, eksekusi bisa dilakukan
-- WAIT_FOR_PULLBACK: Arah benar tapi entry terlalu agresif, tunggu pullback ke zona lebih baik
-- SKIP: Chart tidak mendukung signal, terlalu banyak risiko visual
+Verdict explanations:
+- VALID: Chart supports signal, entry makes sense, execution recommended
+- WAIT_FOR_PULLBACK: Direction is correct but entry is too aggressive, wait for pullback to a better zone
+- SKIP: Chart does not support signal, too many visual risks
 """
 
     if is_gemini:
@@ -235,6 +235,7 @@ def format_telegram_vision_signal(
     tp2:           float,
     tp3:           float,
     rr_ratio:      str,
+    signal_id:     int = None,
 ) -> str:
     """Format pesan Telegram yang kaya dengan hasil Vision."""
 
@@ -253,11 +254,15 @@ def format_telegram_vision_signal(
     obs_text  = "\n".join([f"  • {o}" for o in obs[:3]])
     risk_text = "\n".join([f"  ⚠ {r}" for r in risks[:2]])
 
+    id_header = f" | ID #{signal_id}" if signal_id else ""
+    id_line   = f"🆔 <b>Signal ID: #{signal_id}</b>\n" if signal_id else ""
+
     msg = (
-        f"{sig_emoji} <b>XAU/USD {signal}</b> — {timeframe.upper()}\n"
+        f"{sig_emoji} <b>XAU/USD {signal}</b> — {timeframe.upper()}{id_header}\n"
         f"{verdict_emoji} Vision: <b>{verdict.replace('_', ' ')}</b>\n"
+        f"{id_line}"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"💰 Harga   : <b>${price:,.2f}</b>\n"
+        f"💰 Price   : <b>${price:,.2f}</b>\n"
         f"🎯 Entry   : {entry}\n"
         f"🛑 SL      : {stop_loss}\n"
         f"✅ TP1     : {tp1}\n"
@@ -266,12 +271,12 @@ def format_telegram_vision_signal(
         f"📊 RR      : {rr_ratio}\n"
         f"🔥 Conf    : {combined}% (Vision+AI)\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"👁 <b>Analisis Visual:</b>\n"
+        f"👁 <b>Visual Analysis:</b>\n"
         f"{reasoning}\n"
     )
 
     if obs_text:
-        msg += f"\n📌 <b>Observasi:</b>\n{obs_text}\n"
+        msg += f"\n📌 <b>Observations:</b>\n{obs_text}\n"
 
     if risk_text:
         msg += f"\n{risk_text}\n"

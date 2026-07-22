@@ -37,32 +37,32 @@ function startClock() {
 function saveKey() {
   const val = document.getElementById("api-key-input").value.trim();
   if (!val || !val.startsWith("sk-ant-")) {
-    showToast("Format API key tidak valid (harus diawali sk-ant-)", "error");
+    showToast("Invalid API key format (must start with sk-ant-)", "error");
     return;
   }
   apiKey = val;
   localStorage.setItem("xau_api_key", val);
-  document.getElementById("key-status").textContent = "✓ API key tersimpan";
-  showToast("API key tersimpan!", "success");
+  document.getElementById("key-status").textContent = "✓ API key saved";
+  showToast("API key saved!", "success");
 }
 
 // ─── TWELVE DATA KEY ─────────────────────
 function saveTwelveKey() {
   const val = document.getElementById("twelve-key-input").value.trim();
   if (!val || val.length < 20) {
-    showToast("Format Twelve Data key tidak valid", "error");
+    showToast("Invalid Twelve Data key format", "error");
     return;
   }
   localStorage.setItem("xau_twelve_key", val);
-  document.getElementById("twelve-status").textContent = "✓ Twelve Data key tersimpan";
-  showToast("Twelve Data key tersimpan!", "success");
+  document.getElementById("twelve-status").textContent = "✓ Twelve Data key saved";
+  showToast("Twelve Data key saved!", "success");
 }
 
 // ─── RUN ANALYSIS ────────────────────────
 async function runAnalysis() {
   const keyVal = document.getElementById("api-key-input").value.trim() || apiKey;
   if (!keyVal) {
-    showToast("Masukkan API key dulu!", "error");
+    showToast("Please enter an API key first!", "error");
     return;
   }
 
@@ -71,7 +71,7 @@ async function runAnalysis() {
   const btnText   = document.getElementById("btn-text");
 
   btn.disabled = true;
-  btnText.textContent = "⏳ MENGANALISIS...";
+  btnText.textContent = "⏳ ANALYZING...";
   showLoading(true);
 
   try {
@@ -81,7 +81,7 @@ async function runAnalysis() {
       body: JSON.stringify({
         api_key:     keyVal === "__FROM_SERVER__" ? "" : keyVal,
         timeframe,
-        twelve_key:  "", // diambil dari server env
+        twelve_key:  "", // taken from server env
         use_server_keys: true,
       }),
     });
@@ -89,7 +89,7 @@ async function runAnalysis() {
     const data = await res.json();
 
     if (!res.ok || !data.ok) {
-      throw new Error(data.error || "Analisis gagal");
+      throw new Error(data.error || "Analysis failed");
     }
 
     renderSignal(data);
@@ -97,8 +97,8 @@ async function runAnalysis() {
     renderSMC(data.smc);
     await loadHistory();
     await loadStats();
-    showToast("✓ Analisis berhasil!", "success");
-    // Selalu refresh monitor & performance setelah analisis
+    showToast("✓ Analysis successful!", "success");
+    // Always refresh monitor & performance after analysis
     loadActiveMonitors();
     loadPerformance();
     loadTradeHistory();
@@ -111,7 +111,7 @@ async function runAnalysis() {
     console.error(err);
   } finally {
     btn.disabled = false;
-    btnText.textContent = "▶ JALANKAN ANALISIS";
+    btnText.textContent = "▶ RUN ANALYSIS";
     showLoading(false);
   }
 }
@@ -139,25 +139,38 @@ function renderSignal(data) {
   badge.textContent  = a.signal || "WAIT";
   badge.className    = "signal-badge " + (a.signal || "WAIT");
 
+  // Signal ID
+  const sigIdEl = document.getElementById("sig-id-tag");
+  if (sigIdEl) {
+    const activeSigId = data.signal_id || a.signal_id;
+    if (activeSigId) {
+      sigIdEl.textContent = "ID #" + activeSigId;
+      sigIdEl.style.display = "inline-block";
+    } else {
+      sigIdEl.textContent = "ID #-";
+      sigIdEl.style.display = "inline-block";
+    }
+  }
+
   // Time + price + TF
   document.getElementById("sig-time").textContent  = data.timestamp;
   document.getElementById("sig-price").textContent = "$" + Number(data.price).toLocaleString("en-US", { minimumFractionDigits: 2 });
   document.getElementById("sig-tf").textContent    = "Timeframe: " + data.timeframe.toUpperCase();
 
-  // Tampilkan info sumber data
+  // Display data source info
   const srcBadge = document.getElementById("data-source-badge");
   if (srcBadge) {
     const src      = data.data_source || "";
     const isBridge = src.includes("MT5") || src.includes("BRIDGE");
     const isTwelve = src.includes("Twelve") || src.includes("TWELVE");
     if (isBridge) {
-      srcBadge.textContent = "● MT5 Broker Live — Harga Identik";
+      srcBadge.textContent = "● Live MT5 Broker — Identical Price";
       srcBadge.style.color = "var(--gold)";
     } else if (isTwelve) {
       srcBadge.textContent = "⚡ Twelve Data (Fallback)";
       srcBadge.style.color = "var(--blue, #4c9eff)";
     } else {
-      srcBadge.textContent = "⚠ Sumber Data Offline";
+      srcBadge.textContent = "⚠ Data Source Offline";
       srcBadge.style.color = "var(--red)";
     }
   }
@@ -197,9 +210,9 @@ function renderSignal(data) {
     if (actualSlDist < slMinDist && a.signal !== "WAIT") {
       banner.style.display = "block";
       bannerTx.textContent =
-        `⚠️ Peringatan: SL yang disarankan (±$${actualSlDist.toFixed(2)}) ` +
-        `lebih sempit dari minimum ATR (±$${slMinDist.toFixed(2)} = 1.5x ATR). ` +
-        `Pertimbangkan perlebar SL ke minimal ±$${slOptDist.toFixed(2)} untuk menghindari stop hunt.`;
+        `⚠️ Warning: Suggested SL (±$${actualSlDist.toFixed(2)}) ` +
+        `is narrower than minimum ATR (±$${slMinDist.toFixed(2)} = 1.5x ATR). ` +
+        `Consider widening SL to at least ±$${slOptDist.toFixed(2)} to avoid stop hunts.`;
     } else {
       banner.style.display = "none";
     }
@@ -323,14 +336,15 @@ function renderSMC(smc) {
       </div>`;
     }).join("");
   } else {
-    fvgList.innerHTML = "<div class='history-empty'>Tidak ada FVG</div>";
+    fvgList.innerHTML = "<div class='history-empty'>No FVG zones</div>";
   }
 }
 
 // ─── HISTORY ─────────────────────────────
 async function loadHistory() {
   try {
-    const res  = await fetch("/api/history?limit=30");
+    const filterParam = historyFilter || "TRADE";
+    const res  = await fetch(`/api/history?limit=50&filter=${filterParam}`);
     const data = await res.json();
     if (!data.ok) return;
 
@@ -338,17 +352,17 @@ async function loadHistory() {
     renderHistory(historyData);
     renderConfChart(historyData);
   } catch (e) {
-    console.error("Gagal load history:", e);
+    console.error("Failed to load history:", e);
   }
 }
 
-// Multiplier PnL basis lot (dikirim backend via /api/performance).
-// Default 10 = 0.10 lot XAUUSD ($10 per poin). Data DB tetap poin mentah.
+// PnL Multiplier based on lot (sent by backend via /api/performance).
+// Default 10 = 0.10 lot XAUUSD ($10 per point). DB data remains raw points.
 let PNL_MULT = 10;
 let PNL_LOT  = 0.10;
 
-// Filter aktif untuk History Signal — default hanya trade (BUY/SELL),
-// supaya list tidak dibanjiri entry WAIT.
+// Active filter for Signal History — default only trade (BUY/SELL),
+// so list is not flooded with WAIT entries.
 let historyFilter = "TRADE"; // TRADE | ALL | BUY | SELL | WAIT
 
 function setHistoryFilter(mode) {
@@ -360,7 +374,7 @@ function renderHistory(items) {
   const el = document.getElementById("history-list");
   if (!el) return;
 
-  // ── Dedup: buang entry berurutan yang identik (signal+harga+menit sama) ──
+  // ── Dedup: remove consecutive identical entries (same signal+price+minute) ──
   const deduped = [];
   let prevKey = "";
   (items || []).forEach(item => {
@@ -369,7 +383,7 @@ function renderHistory(items) {
     prevKey = key;
   });
 
-  // ── Filter sesuai chip aktif ──
+  // ── Filter according to active chip ──
   const filtered = deduped.filter(item => {
     if (historyFilter === "ALL")   return true;
     if (historyFilter === "TRADE") return item.signal === "BUY" || item.signal === "SELL";
@@ -387,13 +401,13 @@ function renderHistory(items) {
       ${chip("BUY",  "BUY")}
       ${chip("SELL", "SELL")}
       ${chip("WAIT", `WAIT (${waitCount})`)}
-      ${chip("ALL",  "Semua")}
+      ${chip("ALL",  "All")}
     </div>`;
 
   if (!filtered.length) {
     const emptyMsg = historyFilter === "TRADE" || historyFilter === "BUY" || historyFilter === "SELL"
-      ? "Belum ada signal trade — engine menunggu setup berkualitas"
-      : "Tidak ada entry";
+      ? "No trade signals yet — engine waiting for quality setup"
+      : "No entries found";
     el.innerHTML = chipsHtml + `<div class="history-empty">${emptyMsg}</div>`;
     syncHistoryToMobile();
     return;
@@ -403,6 +417,7 @@ function renderHistory(items) {
     const ts     = new Date(item.timestamp).toLocaleString("id-ID");
     const price  = Number(item.price).toLocaleString("en-US", { minimumFractionDigits: 2 });
     const isWait = item.signal === "WAIT";
+    const sigIdTag = item.id ? `<span class="hist-id-tag" style="font-size:11px; font-weight:700; color:var(--gold,#f1c40f); margin-left:6px; background:rgba(241,196,15,0.12); border:1px solid rgba(241,196,15,0.3); padding:1px 5px; border-radius:3px; vertical-align:middle;">#${item.id}</span>` : '';
     // WAIT tidak punya confidence bermakna — jangan tampilkan "0%"
     const confHtml = isWait
       ? `<span class="hist-conf muted">standby</span>`
@@ -411,6 +426,7 @@ function renderHistory(items) {
     <div class="history-item ${item.signal}${isWait ? " is-wait" : ""}" onclick="showHistoryDetail(${item.id})">
       <div class="hist-row1">
         <span class="hist-signal ${item.signal}">${item.signal}</span>
+        ${sigIdTag}
         <span class="hist-price">$${price}</span>
       </div>
       <div class="hist-row2">
@@ -436,19 +452,22 @@ function showHistoryDetail(id) {
   if (!item || !item.raw_json) return;
   try {
     const raw = JSON.parse(item.raw_json);
-    // Re-render signal dengan data history
+    // Re-render signal with history data
     const fakeResp = {
+      signal_id:  item.id,
       analysis:   raw,
       price:      item.price,
       timeframe:  item.timeframe,
-      timestamp:  new Date(item.timestamp).toLocaleString("id-ID"),
-      indicators: {},
-      smc:        {},
+      timestamp:  new Date(item.timestamp).toLocaleString("en-US"),
+      data_source: "Database Record #" + item.id,
+      from_db:    true,
+      indicators: raw.indicators || {},
+      smc:        raw.smc || {},
     };
     renderSignal(fakeResp);
-    showToast("Menampilkan signal #" + id);
+    showToast("Displaying signal ID #" + id);
   } catch (e) {
-    showToast("Gagal load detail", "error");
+    showToast("Failed to load details", "error");
   }
 }
 
@@ -539,7 +558,7 @@ async function loadStats() {
 
 // ─── CLEAR HISTORY ────────────────────────
 async function clearHistory() {
-  if (!confirm("Hapus semua history signal?")) return;
+  if (!confirm("Delete all signal history?")) return;
   try {
     await fetch("/api/clear_history", { method: "POST" });
     historyData = [];
@@ -547,9 +566,9 @@ async function clearHistory() {
     if (confChart) { confChart.destroy(); confChart = null; }
     document.getElementById("chart-card").style.display = "none";
     await loadStats();
-    showToast("History dihapus", "success");
+    showToast("History deleted", "success");
   } catch (e) {
-    showToast("Gagal hapus history", "error");
+    showToast("Failed to delete history", "error");
   }
 }
 
@@ -610,14 +629,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (tgToken) document.getElementById("tg-token").value = tgToken;
   if (tgChat)  document.getElementById("tg-chat").value  = tgChat;
   if (tgToken && tgChat) {
-    document.getElementById("tg-status").textContent = "✓ Telegram tersimpan";
+    document.getElementById("tg-status").textContent = "✓ Telegram saved";
   }
 });
 
 // ─── AUTO-REFRESH TOGGLE ─────────────────────
 function toggleAuto() {
   const on = document.getElementById("auto-toggle").checked;
-  if (on) startAutoRefresh(true);   // true = langsung analisis saat user toggle ON
+  if (on) startAutoRefresh(true);   // true = analyze immediately on user toggle
   else    stopAutoRefresh();
 }
 
@@ -629,18 +648,18 @@ function startAutoRefresh(runImmediately = true) {
   smartPauseActive = false;
 
   document.getElementById("auto-status").innerHTML =
-    `<span class="auto-active">● Auto mode ON — setiap ${minutes} menit</span>`;
+    `<span class="auto-active">● Auto mode ON — every ${minutes} minutes</span>`;
   document.getElementById("countdown-wrap").style.display = "block";
   document.getElementById("smart-pause-info").style.display = "none";
 
-  // Hanya langsung analisis jika diminta (toggle manual oleh user)
+  // Only analyze immediately if requested (manual toggle by user)
   if (runImmediately) {
     runAnalysis().then(result => {
       if (result) handleAutoResult(result);
     });
   }
 
-  // Clear timer lama jika ada
+  // Clear old timer if exists
   if (autoTimer) clearInterval(autoTimer);
 
   // Set interval
@@ -690,7 +709,7 @@ function updateCountdownUI() {
   if (bar) bar.style.width = ((countdownSec / totalSec) * 100) + "%";
 }
 
-// ─── HANDLE HASIL ANALISIS AUTO ──────────────
+// ─── HANDLE AUTO ANALYSIS RESULT ──────────────
 function handleAutoResult(data) {
   const signal = data?.analysis?.signal || "WAIT";
 
@@ -703,24 +722,24 @@ function handleAutoResult(data) {
       activateSmartPause();
       return;
     }
-    // Refresh monitor status saat WAIT
+    // Refresh monitor status during WAIT
     loadActiveMonitors();
     loadPerformance();
   } else {
-    // BUY atau SELL
+    // BUY or SELL
     waitStreak = 0;
 
     if (data.already_active) {
-      // Ada monitor aktif — skip buat signal baru apapun directionnya
-      showToast(`⏸ Ada posisi aktif — menunggu TP/SL sebelum signal baru`, "");
+      // Active monitor exists — skip generating new signal regardless of direction
+      showToast(`⏸ Active position exists — waiting for TP/SL before new signal`, "");
       loadActiveMonitors();
       loadPerformance();
       return;
     }
 
-    // Signal BARU — trigger Vision confirmation
+    // NEW Signal — trigger Vision confirmation
     playAlertSound(signal);
-    showToast(`🔍 ${signal} signal BARU — menjalankan Vision AI...`, signal === "BUY" ? "success" : "error");
+    showToast(`🔍 NEW ${signal} signal — running Vision AI...`, signal === "BUY" ? "success" : "error");
 
     triggerVisionConfirm(data).then(vision => {
       if (vision) {
@@ -729,7 +748,7 @@ function handleAutoResult(data) {
           playAlertSound(signal);
           showToast(`✅ Vision VALID — ${signal} ${vision.combined_confidence}%`, signal === "BUY" ? "success" : "error");
         } else {
-          showToast(`⏳ Vision: ${vision.verdict.replace("_"," ")} — skip entry`, "");
+          showToast(`⏳ Vision: ${vision.verdict.replace("_"," ")} — skipping entry`, "");
         }
       }
       loadActiveMonitors();
@@ -745,7 +764,7 @@ function activateSmartPause() {
 
   document.getElementById("smart-pause-info").style.display = "block";
   document.getElementById("auto-status").innerHTML =
-    `<span class="auto-paused">⏸ Smart pause — lanjut 30 menit lagi</span>`;
+    `<span class="auto-paused">⏸ Smart pause — resuming in 30 minutes</span>`;
 
   // Countdown smart pause
   totalSec     = SMART_PAUSE_SEC;
@@ -760,9 +779,9 @@ function activateSmartPause() {
     totalSec = minutes * 60;
 
     document.getElementById("auto-status").innerHTML =
-      `<span class="auto-active">● Auto mode ON — setiap ${minutes} menit</span>`;
+      `<span class="auto-active">● Auto mode ON — every ${minutes} minutes</span>`;
 
-    // Langsung analisis setelah pause selesai
+    // Analyze immediately after pause completes
     runAnalysis().then(result => {
       if (result) handleAutoResult(result);
       startCountdown(totalSec);
@@ -803,18 +822,18 @@ function saveTelegram() {
   const chat  = document.getElementById("tg-chat").value.trim();
 
   if (!token || !chat) {
-    showToast("Bot Token dan Chat ID wajib diisi!", "error");
+    showToast("Bot Token and Chat ID are required!", "error");
     return;
   }
   if (!token.includes(":")) {
-    showToast("Format Bot Token tidak valid!", "error");
+    showToast("Invalid Bot Token format!", "error");
     return;
   }
 
   localStorage.setItem("xau_tg_token", token);
   localStorage.setItem("xau_tg_chat",  chat);
-  document.getElementById("tg-status").textContent = "✓ Telegram tersimpan";
-  showToast("Konfigurasi Telegram tersimpan!", "success");
+  document.getElementById("tg-status").textContent = "✓ Telegram saved";
+  showToast("Telegram configuration saved!", "success");
 }
 
 async function testTelegram() {
@@ -824,19 +843,19 @@ async function testTelegram() {
                 document.getElementById("tg-chat").value.trim();
 
   if (!token || !chat) {
-    showToast("Simpan konfigurasi Telegram dulu!", "error");
+    showToast("Save Telegram configuration first!", "error");
     return;
   }
 
   const msg = `🤖 <b>XAU/USD AI Terminal</b>\n\n` +
-    `✅ Test notifikasi berhasil!\n` +
-    `🕐 ${new Date().toLocaleString("id-ID")}\n\n` +
-    `Dashboard kamu sudah terhubung ke Telegram.`;
+    `✅ Notification test successful!\n` +
+    `🕐 ${new Date().toLocaleString("en-US")}\n\n` +
+    `Your dashboard is now connected to Telegram.`;
 
   await sendTelegramRaw(token, chat, msg);
 }
 
-// ─── KIRIM SIGNAL KE TELEGRAM ────────────────
+// ─── SEND SIGNAL TO TELEGRAM ────────────────
 async function sendTelegramSignal(data) {
   const token = localStorage.getItem("xau_tg_token") || "";
   const chat  = localStorage.getItem("xau_tg_chat")  || "";
@@ -849,7 +868,7 @@ async function sendTelegramSignal(data) {
   const price  = data.price || 0;
   const tf     = (data.timeframe || "").toUpperCase();
 
-  // Cek preferensi notifikasi
+  // Check notification preferences
   const notifyBuy  = document.getElementById("tg-buy")?.checked;
   const notifySell = document.getElementById("tg-sell")?.checked;
   const notifyWait = document.getElementById("tg-wait")?.checked;
@@ -859,12 +878,12 @@ async function sendTelegramSignal(data) {
   if (signal === "WAIT" && !notifyWait) return;
 
   const emoji = signal === "BUY" ? "🟢" : signal === "SELL" ? "🔴" : "🟡";
-  const time  = new Date().toLocaleString("id-ID");
+  const time  = new Date().toLocaleString("en-US");
 
   const msg =
     `${emoji} <b>XAU/USD ${signal}</b> — ${tf}\n` +
     `━━━━━━━━━━━━━━━━━━\n` +
-    `💰 Harga    : <b>$${Number(price).toLocaleString("en-US", {minimumFractionDigits: 2})}</b>\n` +
+    `💰 Price    : <b>$${Number(price).toLocaleString("en-US", {minimumFractionDigits: 2})}</b>\n` +
     `🎯 Entry    : ${a.entry?.entry_zone || a.entry?.ideal_price || "-"}\n` +
     `🛑 SL       : ${rm.stop_loss || "-"}\n` +
     `✅ TP1      : ${rm.take_profit_1 || "-"}\n` +
@@ -889,12 +908,12 @@ async function sendTelegramRaw(token, chat, message) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast("✓ Telegram terkirim!", "success");
+      showToast("✓ Telegram message sent!", "success");
     } else {
       showToast("Telegram error: " + (data.error || "Unknown"), "error");
     }
   } catch (e) {
-    showToast("Gagal kirim Telegram: " + e.message, "error");
+    showToast("Failed to send Telegram message: " + e.message, "error");
   }
 }
 
@@ -903,12 +922,12 @@ async function sendTelegramRaw(token, chat, message) {
 // ═══════════════════════════════════════════════
 
 let monitorInterval  = null;
-const MONITOR_TICK_MS = 60 * 1000; // cek setiap 1 menit
+const MONITOR_TICK_MS = 60 * 1000; // check every 1 minute
 
 // ─── START MONITOR ENGINE ────────────────────
 function startMonitorEngine() {
   if (monitorInterval) return;
-  checkMonitors(); // langsung cek pertama
+  checkMonitors(); // check immediately
   monitorInterval = setInterval(checkMonitors, MONITOR_TICK_MS);
 }
 
@@ -932,7 +951,7 @@ async function checkMonitors() {
     const data = await res.json();
     if (!data.ok) return;
 
-    // Jika ada update — refresh UI
+    // If updates exist — refresh UI
     if (data.updates && data.updates.length > 0) {
       data.updates.forEach(u => {
         const pnl   = Number(u.pnl_usd ?? (Number(u.pnl_pips || 0) * PNL_MULT));
@@ -962,7 +981,7 @@ async function checkMonitors() {
 }
 
 // ─── LOAD ACTIVE MONITORS ────────────────────
-let _monitorPnlTimer = null;  // timer live P&L refresh
+let _monitorPnlTimer = null;  // live P&L refresh timer
 
 async function loadActiveMonitors() {
   try {
@@ -975,16 +994,16 @@ async function loadActiveMonitors() {
     const listEl   = document.getElementById("monitor-list");
     if (!listEl) return;
 
-    if (countEl) countEl.textContent = monitors.length + " aktif";
+    if (countEl) countEl.textContent = monitors.length + " active";
 
     if (!monitors.length) {
-      listEl.innerHTML = '<div class="history-empty">Tidak ada posisi dipantau</div>';
-      // Stop live P&L timer kalau tidak ada monitor
+      listEl.innerHTML = '<div class="history-empty">No positions monitored</div>';
+      // Stop live P&L timer if no monitors
       if (_monitorPnlTimer) { clearInterval(_monitorPnlTimer); _monitorPnlTimer = null; }
       return;
     }
 
-    // Render monitor cards dengan P&L placeholder dulu
+    // Render monitor cards with P&L placeholder first
     function renderMonitorCards(currentPrice) {
       listEl.innerHTML = monitors.map(m => {
         const dir    = m.direction;
@@ -993,26 +1012,26 @@ async function loadActiveMonitors() {
         const tp1    = Number(m.tp1 || 0);
         const tp2    = Number(m.tp2 || 0);
         const tp3    = Number(m.tp3 || 0);
-        const ts     = new Date(m.timestamp).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+        const ts     = new Date(m.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
         const livePnl = currentPrice
           ? (dir === "BUY" ? currentPrice - entry : entry - currentPrice) * PNL_MULT
           : null;
 
-        // Hitung durasi berjalan
+        // Calculate running duration
         const elapsed = m.timestamp
           ? Math.floor((Date.now() - new Date(m.timestamp).getTime()) / 60000)
           : 0;
         const elapsedStr = elapsed < 60
-          ? elapsed + " mnt"
-          : Math.floor(elapsed / 60) + "j " + (elapsed % 60) + "m";
+          ? elapsed + " m"
+          : Math.floor(elapsed / 60) + "h " + (elapsed % 60) + "m";
 
         const pnlStr = livePnl !== null
           ? `${livePnl >= 0 ? "+" : ""}$${livePnl.toFixed(2)}`
           : "...";
         const pnlCls = livePnl !== null ? (livePnl >= 0 ? "pos" : "neg") : "";
 
-        // Badge status TP
+        // TP status badge
         const tpHit = m.tp_hit || 0;
         const tpBadge = tpHit > 0
           ? `<span class="tp-badge">TP${tpHit} ✓</span>`
@@ -1042,13 +1061,13 @@ async function loadActiveMonitors() {
               <span class="tp-val">$${tp3 ? tp3.toFixed(2) : "-"}</span>
             </div>
             <div class="mon-level">
-              <span style="color:var(--text-dim)">Berjalan</span>
+              <span style="color:var(--text-dim)">Duration</span>
               <span>${elapsedStr}</span>
             </div>
           </div>
           ${tpBadge}
           <div class="mon-live-price" style="font-size:11px;color:var(--text-dim);margin-top:4px;">
-            Harga live: <span id="liveprice-${m.id}">${currentPrice ? "$" + currentPrice.toFixed(2) : "..."}</span>
+            Live price: <span id="liveprice-${m.id}">${currentPrice ? "$" + currentPrice.toFixed(2) : "..."}</span>
           </div>
         </div>`;
       }).join("");
@@ -1109,7 +1128,7 @@ async function loadTradeHistory() {
     if (!el) return;
 
     if (!trades.length) {
-      el.innerHTML = '<div class="history-empty">Belum ada trade selesai</div>';
+      el.innerHTML = '<div class="history-empty">No completed trades yet</div>';
       return;
     }
 
@@ -1122,17 +1141,16 @@ async function loadTradeHistory() {
     };
 
     el.innerHTML = trades
-      .filter(t => t.status !== "ACTIVE")   // posisi aktif tampil di LIVE MONITORS, bukan di sini
+      .filter(t => t.status !== "ACTIVE")   // active positions shown in LIVE MONITORS
       .map(t => {
       const pnl   = Number(t.pnl_usd ?? (Number(t.pnl_pips || 0) * PNL_MULT));
       const isBE  = t.outcome === "BE_HIT";
       const isWin = pnl > 0 && !isBE;
       const cls   = isWin ? "win" : isBE ? "be" : pnl > 0 ? "win" : "loss";
-      // FIX: sebelumnya loss tampil "$6.41" tanpa tanda minus
       const pnlStr  = `${pnl >= 0 ? "+" : "-"}$${Math.abs(pnl).toFixed(2)}`;
       const outcome = outcomeLabel[t.outcome] || (t.outcome ? t.outcome.replace("_", " ") : "-");
       const ts      = new Date(t.outcome_time || t.timestamp)
-                        .toLocaleString("id-ID", { day:"2-digit", month:"2-digit",
+                        .toLocaleString("en-US", { day:"2-digit", month:"2-digit",
                           hour:"2-digit", minute:"2-digit" });
       const dir     = t.direction || "-";
       const tpBadge = (t.tp_hit || 0) > 0
@@ -1150,12 +1168,12 @@ async function loadTradeHistory() {
           <span class="trade-meta">${ts}</span>
         </div>
       </div>`;
-    }).join("") || '<div class="history-empty">Belum ada trade selesai</div>';
+    }).join("") || '<div class="history-empty">No completed trades yet</div>';
 
   } catch (e) {
     console.error("Trade history error:", e);
   }
-  // Sync semua list ke mobile sections
+  // Sync all lists to mobile sections
   setTimeout(() => {
     ["monitor-list", "trade-history-list", "history-list"].forEach(id => {
       const src  = document.getElementById(id);
@@ -1167,7 +1185,7 @@ async function loadTradeHistory() {
     if (cnt && mcnt) mcnt.textContent = cnt.textContent;
   }, 100);
 }
-// ─── ANALITIK DIAGNOSIS ──────────────────────
+// ─── ANALYTICS DIAGNOSIS ──────────────────────
 const SESSION_LABEL = {
   london: "🇬🇧 London", new_york: "🇺🇸 New York",
   tokyo: "🇯🇵 Tokyo",   sydney: "🇦🇺 Sydney",
@@ -1184,7 +1202,7 @@ async function loadAnalytics() {
     if (!el) return;
 
     if (!a.overall || !a.overall.total) {
-      el.innerHTML = '<div class="history-empty">Belum ada data trade</div>';
+      el.innerHTML = '<div class="history-empty">No trade data available</div>';
       syncAnalyticsToMobile();
       return;
     }
@@ -1208,24 +1226,24 @@ async function loadAnalytics() {
       <span class="an-val">WR</span><span class="an-val">PnL</span><span class="an-val">PF</span>
     </div>`;
 
-    html += `<div class="an-section">Arah</div>`;
+    html += `<div class="an-section">Direction</div>`;
     ["BUY", "SELL"].forEach(d => { html += row(d, a.by_direction[d]); });
 
     html += `<div class="an-section">Timeframe</div>`;
     Object.entries(a.by_timeframe || {}).forEach(([tf, g]) => { html += row(tf, g); });
 
-    html += `<div class="an-section">Sesi</div>`;
+    html += `<div class="an-section">Session</div>`;
     Object.entries(a.by_session || {}).forEach(([s, g]) => {
       html += row(SESSION_LABEL[s] || s, g);
     });
 
-    // Insight MFE — bedakan salah arah vs salah eksekusi
+    // MFE Insight
     const d = a.mfe_diagnosis || {};
     if (d.sl_pure_total > 0) {
       const pct = Math.round((d.sl_near_tp1 / d.sl_pure_total) * 100);
       const insight = pct >= 50
-        ? `⚠️ ${pct}% loss sempat mendekati TP1 (≥70% jarak) — indikasi SL terlalu ketat / TP1 terlalu jauh`
-        : `${d.sl_near_tp1}/${d.sl_pure_total} loss sempat mendekati TP1 — mayoritas loss adalah salah arah, bukan salah eksekusi`;
+        ? `⚠️ ${pct}% of losses approached TP1 (≥70% distance) — indicates SL too tight / TP1 too far`
+        : `${d.sl_near_tp1}/${d.sl_pure_total} losses approached TP1 — majority of losses were wrong direction, not execution error`;
       html += `<div class="an-insight">${insight}</div>`;
     }
 
@@ -1264,14 +1282,14 @@ async function loadPerformance() {
 
     // Update period label
     const periodEl = document.getElementById("perf-period-label");
-    if(periodEl) periodEl.textContent = p.period_days > 0 ? p.period_days + " HARI" : "ALL TIME";
+    if(periodEl) periodEl.textContent = p.period_days > 0 ? p.period_days + " DAYS" : "ALL TIME";
 
     const pipsEl = document.getElementById("perf-pips");
     const avgEl  = document.getElementById("perf-avg");
     const bestEl = document.getElementById("perf-best");
     const wrstEl = document.getElementById("perf-worst");
 
-    // Sinkronkan multiplier lot dari backend (dipakai live monitor & fallback)
+    // Sync lot multiplier from backend
     if (p.pnl_mult) PNL_MULT = Number(p.pnl_mult);
     if (p.lot_size) PNL_LOT  = Number(p.lot_size);
     const lotLbl = document.getElementById("perf-lot-note");
@@ -1280,7 +1298,6 @@ async function loadPerformance() {
       el.textContent = `(${PNL_LOT.toFixed(2)} lot)`;
     });
 
-    // Support total_pnl (baru) dan total_pips (lama)
     const totalPnl = p.total_pnl ?? p.total_pips ?? 0;
     const avgPnl   = p.avg_pnl   ?? p.avg_pips   ?? 0;
 
@@ -1295,7 +1312,6 @@ async function loadPerformance() {
     if (bestEl)  bestEl.textContent  = "+$" + (p.best  || 0).toFixed(2);
     if (wrstEl)  wrstEl.textContent  = "-$" + Math.abs(p.worst || 0).toFixed(2);
 
-    // Profit Factor — metrik yang lebih adil dari win rate untuk sistem partial-TP
     const pfEl = document.getElementById("perf-pf");
     if (pfEl) {
       const pf = Number(p.profit_factor || 0);
@@ -1307,7 +1323,6 @@ async function loadPerformance() {
     const beEl = document.getElementById("perf-be");
     if (beEl) beEl.textContent = p.be_count || 0;
 
-    // Warna win rate
     const rateEl = document.getElementById("perf-rate");
     if (rateEl) {
       rateEl.style.color = p.win_rate >= 60 ? "var(--green)"
@@ -1315,7 +1330,6 @@ async function loadPerformance() {
                          : "var(--red)";
     }
 
-    // Sync ke mobile sections
     if (window.innerWidth <= 768) {
       const mf = {
         "m-perf-total":  p.total,
@@ -1336,7 +1350,7 @@ async function loadPerformance() {
 }
 
 async function resetPerformance() {
-  if (!confirm("Reset semua data performa? Trade outcomes akan dihapus permanen.")) return;
+  if (!confirm("Reset all performance data? Trade outcomes will be permanently deleted.")) return;
   try {
     const res  = await fetch("/api/reset_performance", {method:"POST"});
     const data = await res.json();
@@ -1346,7 +1360,7 @@ async function resetPerformance() {
       loadTradeHistory();
       loadAnalytics();
     } else {
-      showToast("Gagal reset: " + (data.error || "unknown"), "error");
+      showToast("Reset failed: " + (data.error || "unknown"), "error");
     }
   } catch(e) {
     showToast("Error: " + e.message, "error");
@@ -1628,13 +1642,16 @@ async function processReceivedSignal(data) {
   // Update status bar dengan data Berkah Signal
   updateTerminalStatus(data.analysis || null);
 
-  // Render jika: signal baru, atau signal-result masih tersembunyi (belum pernah render)
+  // Render jika: signal baru, tipe signal berubah, atau signal-result masih tersembunyi
   const resultEl    = document.getElementById("signal-result");
   const neverShown  = !resultEl || resultEl.style.display === "none";
-  const isNewSignal = data.signal_id && data.signal_id !== lastSignalId;
+  const currentSig  = data.analysis?.signal || "WAIT";
+  const lastSigType = window._renderedSigType || null;
+  const isNewSignal = (data.signal_id && data.signal_id !== lastSignalId) || (currentSig !== lastSigType);
 
   if (isNewSignal || neverShown) {
     lastSignalId = data.signal_id;
+    window._renderedSigType = currentSig;
     renderSignal(data);
     renderIndicators(data.indicators, data.price);
     renderSMC(data.smc);
