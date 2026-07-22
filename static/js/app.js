@@ -361,13 +361,12 @@ async function loadHistory() {
 let PNL_MULT = 10;
 let PNL_LOT  = 0.10;
 
-// Active filter for Signal History — default only trade (BUY/SELL),
-// so list is not flooded with WAIT entries.
-let historyFilter = "TRADE"; // TRADE | ALL | BUY | SELL | WAIT
+// Active filter for Signal History — default ALL so all recent signals are loaded
+let historyFilter = "ALL"; // TRADE | ALL | BUY | SELL | WAIT
 
 function setHistoryFilter(mode) {
   historyFilter = mode;
-  renderHistory(historyData || []);
+  loadHistory();
 }
 
 function renderHistory(items) {

@@ -44,8 +44,13 @@ DATA_DIR = resolve_data_dir()
 DB_PATH = DATA_DIR / "signals.db"
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=15.0)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA busy_timeout=10000;")
+    except Exception:
+        pass
     conn.execute("""
         CREATE TABLE IF NOT EXISTS signals (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -290,20 +295,9 @@ def get_history(limit=50, signal_filter="ALL"):
                 (signal_filter, limit)
             ).fetchall()
         else:
-            # Default "ALL": Always fetch BUY/SELL trade signals AND recent WAIT signals
-            # so trade signals are never lost or buried by 1-minute WAIT checks!
             rows = conn.execute(
-                """
-                SELECT * FROM (
-                    SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ?
-                )
-                UNION
-                SELECT * FROM (
-                    SELECT * FROM signals ORDER BY id DESC LIMIT 20
-                )
-                ORDER BY id DESC LIMIT ?
-                """,
-                (limit, limit)
+                "SELECT * FROM signals ORDER BY id DESC LIMIT ?",
+                (limit,)
             ).fetchall()
             
         conn.close()
@@ -549,8 +543,8 @@ def get_performance_stats(days=7):
             cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
             monitors = conn.execute("""
                 SELECT * FROM trade_monitors
-                WHERE status='CLOSED' AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ?)
-            """, (cutoff, cutoff, cutoff)).fetchall()
+                WHERE status='CLOSED' AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ? OR created_at >= ?)
+            """, (cutoff, cutoff, cutoff, cutoff)).fetchall()
         else:
             monitors = conn.execute("SELECT * FROM trade_monitors WHERE status='CLOSED'").fetchall()
             

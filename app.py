@@ -147,6 +147,16 @@ def resolve_data_dir():
 DATA_DIR = resolve_data_dir()
 DB_PATH  = DATA_DIR / "signals.db"
 
+def get_db():
+    """Ambil koneksi SQLite dengan WAL mode dan timeout untuk penanganan concurrency."""
+    conn = sqlite3.connect(DB_PATH, timeout=15.0)
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA busy_timeout=10000;")
+    except Exception:
+        pass
+    return conn
+
 
 # ─────────────────────────────────────────────
 # DATABASE SETUP
@@ -154,7 +164,7 @@ DB_PATH  = DATA_DIR / "signals.db"
 def init_db():
     """Buat semua tabel jika belum ada."""
     DB_PATH.parent.mkdir(exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
 
     # Tabel signals (existing)
     conn.execute("""
@@ -393,7 +403,7 @@ def _atomic_reserve_candle(timeframe: str, candle_id: str) -> bool:
 
 def save_signal(data: dict, timeframe: str, price: float):
     """Simpan signal ke database."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     rm   = data.get("risk_management", {})
     entry = data.get("entry", {})
     ms   = data.get("market_structure", {})
@@ -427,8 +437,8 @@ def save_signal(data: dict, timeframe: str, price: float):
 
 
 def get_history(limit: int = 50, signal_filter: str = "ALL") -> list:
-    """Ambil history signal dari database dengan prioritas trade signals agar tidak tertutup WAIT."""
-    conn = sqlite3.connect(DB_PATH)
+    """Ambil history signal dari database dengan filter tepat."""
+    conn = get_db()
     conn.row_factory = sqlite3.Row
     
     if signal_filter in ("TRADE", "BUY_SELL"):
@@ -442,19 +452,10 @@ def get_history(limit: int = 50, signal_filter: str = "ALL") -> list:
             (signal_filter, limit)
         ).fetchall()
     else:
-        # Default ALL: Ambil BUY/SELL trade signals DAN scan WAIT terbaru
+        # Default ALL: Ambil semua signal terbaru berurutan
         rows = conn.execute(
-            """
-            SELECT * FROM (
-                SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ?
-            )
-            UNION
-            SELECT * FROM (
-                SELECT * FROM signals ORDER BY id DESC LIMIT 20
-            )
-            ORDER BY id DESC LIMIT ?
-            """,
-            (limit, limit)
+            "SELECT * FROM signals ORDER BY id DESC LIMIT ?",
+            (limit,)
         ).fetchall()
 
     conn.close()
@@ -463,7 +464,7 @@ def get_history(limit: int = 50, signal_filter: str = "ALL") -> list:
 
 def get_stats() -> dict:
     """Hitung statistik performa signal."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     conn.row_factory = sqlite3.Row
     rows = conn.execute("SELECT signal, confidence FROM signals").fetchall()
     conn.close()
@@ -491,7 +492,7 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          timeframe: str) -> int:
     """Buat trade monitor baru setelah signal BUY/SELL."""
     now_iso = datetime.now(WIB).isoformat()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     cursor = conn.execute("""
         INSERT INTO trade_monitors
         (signal_id, timestamp, created_at, timeframe, direction, entry_price,
@@ -507,7 +508,7 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
 
 def get_active_monitors() -> list:
     """Ambil semua trade monitor yang masih aktif."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     conn.row_factory = sqlite3.Row
     rows = conn.execute("""
         SELECT * FROM trade_monitors WHERE status = 'ACTIVE'
@@ -522,7 +523,7 @@ def update_monitor_outcome(monitor_id: int, outcome: str,
                            tp_hit: int = 0):
     """Update hasil trade monitor — set closed_at untuk filter performa."""
     now_iso = datetime.now(WIB).isoformat()
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     conn.execute("""
         UPDATE trade_monitors
         SET status='CLOSED', outcome=?, outcome_price=?,
@@ -540,18 +541,18 @@ def get_performance_stats(days: int = 7) -> dict:
     Hitung statistik performa trade dari monitor.
     Default: 7 hari terakhir. days=0 berarti semua data.
     """
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     conn.row_factory = sqlite3.Row
 
     if days > 0:
-        # Filter 7 hari terakhir berdasarkan closed_at atau created_at
-        cutoff = (datetime.now(WIB) - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+        # Filter N hari terakhir berdasarkan ISO timestamp
+        cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
         rows = conn.execute("""
             SELECT * FROM trade_monitors
             WHERE status = 'CLOSED'
-            AND COALESCE(closed_at, created_at) >= ?
+            AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ? OR created_at >= ?)
             ORDER BY id DESC
-        """, (cutoff,)).fetchall()
+        """, (cutoff, cutoff, cutoff, cutoff)).fetchall()
     else:
         rows = conn.execute("""
             SELECT * FROM trade_monitors WHERE status = 'CLOSED'
@@ -1622,9 +1623,11 @@ def run_scheduled_analysis():
                 print(f"[Scheduler] 🚧 {sig} diblokir loss-streak guard — {guard_note}")
                 return None
 
-        if sig in ("BUY", "SELL") and not active_monitor:
+        if sig in ("BUY", "SELL"):
             signal_id = save_signal(analysis, tf_label, market.current_price)
-            if berkah["sl"] and berkah["entry"]:
+            _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
+
+            if not active_monitor and berkah["sl"] and berkah["entry"]:
                 create_trade_monitor(
                     signal_id = signal_id,
                     direction = sig,
@@ -1640,27 +1643,10 @@ def run_scheduled_analysis():
                 _LAST_SIGNAL_TS = _time_mod.time()
                 _cfg_set("last_signal_ts", _LAST_SIGNAL_TS)
                 print(f"[Scheduler] ✅ NEW {sig} [{tf_label}] signal saved & sent @ ${market.current_price:.2f} | score={berkah.get('score',0)}/7 | cooldown {_SIGNAL_COOLDOWN_SEC}s aktif")
-            _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
+            elif active_monitor:
+                print(f"[Scheduler] ℹ️ {sig} saved to history, but trade monitor creation skipped (already monitoring active position)")
 
-        elif sig in ("BUY", "SELL") and active_monitor:
-            print(f"[Scheduler] ⏸ {sig} detected but monitor ACTIVE — skip save")
-            latest_cached_str = _cfg_get("latest_signal_cache", "")
-            if latest_cached_str:
-                try:
-                    cached_data = json.loads(latest_cached_str)
-                    cached_data["price"] = market.current_price
-                    cached_data["timestamp"] = now_wib_str("%Y-%m-%d %H:%M:%S")
-                    _latest_signal_cache = cached_data
-                    _cfg_set("latest_signal_cache", json.dumps(cached_data, ensure_ascii=False))
-                except Exception:
-                    pass
-            elif _latest_signal_cache:
-                _latest_signal_cache["price"]     = market.current_price
-                _latest_signal_cache["timestamp"] = now_wib_str("%Y-%m-%d %H:%M:%S")
-                _cfg_set("latest_signal_cache", json.dumps(_latest_signal_cache, ensure_ascii=False))
-            signal_id = None
-
-        return signal_id
+            return signal_id
 
     except Exception as e:
         print(f"[Scheduler] Error: {e}")
