@@ -856,46 +856,8 @@ async function testTelegram() {
 
 // ─── SEND SIGNAL TO TELEGRAM ────────────────
 async function sendTelegramSignal(data) {
-  const token = localStorage.getItem("xau_tg_token") || "";
-  const chat  = localStorage.getItem("xau_tg_chat")  || "";
-  if (!token || !chat) return;
-
-  const a      = data.analysis || {};
-  const rm     = a.risk_management || {};
-  const signal = a.signal  || "WAIT";
-  const conf   = a.confidence || 0;
-  const price  = data.price || 0;
-  const tf     = (data.timeframe || "").toUpperCase();
-
-  // Check notification preferences
-  const notifyBuy  = document.getElementById("tg-buy")?.checked;
-  const notifySell = document.getElementById("tg-sell")?.checked;
-  const notifyWait = document.getElementById("tg-wait")?.checked;
-
-  if (signal === "BUY"  && !notifyBuy)  return;
-  if (signal === "SELL" && !notifySell) return;
-  if (signal === "WAIT" && !notifyWait) return;
-
-  const emoji = signal === "BUY" ? "🟢" : signal === "SELL" ? "🔴" : "🟡";
-  const time  = new Date().toLocaleString("en-US");
-
-  const msg =
-    `${emoji} <b>XAU/USD ${signal}</b> — ${tf}\n` +
-    `━━━━━━━━━━━━━━━━━━\n` +
-    `💰 Price    : <b>$${Number(price).toLocaleString("en-US", {minimumFractionDigits: 2})}</b>\n` +
-    `🎯 Entry    : ${a.entry?.entry_zone || a.entry?.ideal_price || "-"}\n` +
-    `🛑 SL       : ${rm.stop_loss || "-"}\n` +
-    `✅ TP1      : ${rm.take_profit_1 || "-"}\n` +
-    `✅ TP2      : ${rm.take_profit_2 || "-"}\n` +
-    `✅ TP3      : ${rm.take_profit_3 || "-"}\n` +
-    `📊 RR       : ${rm.risk_reward_ratio || "-"}\n` +
-    `🔥 Conf.    : ${conf}%\n` +
-    `━━━━━━━━━━━━━━━━━━\n` +
-    `📝 ${a.narrative ? a.narrative.substring(0, 200) + "..." : "-"}\n` +
-    `━━━━━━━━━━━━━━━━━━\n` +
-    `🕐 ${time}`;
-
-  await sendTelegramRaw(token, chat, msg);
+  // Signal dispatch disabled per user directive
+  return;
 }
 
 async function sendTelegramRaw(token, chat, message) {

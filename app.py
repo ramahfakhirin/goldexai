@@ -1638,8 +1638,8 @@ def run_scheduled_analysis():
                     tp3       = float(berkah["tp3"]),
                     timeframe = tf_label,
                 )
-                msg = format_signal_message(analysis, market.current_price, tf_label, signal_id=signal_id)
-                send_telegram_message(msg)
+                # Telegram signal broadcast disabled per user directive
+                # send_telegram_message(msg)
                 _LAST_SIGNAL_TS = _time_mod.time()
                 _cfg_set("last_signal_ts", _LAST_SIGNAL_TS)
                 print(f"[Scheduler] ✅ NEW {sig} [{tf_label}] signal saved & sent @ ${market.current_price:.2f} | score={berkah.get('score',0)}/7 | cooldown {_SIGNAL_COOLDOWN_SEC}s aktif")
@@ -2976,9 +2976,9 @@ def analyze():
                     tp3        = float(rm.get("take_profit_3", 0) or 0),
                     timeframe  = timeframe,
                 )
-                msg     = format_signal_message(analysis, market.current_price, timeframe, signal_id=signal_id)
-                tg_sent = send_telegram_message(msg)
-                print(f"[Signal] NEW {sig} monitor created, Telegram: {tg_sent}")
+                # Telegram signal broadcast disabled per user directive
+                tg_sent = False
+                print(f"[Signal] NEW {sig} monitor created")
             elif already_active:
                 print(f"[Signal] {sig} monitor already active — skip duplicate")
         else:
