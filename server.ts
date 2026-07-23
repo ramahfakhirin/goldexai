@@ -127,8 +127,15 @@ app.use((req, res, next) => {
 // Authentication Guard Middlewares
 function loginRequired(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!req.session || !(req.session as any).user_id) {
-    if (req.xhr || req.path.startsWith("/api/")) {
-      return res.status(401).json({ error: "Please log in first" });
+    const isApi =
+      req.xhr ||
+      req.path.startsWith("/api/") ||
+      req.originalUrl.startsWith("/api/") ||
+      req.baseUrl.startsWith("/api/") ||
+      (req.headers.accept && req.headers.accept.includes("application/json"));
+
+    if (isApi) {
+      return res.status(401).json({ ok: false, error: "Silakan login terlebih dahulu (Sesi telah berakhir)." });
     }
     return res.redirect("/login");
   }
@@ -137,8 +144,15 @@ function loginRequired(req: express.Request, res: express.Response, next: expres
 
 function superadminRequired(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!req.session || (req.session as any).role !== "superadmin") {
-    if (req.xhr || req.path.startsWith("/api/")) {
-      return res.status(403).json({ error: "Access denied: Superadmin only" });
+    const isApi =
+      req.xhr ||
+      req.path.startsWith("/api/") ||
+      req.originalUrl.startsWith("/api/") ||
+      req.baseUrl.startsWith("/api/") ||
+      (req.headers.accept && req.headers.accept.includes("application/json"));
+
+    if (isApi) {
+      return res.status(403).json({ ok: false, error: "Akses ditolak: Hanya superadmin." });
     }
     return res.status(403).send("Access denied: Only superadmin can access this page.");
   }

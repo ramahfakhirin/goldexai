@@ -7,6 +7,28 @@ let historyData   = [];
 let lastSignalId  = null;  // track signal terakhir yang ditampilkan
 let pollTimer     = null;  // timer polling /api/latest_signal
 
+// ─── SAFE FETCH HELPER ─────────────────────
+async function safeFetchJson(url, options = {}) {
+  const opts = { ...options };
+  opts.headers = {
+    "Accept": "application/json",
+    ...(opts.headers || {}),
+  };
+
+  const res = await fetch(url, opts);
+  const contentType = res.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("Sesi login berakhir. Silakan muat ulang halaman atau login kembali.");
+    }
+    throw new Error(`Server mengembalikan respon non-JSON (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data;
+}
+
 // ─── INIT ────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   startClock();
@@ -902,8 +924,7 @@ async function sendTelegramSignal(data) {
 async function triggerManualAnalysis() {
   showToast("⏳ Running market analysis & preparing signal broadcast...", "info");
   try {
-    const res = await fetch("/api/analyze", { method: "POST" });
-    const data = await res.json();
+    const data = await safeFetchJson("/api/analyze", { method: "POST" });
     if (data.ok) {
       showToast("✅ Market analysis completed & broadcasted!", "success");
       if (typeof loadLatestSignal === "function") loadLatestSignal();
@@ -918,8 +939,7 @@ async function triggerManualAnalysis() {
 async function broadcastLatestSignal() {
   showToast("⏳ Sending active signal to Telegram...", "info");
   try {
-    const res = await fetch("/api/broadcast_latest_signal", { method: "POST" });
-    const data = await res.json();
+    const data = await safeFetchJson("/api/broadcast_latest_signal", { method: "POST" });
     if (data.ok) {
       showToast(data.message || "✅ Signal sent to Telegram!", "success");
     } else {
@@ -952,7 +972,7 @@ async function dispatchManualSignal() {
 
   showToast("⏳ Dispatching manual signal to Dashboard & Telegram...", "info");
   try {
-    const res = await fetch("/api/dispatch_manual_signal", {
+    const data = await safeFetchJson("/api/dispatch_manual_signal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -966,7 +986,6 @@ async function dispatchManualSignal() {
         timeframe: "5m"
       })
     });
-    const data = await res.json();
     if (data.ok) {
       showToast("🎉 " + data.message, "success");
       if (typeof loadLatestSignal === "function") loadLatestSignal();
@@ -980,12 +999,11 @@ async function dispatchManualSignal() {
 
 async function sendTelegramRaw(token, chat, message) {
   try {
-    const res = await fetch("/api/send_telegram", {
+    const data = await safeFetchJson("/api/send_telegram", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bot_token: token, chat_id: chat, message }),
     });
-    const data = await res.json();
     if (data.ok) {
       showToast("✓ Telegram message sent!", "success");
     } else {
