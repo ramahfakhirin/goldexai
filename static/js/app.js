@@ -856,8 +856,126 @@ async function testTelegram() {
 
 // ─── SEND SIGNAL TO TELEGRAM ────────────────
 async function sendTelegramSignal(data) {
-  // Signal dispatch disabled per user directive
-  return;
+  const token = localStorage.getItem("xau_tg_token") || "";
+  const chat  = localStorage.getItem("xau_tg_chat")  || "";
+  if (!token || !chat) return;
+
+  const a      = data.analysis || {};
+  const rm     = a.risk_management || {};
+  const signal = a.signal  || "WAIT";
+  const conf   = a.confidence || 0;
+  const price  = data.price || 0;
+  const tf     = (data.timeframe || "").toUpperCase();
+
+  // Check notification preferences
+  const notifyBuy  = document.getElementById("tg-buy")?.checked;
+  const notifySell = document.getElementById("tg-sell")?.checked;
+  const notifyWait = document.getElementById("tg-wait")?.checked;
+
+  if (signal === "BUY"  && !notifyBuy)  return;
+  if (signal === "SELL" && !notifySell) return;
+  if (signal === "WAIT" && !notifyWait) return;
+
+  const emoji = signal === "BUY" ? "🟢" : signal === "SELL" ? "🔴" : "🟡";
+  const time  = new Date().toLocaleString("en-US");
+
+  const msg =
+    `${emoji} <b>XAU/USD ${signal}</b> — ${tf}\n` +
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `💰 Price    : <b>$${Number(price).toLocaleString("en-US", {minimumFractionDigits: 2})}</b>\n` +
+    `🎯 Entry    : ${a.entry?.entry_zone || a.entry?.ideal_price || "-"}\n` +
+    `🛑 SL       : ${rm.stop_loss || "-"}\n` +
+    `✅ TP1      : ${rm.take_profit_1 || "-"}\n` +
+    `✅ TP2      : ${rm.take_profit_2 || "-"}\n` +
+    `✅ TP3      : ${rm.take_profit_3 || "-"}\n` +
+    `📊 RR       : ${rm.risk_reward_ratio || "-"}\n` +
+    `🔥 Conf.    : ${conf}%\n` +
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `📝 ${a.narrative ? a.narrative.substring(0, 200) + "..." : "-"}\n` +
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `🕐 ${time}`;
+
+  await sendTelegramRaw(token, chat, msg);
+}
+
+// ─── MANUAL SIGNAL & TELEGRAM CONTROL FUNCTIONS ────────────────
+async function triggerManualAnalysis() {
+  showToast("⏳ Running market analysis & preparing signal broadcast...", "info");
+  try {
+    const res = await fetch("/api/analyze", { method: "POST" });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("✅ Market analysis completed & broadcasted!", "success");
+      if (typeof loadLatestSignal === "function") loadLatestSignal();
+    } else {
+      showToast("⚠️ " + (data.error || "Analysis failed"), "error");
+    }
+  } catch (e) {
+    showToast("❌ Connection error: " + e.message, "error");
+  }
+}
+
+async function broadcastLatestSignal() {
+  showToast("⏳ Sending active signal to Telegram...", "info");
+  try {
+    const res = await fetch("/api/broadcast_latest_signal", { method: "POST" });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(data.message || "✅ Signal sent to Telegram!", "success");
+    } else {
+      showToast("⚠️ " + (data.error || "Broadcast failed"), "error");
+    }
+  } catch (e) {
+    showToast("❌ Connection error: " + e.message, "error");
+  }
+}
+
+async function dispatchManualSignal() {
+  const signal = prompt("Masukkan jenis sinyal (BUY atau SELL):", "BUY");
+  if (!signal) return;
+  
+  const currentPriceText = document.getElementById("dt-price")?.textContent?.replace("$","") || "2385.00";
+  const defaultPrice = parseFloat(currentPriceText) || 2385.00;
+
+  const priceStr = prompt("Masukkan Current Price ($):", defaultPrice.toFixed(2));
+  if (!priceStr) return;
+  
+  const slStr = prompt("Masukkan Stop Loss ($):", (signal.toUpperCase() === "BUY" ? defaultPrice - 5 : defaultPrice + 5).toFixed(2));
+  if (!slStr) return;
+
+  const tp1Str = prompt("Masukkan Take Profit 1 ($):", (signal.toUpperCase() === "BUY" ? defaultPrice + 8 : defaultPrice - 8).toFixed(2));
+  if (!tp1Str) return;
+
+  const tp2Str = prompt("Masukkan Take Profit 2 ($) (opsional):", (signal.toUpperCase() === "BUY" ? defaultPrice + 15 : defaultPrice - 15).toFixed(2));
+  const tp3Str = prompt("Masukkan Take Profit 3 ($) (opsional):", (signal.toUpperCase() === "BUY" ? defaultPrice + 25 : defaultPrice - 25).toFixed(2));
+  const narrative = prompt("Catatan / Alasan Analisis:", "Manual signal dispatched from GOLDEX AI Terminal.");
+
+  showToast("⏳ Dispatching manual signal to Dashboard & Telegram...", "info");
+  try {
+    const res = await fetch("/api/dispatch_manual_signal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        signal,
+        price: parseFloat(priceStr),
+        stop_loss: parseFloat(slStr),
+        tp1: parseFloat(tp1Str),
+        tp2: tp2Str ? parseFloat(tp2Str) : undefined,
+        tp3: tp3Str ? parseFloat(tp3Str) : undefined,
+        narrative,
+        timeframe: "5m"
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("🎉 " + data.message, "success");
+      if (typeof loadLatestSignal === "function") loadLatestSignal();
+    } else {
+      showToast("⚠️ " + (data.error || "Failed to dispatch manual signal"), "error");
+    }
+  } catch (e) {
+    showToast("❌ Connection error: " + e.message, "error");
+  }
 }
 
 async function sendTelegramRaw(token, chat, message) {

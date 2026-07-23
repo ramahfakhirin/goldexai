@@ -652,7 +652,33 @@ async function runScheduledAnalysis() {
     );
     console.log(`[Scheduler] 🚀 Active trade monitor set for Signal #${signalId}`);
 
-    // (Telegram signal broadcast disabled / removed as all signals are invalidated by user request)
+    // 3. ALWAYS Format and Send Telegram Message with synchronized signalId
+    if (lastSentTelegramSignalId === signalId) {
+      console.log(`[Scheduler] ℹ️ Signal #${signalId} already broadcasted to Telegram — skipping duplicate`);
+    } else {
+      const { formatTelegramVisionSignal } = await import("./src/vision.js");
+      const msg = formatTelegramVisionSignal(
+        visionResult,
+        price,
+        tfLabel,
+        best.entry,
+        best.sl,
+        best.tp1,
+        best.tp2,
+        best.tp3,
+        analysis.risk_management?.risk_reward_ratio || "1:2",
+        signalId,
+        analysis.risk_management?.recommended_lot || best.lot_risk || 0.10,
+        martingaleMultiplier
+      );
+      if (msg) {
+        const sent = await sendTelegramMessage(msg);
+        if (sent) {
+          lastSentTelegramSignalId = signalId;
+          console.log(`[Scheduler] ✅ Broadcasted Signal #${signalId} to Telegram`);
+        }
+      }
+    }
 
     lastSignalTs = nowTs;
     db.configSet("last_signal_ts", nowTs);
@@ -1206,8 +1232,39 @@ app.post("/api/vision_confirm", loginRequired, async (req, res) => {
 
     // 3. Post to Telegram if VALID
     let tg_sent = false;
-    // Telegram signal broadcast disabled per user directive
-    tg_sent = false;
+    const bot_token = process.env.TELEGRAM_BOT_TOKEN;
+    const chat_id = process.env.TELEGRAM_CHAT_ID;
+
+    if (vision.verdict === "VALID" && bot_token && chat_id) {
+      const rawSigId = req.body.signal_id ? parseInt(req.body.signal_id) : undefined;
+      
+      if (!rawSigId || isNaN(rawSigId) || rawSigId <= 0) {
+        console.log("[Vision Confirm] ℹ️ Vision analysis completed, but no signal_id from DB provided — skipping Telegram broadcast");
+      } else if (lastSentTelegramSignalId === rawSigId) {
+        console.log(`[Vision Confirm] ℹ️ Telegram message for Signal #${rawSigId} already broadcasted by server — skipping duplicate`);
+      } else {
+        const msg = formatTelegramVisionSignal(
+          vision,
+          parseFloat(price || chart.price || 0),
+          timeframe || "15m",
+          parseFloat(entry || 0),
+          parseFloat(stop_loss || 0),
+          parseFloat(tp1 || 0),
+          parseFloat(tp2 || 0),
+          parseFloat(tp3 || 0),
+          req.body.rr_ratio || "1:1.5",
+          rawSigId
+        );
+
+        if (msg) {
+          const textSuccess = await sendTelegramMessage(msg);
+          if (textSuccess) {
+            tg_sent = true;
+            lastSentTelegramSignalId = rawSigId;
+          }
+        }
+      }
+    }
 
     res.json({
       ok: true,
@@ -1381,18 +1438,165 @@ app.get("/api/get_config", loginRequired, async (req, res) => {
   });
 });
 
-// POST run manual analyze (only if allowed)
+// POST run manual analyze (authorized for dashboard users)
 app.post("/api/analyze", loginRequired, async (req, res) => {
-  if (process.env.ALLOW_MANUAL_ANALYZE !== "true") {
-    return res.status(403).json({
-      error: "Manual analysis is disabled. Server scheduler runs automatically.",
-      next_run: 60,
-    });
-  }
-
   try {
     await runScheduledAnalysis();
-    res.json({ ok: true, message: "Manual analysis completed successfully." });
+    res.json({ ok: true, message: "Manual market analysis executed & signal broadcasted successfully." });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST broadcast latest active signal to Telegram
+app.post("/api/broadcast_latest_signal", loginRequired, async (req, res) => {
+  try {
+    const latest = db.getLatestSignalFromDB();
+    if (!latest) {
+      return res.status(404).json({ error: "No active signal found in database" });
+    }
+
+    const { formatTelegramVisionSignal } = await import("./src/vision.js");
+    const parsed = typeof latest.raw_json === "string" ? JSON.parse(latest.raw_json) : latest.raw_json || {};
+    const rm = parsed.risk_management || {};
+
+    const msg = formatTelegramVisionSignal(
+      {
+        verdict: "VALID",
+        final_signal: latest.signal,
+        combined_confidence: latest.confidence || 80,
+        reasoning: latest.narrative || "Manual broadcast from GOLDEX AI Dashboard.",
+        key_observations: ["Broadcasted on demand via Dashboard"],
+        risk_notes: "Follow strict risk management guidelines.",
+        suggested_sl: latest.stop_loss,
+        suggested_tp1: latest.tp1,
+        suggested_tp2: latest.tp2,
+        suggested_tp3: latest.tp3,
+      },
+      latest.price,
+      latest.timeframe || "5m",
+      latest.entry || latest.price,
+      latest.stop_loss,
+      latest.tp1,
+      latest.tp2,
+      latest.tp3,
+      latest.rr_ratio || rm.risk_reward_ratio || "1:2",
+      latest.id,
+      rm.recommended_lot || 0.10
+    );
+
+    if (!msg) {
+      return res.status(500).json({ error: "Failed to format signal message" });
+    }
+
+    const sent = await sendTelegramMessage(msg);
+    if (sent) {
+      res.json({ ok: true, message: `Signal #${latest.id} (${latest.signal}) successfully sent to Telegram!` });
+    } else {
+      res.status(500).json({ error: "Failed to send to Telegram — please verify Bot Token and Chat ID" });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST dispatch custom manual signal to Dashboard & Telegram
+app.post("/api/dispatch_manual_signal", loginRequired, async (req, res) => {
+  try {
+    const { signal, price, timeframe, stop_loss, tp1, tp2, tp3, narrative } = req.body;
+    if (!signal || !price || !stop_loss || !tp1) {
+      return res.status(400).json({ error: "Signal, current price, stop loss, and TP1 are required." });
+    }
+
+    const sigType = signal.toUpperCase();
+    if (sigType !== "BUY" && sigType !== "SELL") {
+      return res.status(400).json({ error: "Signal must be BUY or SELL" });
+    }
+
+    const currentPrice = parseFloat(price);
+    const sl = parseFloat(stop_loss);
+    const t1 = parseFloat(tp1);
+    const t2 = tp2 ? parseFloat(tp2) : (sigType === "BUY" ? t1 + (t1 - currentPrice) : t1 - (currentPrice - t1));
+    const t3 = tp3 ? parseFloat(tp3) : (sigType === "BUY" ? t2 + (t1 - currentPrice) : t2 - (currentPrice - t1));
+    const tf = timeframe || "5m";
+
+    const customAnalysis = {
+      signal: sigType,
+      confidence: 85,
+      bias: sigType === "BUY" ? "BULLISH" : "BEARISH",
+      narrative: narrative || "Manual signal created & dispatched from GOLDEX AI Terminal.",
+      entry: {
+        ideal_price: currentPrice,
+        entry_zone: `$${currentPrice.toFixed(2)} - $${(currentPrice + (sigType === "BUY" ? 0.5 : -0.5)).toFixed(2)}`,
+        action: sigType,
+      },
+      risk_management: {
+        stop_loss: sl,
+        take_profit_1: t1,
+        take_profit_2: t2,
+        take_profit_3: t3,
+        risk_reward_ratio: "1:2",
+        recommended_lot: 0.10,
+      },
+    };
+
+    // 1. Save to DB
+    const signalId = db.saveSignal(customAnalysis, tf, currentPrice);
+
+    // 2. Set active trade monitor
+    db.supersedeActiveMonitors();
+    db.createTradeMonitor(signalId, sigType, currentPrice, sl, t1, t2, t3, tf);
+
+    // 3. Broadcast to Dashboard clients via WebSocket
+    broadcast({
+      type: "SIGNAL_UPDATE",
+      data: {
+        id: signalId,
+        analysis: customAnalysis,
+        price: currentPrice,
+        timeframe: tf,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    // 4. Format & Send Telegram Message
+    const { formatTelegramVisionSignal } = await import("./src/vision.js");
+    const msg = formatTelegramVisionSignal(
+      {
+        verdict: "VALID",
+        final_signal: sigType,
+        combined_confidence: 85,
+        reasoning: customAnalysis.narrative,
+        key_observations: ["Manual Signal dispatched directly from Dashboard"],
+        risk_notes: "Always practice proper risk & money management.",
+        suggested_sl: sl,
+        suggested_tp1: t1,
+        suggested_tp2: t2,
+        suggested_tp3: t3,
+      },
+      currentPrice,
+      tf,
+      currentPrice,
+      sl,
+      t1,
+      t2,
+      t3,
+      "1:2",
+      signalId,
+      0.10
+    );
+
+    let tgSent = false;
+    if (msg) {
+      tgSent = await sendTelegramMessage(msg);
+    }
+
+    res.json({
+      ok: true,
+      signal_id: signalId,
+      telegram_sent: tgSent,
+      message: `Manual Signal #${signalId} (${sigType}) dispatched successfully! ${tgSent ? "Sent to Telegram & Dashboard." : "Updated on Dashboard."}`,
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

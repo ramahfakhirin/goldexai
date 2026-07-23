@@ -132,9 +132,19 @@
       </div>
     </section>
 
-    <!-- Telegram Panel (hidden) -->
-    <section class="card card-telegram" style="display:none">
-      <div class="card-label">📱 TELEGRAM NOTIFICATION (GROUP)</div>
+    <!-- Telegram & Signal Dispatch Control Panel -->
+    <section class="card card-telegram" style="display:block">
+      <div class="card-label">📡 TELEGRAM & MANUAL SIGNAL CONTROL</div>
+      
+      <!-- Quick Action Buttons -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <button class="btn-save-key" style="background:var(--gold,#f1c40f); color:#000; font-weight:700; border:none; padding:8px;" onclick="triggerManualAnalysis()">⚡ Run Scan & Send</button>
+        <button class="btn-save-key" style="background:#2ecc71; color:#000; font-weight:700; border:none; padding:8px;" onclick="broadcastLatestSignal()">📢 Send Signal to TG</button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <button class="btn-save-key" style="width:100%; background:#3498db; color:#fff; font-weight:700; border:none; padding:8px;" onclick="dispatchManualSignal()">✏️ Create & Dispatch Manual Signal</button>
+      </div>
+
       <div class="input-group">
         <label class="input-label">Bot Token</label>
         <input type="password" id="tg-token" class="input-field"
@@ -145,13 +155,13 @@
         <input type="text" id="tg-chat" class="input-field"
                placeholder="123456789">
       </div>
-      <div class="tg-controls">
-        <button class="btn-save-key" onclick="saveTelegram()">Save</button>
-        <button class="btn-save-key" onclick="testTelegram()">Test Send</button>
+      <div class="tg-controls" style="display:flex; gap:8px;">
+        <button class="btn-save-key" style="flex:1;" onclick="saveTelegram()">Save Credentials</button>
+        <button class="btn-save-key" style="flex:1; background:rgba(255,255,255,0.1);" onclick="testTelegram()">Test TG Send</button>
       </div>
       <div class="key-status" id="tg-status"></div>
-      <div class="tg-notify-row">
-        <label class="input-label">Send notifications for:</label>
+      <div class="tg-notify-row" style="margin-top:10px;">
+        <label class="input-label">Auto-notify Telegram for:</label>
         <div class="tg-checks">
           <label class="tg-check"><input type="checkbox" id="tg-buy" checked> BUY</label>
           <label class="tg-check"><input type="checkbox" id="tg-sell" checked> SELL</label>
