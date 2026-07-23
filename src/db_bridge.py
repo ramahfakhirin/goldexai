@@ -410,6 +410,22 @@ def get_active_monitors():
     except Exception:
         return []
 
+def supersede_active_monitors():
+    try:
+        conn = get_db()
+        now_iso = datetime.now(WIB).isoformat()
+        conn.execute("""
+            UPDATE trade_monitors 
+            SET status='CLOSED', outcome='SUPERSEDED', closed_at=?
+            WHERE status='ACTIVE'
+        """, (now_iso,))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"[DB Bridge supersede_active_monitors error]: {e}", file=sys.stderr)
+        return False
+
 def get_monitors():
     try:
         conn = get_db()
@@ -712,6 +728,9 @@ def main():
         
     elif action == "get_active_monitors":
         print(json.dumps(get_active_monitors()))
+
+    elif action == "supersede_active_monitors":
+        print(json.dumps(supersede_active_monitors()))
         
     elif action == "get_monitors":
         print(json.dumps(get_monitors()))

@@ -166,6 +166,10 @@ class BridgeDB {
     return this.runBridge("get_active_monitors") || [];
   }
 
+  public supersedeActiveMonitors(): boolean {
+    return !!this.runBridge("supersede_active_monitors");
+  }
+
   public getMonitors(): TradeMonitor[] {
     return this.runBridge("get_monitors") || [];
   }

@@ -638,23 +638,19 @@ async function runScheduledAnalysis() {
       return;
     }
 
-    // 2. Auto-create Trade Monitor if no active monitor exists
-    const hasActive = db.hasActiveMonitor();
-    if (!hasActive) {
-      db.createTradeMonitor(
-        signalId,
-        sig,
-        best.entry,
-        best.sl,
-        best.tp1,
-        best.tp2,
-        best.tp3,
-        tfLabel
-      );
-      console.log(`[Scheduler] 🚀 New trade monitor created for Signal #${signalId}`);
-    } else {
-      console.log(`[Scheduler] ℹ️ Active trade monitor running — Signal #${signalId} recorded in database & report`);
-    }
+    // 2. Auto-create Trade Monitor for the confirmed signal (supersede old active monitors to prevent desync)
+    db.supersedeActiveMonitors();
+    db.createTradeMonitor(
+      signalId,
+      sig,
+      best.entry,
+      best.sl,
+      best.tp1,
+      best.tp2,
+      best.tp3,
+      tfLabel
+    );
+    console.log(`[Scheduler] 🚀 Active trade monitor set for Signal #${signalId}`);
 
     // 3. ALWAYS Format and Send Telegram Message with synchronized signalId
     if (lastSentTelegramSignalId === signalId) {
@@ -718,7 +714,7 @@ let lastScanTime = Date.now();
 function startBackgroundTasks() {
   console.log("[Scheduler] Initializing background tasks...");
   
-  // Trade monitor loop: runs every 60 seconds
+  // Trade monitor loop: runs every 10 seconds for real-time TP/SL execution
   if (!checkInterval) {
     checkInterval = setInterval(async () => {
       if (isPythonSchedulerRunning()) {
@@ -729,11 +725,11 @@ function startBackgroundTasks() {
       if (updates && updates.length > 0) {
         broadcast({ type: "MONITOR_UPDATE", data: updates });
       }
-    }, 60000);
-    console.log("[Monitor] 60s background monitor check loop started");
+    }, 10000);
+    console.log("[Monitor] 10s background monitor check loop started");
   }
 
-  // Market analysis scan loop: runs every 60 seconds
+  // Market analysis scan loop: runs every 30 seconds
   if (!scanInterval) {
     scanInterval = setInterval(async () => {
       if (isPythonSchedulerRunning()) {
@@ -742,8 +738,8 @@ function startBackgroundTasks() {
       }
       lastScanTime = Date.now();
       await runScheduledAnalysis();
-    }, 60000);
-    console.log("[Scheduler] 60s background market analysis loop started");
+    }, 30000);
+    console.log("[Scheduler] 30s background market analysis loop started");
   }
 
   // Run first check immediately after boot
