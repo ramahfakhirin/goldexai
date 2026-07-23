@@ -1598,10 +1598,10 @@ function startServerPolling() {
   // Connect WebSocket first for real-time instant data stream
   connectWebSocket();
 
-  // Poll every 30s as a foolproof fallback
+  // Poll every 5s as a foolproof fallback
   pollLatestSignal();
-  pollTimer = setInterval(pollLatestSignal, 30000);
-  console.log("[Polling] Fallback active — check every 30s");
+  pollTimer = setInterval(pollLatestSignal, 5000);
+  console.log("[Polling] Active — checking every 5s");
 }
 
 // ─── POLL LATEST SIGNAL ──────────────────────
@@ -1643,19 +1643,18 @@ async function processReceivedSignal(data) {
   // Update status bar dengan data Berkah Signal
   updateTerminalStatus(data.analysis || null);
 
-  // Render jika: signal baru, tipe signal berubah, atau signal-result masih tersembunyi
-  const resultEl    = document.getElementById("signal-result");
-  const neverShown  = !resultEl || resultEl.style.display === "none";
+  // Render signal UI & parameters on every data check for real-time responsiveness
   const currentSig  = data.analysis?.signal || "WAIT";
   const lastSigType = window._renderedSigType || null;
   const isNewSignal = (data.signal_id && data.signal_id !== lastSignalId) || (currentSig !== lastSigType);
 
-  if (isNewSignal || neverShown) {
+  renderSignal(data);
+  renderIndicators(data.indicators, data.price);
+  renderSMC(data.smc);
+
+  if (isNewSignal) {
     lastSignalId = data.signal_id;
     window._renderedSigType = currentSig;
-    renderSignal(data);
-    renderIndicators(data.indicators, data.price);
-    renderSMC(data.smc);
     await loadHistory();
     await loadStats();
     await loadActiveMonitors();

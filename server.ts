@@ -306,7 +306,12 @@ function saveWaitRatelimited(reason: string, price: number, indicators: any, smc
   };
 
   const signalId = db.saveSignal(waitAnalysis, timeframe, price);
-  setLatestSignal(signalId, waitAnalysis, price, timeframe, indicators, smc);
+  
+  // Only update latest signal cache with WAIT if there is no current BUY or SELL signal in DB
+  const currentDbSig = db.getLatestSignalFromDB();
+  if (!currentDbSig || (currentDbSig.signal !== "BUY" && currentDbSig.signal !== "SELL")) {
+    setLatestSignal(signalId, waitAnalysis, price, timeframe, indicators, smc);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -607,7 +612,26 @@ async function runScheduledAnalysis() {
       }
     }
 
-    // 1. ALWAYS Save Signal to SQLite Database first to get unique signal ID
+    // 0. Synchronize Vision AI SL/TP refinement directly into 'best' and 'analysis' BEFORE saving to DB
+    if (visionResult) {
+      if (visionResult.suggested_sl && visionResult.suggested_sl > 0) {
+        best.sl = visionResult.suggested_sl;
+        if (visionResult.suggested_tp1 && visionResult.suggested_tp1 > 0) best.tp1 = visionResult.suggested_tp1;
+        if (visionResult.suggested_tp2 && visionResult.suggested_tp2 > 0) best.tp2 = visionResult.suggested_tp2;
+        if (visionResult.suggested_tp3 && visionResult.suggested_tp3 > 0) best.tp3 = visionResult.suggested_tp3;
+      }
+      analysis.risk_management.stop_loss = best.sl;
+      analysis.risk_management.take_profit_1 = best.tp1;
+      analysis.risk_management.take_profit_2 = best.tp2;
+      analysis.risk_management.take_profit_3 = best.tp3;
+      analysis.entry.ideal_price = best.entry;
+      analysis.vision = visionResult;
+      if (visionResult.combined_confidence) {
+        analysis.confidence = visionResult.combined_confidence;
+      }
+    }
+
+    // 1. ALWAYS Save Signal to SQLite Database first to get unique signal ID (with synchronized SL/TP)
     const signalId = db.saveSignal(analysis, tfLabel, price);
     if (!signalId || isNaN(signalId) || signalId <= 0) {
       console.error("[Scheduler] Failed to save signal to database — skipping Telegram broadcast");
@@ -1343,55 +1367,9 @@ app.get("/api/economic_calendar", loginRequired, async (req, res) => {
 // GET latest signal
 app.get("/api/latest_signal", loginRequired, (req, res) => {
   const activeMonitors = db.getActiveMonitors();
-  
-  // 1. If an active monitor exists, prioritize returning the active trade signal
-  if (activeMonitors && activeMonitors.length > 0) {
-    const dbSignal = db.getLatestSignalFromDB();
-    if (dbSignal && (dbSignal.signal === "BUY" || dbSignal.signal === "SELL")) {
-      let analysisObj: any = {};
-      try {
-        analysisObj = JSON.parse(dbSignal.raw_json);
-      } catch {
-        analysisObj = dbSignal;
-      }
-      return res.json({
-        ok: true,
-        signal_id: dbSignal.id,
-        analysis: analysisObj,
-        price: dbSignal.price,
-        timeframe: dbSignal.timeframe,
-        timestamp: getWIBDate(new Date(dbSignal.timestamp)).toISOString().replace("T", " ").substring(0, 19),
-        data_source: "MT5 Bridge (Broker Live)",
-        indicators: analysisObj.indicators || {},
-        smc: analysisObj.smc || { trend: dbSignal.trend },
-        market_open: isMarketOpen(),
-        market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
-        active_monitor: activeMonitors[0],
-      });
-    }
-  }
-
-  // 2. Check cached signal
-  const latestCachedStr = db.configGet("latest_signal_cache", "");
-  if (latestCachedStr) {
-    try {
-      const cachedData = JSON.parse(latestCachedStr);
-      return res.json({
-        ...cachedData,
-        market_open: isMarketOpen(),
-        market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
-      });
-    } catch {
-      // ignore parse error, fallback
-    }
-  }
-
-  if (latestSignalCache.ok) {
-    return res.json(latestSignalCache);
-  }
-
-  // 3. Fallback to database
   const dbSignal = db.getLatestSignalFromDB();
+
+  // 1. Prioritize DB signal (Active trade monitor signal, or latest BUY/SELL trade signal)
   if (dbSignal) {
     let analysisObj: any = {};
     try {
@@ -1412,6 +1390,33 @@ app.get("/api/latest_signal", loginRequired, (req, res) => {
       smc: analysisObj.smc || { trend: dbSignal.trend },
       market_open: isMarketOpen(),
       market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
+      active_monitor: activeMonitors && activeMonitors.length > 0 ? activeMonitors[0] : null,
+      from_db: true,
+    });
+  }
+
+  // 2. Check cached signal fallback
+  const latestCachedStr = db.configGet("latest_signal_cache", "");
+  if (latestCachedStr) {
+    try {
+      const cachedData = JSON.parse(latestCachedStr);
+      return res.json({
+        ...cachedData,
+        market_open: isMarketOpen(),
+        market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
+        active_monitor: activeMonitors && activeMonitors.length > 0 ? activeMonitors[0] : null,
+      });
+    } catch {
+      // ignore parse error, fallback
+    }
+  }
+
+  if (latestSignalCache && latestSignalCache.ok) {
+    return res.json({
+      ...latestSignalCache,
+      market_open: isMarketOpen(),
+      market_closed_reason: isMarketOpen() ? "" : marketClosedReason(),
+      active_monitor: activeMonitors && activeMonitors.length > 0 ? activeMonitors[0] : null,
     });
   }
 
