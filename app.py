@@ -237,6 +237,15 @@ def init_db():
         WHERE closed_at IS NULL AND status = 'CLOSED' AND outcome_time IS NOT NULL
     """)
 
+    # Guard di level DB: hanya boleh ada 1 trade monitor berstatus ACTIVE.
+    # Mencegah race scheduler thread vs request /api/analyze/dispatch_manual_signal
+    # yang lolos cek has_active_monitor() bersamaan lalu sama-sama insert ACTIVE —
+    # kondisi yang membuat dashboard & Telegram bisa merujuk signal_id berbeda.
+    conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_monitor
+        ON trade_monitors(status) WHERE status = 'ACTIVE'
+    """)
+
     # Tabel performance summary (cache harian)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS performance (
@@ -489,21 +498,31 @@ def get_stats() -> dict:
 
 def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          sl: float, tp1: float, tp2: float, tp3: float,
-                         timeframe: str) -> int:
-    """Buat trade monitor baru setelah signal BUY/SELL."""
+                         timeframe: str) -> int | None:
+    """Buat trade monitor baru setelah signal BUY/SELL.
+
+    Return None jika ada monitor ACTIVE lain yang menang race (idx_one_active_monitor) —
+    caller harus perlakukan sama seperti has_active_monitor()==True (skip alert).
+    """
     now_iso = datetime.now(WIB).isoformat()
     conn = get_db()
-    cursor = conn.execute("""
-        INSERT INTO trade_monitors
-        (signal_id, timestamp, created_at, timeframe, direction, entry_price,
-         stop_loss, tp1, tp2, tp3, status)
-        VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE')
-    """, (signal_id, now_iso, now_iso, timeframe,
-          direction, entry, sl, tp1, tp2, tp3))
-    monitor_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return monitor_id
+    try:
+        cursor = conn.execute("""
+            INSERT INTO trade_monitors
+            (signal_id, timestamp, created_at, timeframe, direction, entry_price,
+             stop_loss, tp1, tp2, tp3, status)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE')
+        """, (signal_id, now_iso, now_iso, timeframe,
+              direction, entry, sl, tp1, tp2, tp3))
+        monitor_id = cursor.lastrowid
+        conn.commit()
+        return monitor_id
+    except sqlite3.IntegrityError:
+        print(f"[Monitor] Race terdeteksi — monitor ACTIVE lain sudah dibuat duluan untuk signal #{signal_id}, skip")
+        conn.rollback()
+        return None
+    finally:
+        conn.close()
 
 
 def get_active_monitors() -> list:
@@ -719,6 +738,24 @@ def has_active_monitor(direction: str = None) -> bool:
         ).fetchone()
     conn.close()
     return row is not None
+
+
+def supersede_active_monitors():
+    """Tandai semua trade monitor ACTIVE sebagai SUPERSEDED sebelum membuat monitor baru.
+
+    Mencegah dua monitor ACTIVE hidup bersamaan — kondisi yang membuat
+    /api/latest_signal (dashboard) dan background_monitor_loop (Telegram)
+    bisa mengacu ke signal_id yang berbeda pada waktu yang sama.
+    """
+    now_iso = datetime.now(WIB).isoformat()
+    conn = get_db()
+    conn.execute("""
+        UPDATE trade_monitors
+        SET status='SUPERSEDED', closed_at=?
+        WHERE status='ACTIVE'
+    """, (now_iso,))
+    conn.commit()
+    conn.close()
 
 
 _TWELVE_TF_MAP = {"1m": "1min", "5m": "5min", "15m": "15min", "1h": "1h", "4h": "4h", "1d": "1day"}
@@ -1626,9 +1663,8 @@ def run_scheduled_analysis():
         if sig in ("BUY", "SELL"):
             if not active_monitor and berkah.get("sl") and berkah.get("entry"):
                 signal_id = save_signal(analysis, tf_label, market.current_price)
-                _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
 
-                create_trade_monitor(
+                monitor_id = create_trade_monitor(
                     signal_id = signal_id,
                     direction = sig,
                     entry     = float(berkah["entry"]),
@@ -1638,6 +1674,12 @@ def run_scheduled_analysis():
                     tp3       = float(berkah["tp3"]),
                     timeframe = tf_label,
                 )
+                if monitor_id is None:
+                    # Kalah race vs monitor ACTIVE lain — jangan set cache/kirim Telegram
+                    # untuk signal yang sudah tidak jadi acuan dashboard.
+                    return None
+
+                _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
                 msg = format_signal_message(analysis, market.current_price, tf_label, signal_id=signal_id)
                 send_telegram_message(msg)
                 _LAST_SIGNAL_TS = _time_mod.time()
@@ -1762,6 +1804,7 @@ def send_telegram_message(text: str, bot_token: str = "", chat_id: str = "") -> 
     token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN", "")
     chat  = chat_id  or os.getenv("TELEGRAM_CHAT_ID",   "")
     if not token or not chat:
+        print("[Telegram] Skip send — TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID belum diset")
         return False
     try:
         import urllib.request as ureq
@@ -1775,6 +1818,14 @@ def send_telegram_message(text: str, bot_token: str = "", chat_id: str = "") -> 
                            headers={"Content-Type": "application/json"})
         ureq.urlopen(req, timeout=10)
         return True
+    except ureq.HTTPError as e:
+        # Telegram taruh alasan penolakan (chat not found, bot diblokir, dst) di response body
+        try:
+            body = e.read().decode(errors="replace")
+        except Exception:
+            body = ""
+        print(f"[Telegram] HTTP {e.code} Error: {body or e}")
+        return False
     except Exception as e:
         print(f"[Telegram] Error: {e}")
         return False
@@ -1815,6 +1866,7 @@ def format_signal_message(analysis: dict, price: float, timeframe: str, signal_i
     tp3 = rm.get("take_profit_3", "-")
     rr  = rm.get("risk_reward_ratio", "1:1")
     lot = rm.get("recommended_lot", "-")
+    from xauusd_ai_analyst import get_martingale_multiplier
     mult = get_martingale_multiplier()
     lot_str = f"{lot} Lot" if lot != "-" else "0.10 Lot"
     mart_str = f"🔥 <b>Martingale {mult}x Active</b> (Recovery Step)" if mult > 1 else "🛡 <b>Normal Risk 1x</b> (Standard)"
@@ -2253,7 +2305,27 @@ def vision_confirm():
 
         # ── Step 3: Kirim Telegram jika VALID ──
         tg_sent = False
-        if vision.get("verdict") == "VALID" and bot_token and chat_id:
+
+        # Freshness guard: proses vision (chart + API call) makan waktu beberapa
+        # detik — kalau selama itu monitor ACTIVE sudah berpindah ke signal lain
+        # (signal baru dari scheduler/manual), JANGAN kirim hasil vision yang
+        # sudah basi, karena akan beda dengan yang tampil di dashboard.
+        is_stale = False
+        if signal_id:
+            try:
+                conn = get_db()
+                conn.row_factory = sqlite3.Row
+                cur_active = conn.execute(
+                    "SELECT signal_id FROM trade_monitors WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1"
+                ).fetchone()
+                conn.close()
+                if cur_active and cur_active["signal_id"] != signal_id:
+                    is_stale = True
+                    print(f"[Vision] Skip Telegram — signal #{signal_id} sudah disupersede oleh #{cur_active['signal_id']}")
+            except Exception as e:
+                print(f"[Vision] Freshness check error (lanjut kirim): {e}")
+
+        if vision.get("verdict") == "VALID" and bot_token and chat_id and not is_stale:
             import urllib.request as ureq
 
             # 3a. Kirim pesan teks dengan analisis
@@ -2281,7 +2353,8 @@ def vision_confirm():
                 ureq.urlopen(req, timeout=10)
                 tg_sent = True
             except Exception as e:
-                pass  # Telegram error tidak batalkan response
+                # Telegram error tidak batalkan response, tapi tetap harus terlihat di log
+                print(f"[Telegram] vision_confirm sendMessage error: {e}")
 
             # 3b. Kirim chart image ke Telegram
             try:
@@ -2308,8 +2381,8 @@ def vision_confirm():
                     headers={"Content-Type": f"multipart/form-data; boundary={boundary}"}
                 )
                 ureq.urlopen(photo_req, timeout=15)
-            except Exception:
-                pass  # Chart photo error tidak kritis
+            except Exception as e:
+                print(f"[Telegram] vision_confirm sendPhoto error: {e}")  # tidak kritis, tapi tetap dilog
 
         return jsonify({
             "ok":          True,
@@ -2964,7 +3037,6 @@ def analyze():
 
             if not already_active and rm.get("stop_loss") and en.get("ideal_price"):
                 signal_id = save_signal(analysis, timeframe, market.current_price)
-                _set_latest_signal(signal_id, analysis, market, indicators, smc, timeframe)
 
                 monitor_id = create_trade_monitor(
                     signal_id  = signal_id,
@@ -2976,9 +3048,14 @@ def analyze():
                     tp3        = float(rm.get("take_profit_3", 0) or 0),
                     timeframe  = timeframe,
                 )
-                msg     = format_signal_message(analysis, market.current_price, timeframe, signal_id=signal_id)
-                tg_sent = send_telegram_message(msg)
-                print(f"[Signal] NEW {sig} monitor created")
+                if monitor_id is None:
+                    # Kalah race vs monitor ACTIVE lain (mis. scheduler thread) — treat as already_active
+                    already_active = True
+                else:
+                    _set_latest_signal(signal_id, analysis, market, indicators, smc, timeframe)
+                    msg     = format_signal_message(analysis, market.current_price, timeframe, signal_id=signal_id)
+                    tg_sent = send_telegram_message(msg)
+                    print(f"[Signal] NEW {sig} monitor created")
             elif already_active:
                 print(f"[Signal] {sig} monitor already active — skip duplicate")
         else:
@@ -3079,6 +3156,132 @@ def send_telegram():
         resp = urllib.request.urlopen(req, timeout=10)
         result = json.loads(resp.read())
         return jsonify({"ok": True, "telegram": result})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/broadcast_latest_signal", methods=["POST"])
+@login_required
+def broadcast_latest_signal():
+    """Endpoint: kirim ulang signal aktif terbaru (dari DB) ke Telegram."""
+    try:
+        conn = get_db()
+        conn.row_factory = sqlite3.Row
+        active_mon = conn.execute(
+            "SELECT signal_id FROM trade_monitors WHERE status='ACTIVE' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+
+        row = None
+        if active_mon and active_mon["signal_id"]:
+            row = conn.execute("SELECT * FROM signals WHERE id=?", (active_mon["signal_id"],)).fetchone()
+        if not row:
+            row = conn.execute(
+                "SELECT * FROM signals WHERE signal IN ('BUY','SELL') ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({"error": "Tidak ada signal aktif di database"}), 404
+
+        row_dict = dict(row)
+        try:
+            analysis_obj = json.loads(row_dict.get("raw_json") or "{}")
+        except Exception:
+            analysis_obj = {}
+
+        if not analysis_obj.get("signal"):
+            analysis_obj["signal"] = row_dict.get("signal", "WAIT")
+        if "confidence" not in analysis_obj:
+            analysis_obj["confidence"] = row_dict.get("confidence", 0)
+        if not analysis_obj.get("risk_management"):
+            analysis_obj["risk_management"] = {
+                "stop_loss":         row_dict.get("stop_loss"),
+                "take_profit_1":     row_dict.get("tp1"),
+                "take_profit_2":     row_dict.get("tp2"),
+                "take_profit_3":     row_dict.get("tp3"),
+                "risk_reward_ratio": row_dict.get("rr_ratio", "-"),
+            }
+        if not analysis_obj.get("entry"):
+            analysis_obj["entry"] = {"ideal_price": row_dict.get("entry")}
+
+        msg = format_signal_message(
+            analysis_obj, row_dict.get("price", 0),
+            row_dict.get("timeframe", "5m"), signal_id=row_dict["id"],
+        )
+        if not msg:
+            return jsonify({"error": "Gagal memformat pesan signal"}), 500
+
+        sent = send_telegram_message(msg)
+        if sent:
+            return jsonify({"ok": True, "message": f"Signal #{row_dict['id']} ({row_dict.get('signal')}) berhasil dikirim ke Telegram!"})
+        return jsonify({"error": "Gagal kirim ke Telegram — cek Bot Token dan Chat ID"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/dispatch_manual_signal", methods=["POST"])
+@login_required
+def dispatch_manual_signal():
+    """Endpoint: buat signal manual & kirim ke Dashboard + Telegram sekaligus (satu sumber data untuk keduanya)."""
+    try:
+        body = request.get_json() or {}
+        sig       = str(body.get("signal", "")).upper()
+        price_raw = body.get("price")
+        sl_raw    = body.get("stop_loss")
+        tp1_raw   = body.get("tp1")
+
+        if sig not in ("BUY", "SELL") or not price_raw or not sl_raw or not tp1_raw:
+            return jsonify({"error": "Signal, current price, stop loss, dan TP1 wajib diisi"}), 400
+
+        price = float(price_raw)
+        sl    = float(sl_raw)
+        tp1   = float(tp1_raw)
+        tp2   = float(body["tp2"]) if body.get("tp2") else (tp1 + (tp1 - price) if sig == "BUY" else tp1 - (price - tp1))
+        tp3   = float(body["tp3"]) if body.get("tp3") else (tp2 + (tp1 - price) if sig == "BUY" else tp2 - (price - tp1))
+        timeframe = body.get("timeframe") or "5m"
+        narrative = body.get("narrative") or "Manual signal dispatched from GOLDEX AI Terminal."
+
+        analysis = {
+            "signal": sig,
+            "confidence": 85,
+            "bias": "BULLISH" if sig == "BUY" else "BEARISH",
+            "narrative": narrative,
+            "entry": {
+                "ideal_price": price,
+                "entry_zone": f"${price:.2f} - ${price + (0.5 if sig == 'BUY' else -0.5):.2f}",
+                "action": sig,
+            },
+            "risk_management": {
+                "stop_loss": sl,
+                "take_profit_1": tp1,
+                "take_profit_2": tp2,
+                "take_profit_3": tp3,
+                "risk_reward_ratio": "1:2",
+                "recommended_lot": 0.10,
+            },
+        }
+
+        # Pastikan tidak ada monitor ACTIVE lain yang bentrok dengan signal manual ini
+        supersede_active_monitors()
+
+        signal_id = save_signal(analysis, timeframe, price)
+        create_trade_monitor(
+            signal_id=signal_id, direction=sig, entry=price,
+            sl=sl, tp1=tp1, tp2=tp2, tp3=tp3, timeframe=timeframe,
+        )
+
+        msg = format_signal_message(analysis, price, timeframe, signal_id=signal_id)
+        tg_sent = send_telegram_message(msg) if msg else False
+
+        return jsonify({
+            "ok": True,
+            "signal_id": signal_id,
+            "telegram_sent": tg_sent,
+            "message": f"Manual Signal #{signal_id} ({sig}) berhasil dikirim! " +
+                       ("Terkirim ke Telegram & Dashboard." if tg_sent else "Tersimpan di Dashboard (Telegram gagal)."),
+        })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
