@@ -1921,11 +1921,14 @@ def _acquire_leader_lock() -> bool:
 
     Coba DATA_DIR (/data) dulu — volume persisten yang dibagi antar
     container, supaya container lama & baru yang sempat overlap saat
-    redeploy tidak sama-sama jadi "leader". Tapi beberapa volume Docker
-    tidak mendukung flock() dengan benar (silently gagal untuk SEMUA
-    proses, bukan cuma yang kalah race) — kalau itu terjadi, scheduler
-    mati total. Jadi fallback ke /tmp kalau /data gagal, supaya scheduler
-    tetap jalan walau proteksi cross-container-nya berkurang.
+    redeploy tidak sama-sama jadi "leader". Kalau flock() di /data KALAH
+    RACE (BlockingIOError — proses lain sudah pegang lock di sana), lock
+    mekanismenya terbukti bekerja normal, jadi worker ini HARUS berhenti
+    di situ sebagai follower — TIDAK boleh lanjut coba /tmp, karena itu
+    akan membuatnya jadi leader kedua di lokasi berbeda (dua scheduler
+    jalan paralel). Fallback ke /tmp hanya untuk error LAIN yang berarti
+    mekanisme flock() di /data sendiri tidak berfungsi (mis. volume tidak
+    mendukungnya sama sekali), bukan sekadar kalah race.
     """
     global _leader_lock_handle
     for lock_path, label in ((DATA_DIR / "goldex_scheduler.lock", "/data"),
@@ -1939,8 +1942,11 @@ def _acquire_leader_lock() -> bool:
             _leader_lock_handle = handle
             print(f"[Leader] Lock berhasil diklaim di {label} ({lock_path})")
             return True
+        except BlockingIOError:
+            print(f"[Leader] Lock di {label} sudah dipegang proses lain — worker ini follower")
+            return False
         except Exception as e:
-            print(f"[Leader] Gagal klaim lock di {label}: {e}")
+            print(f"[Leader] Gagal klaim lock di {label}: {e} — coba lokasi berikutnya")
     return False
 
 load_session_schedule_from_db()   # restore state toggle sesi dari DB
