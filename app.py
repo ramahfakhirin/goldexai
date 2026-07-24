@@ -2263,8 +2263,12 @@ def vision_confirm():
         smc        = body.get("smc",              {})
         price      = float(body.get("price",      0) or 0)
 
-        bot_token  = body.get("bot_token",  os.getenv("TELEGRAM_BOT_TOKEN", ""))
-        chat_id    = body.get("chat_id",    os.getenv("TELEGRAM_CHAT_ID",   ""))
+        # Server env var adalah sumber utama — token/chat dari browser (body) hanya
+        # dipakai kalau env var belum diset, supaya credential yang tersimpan di
+        # localStorage tiap browser tidak bisa diam-diam override konfigurasi server
+        # (penyebab Vision-confirm kirim ke bot/chat berbeda dari scheduler otomatis).
+        bot_token  = os.getenv("TELEGRAM_BOT_TOKEN", "") or body.get("bot_token", "")
+        chat_id    = os.getenv("TELEGRAM_CHAT_ID",   "") or body.get("chat_id", "")
         api_key    = os.getenv("ANTHROPIC_API_KEY", "")
         twelve_key = os.getenv("TWELVE_DATA_KEY",   "")
 
@@ -3135,8 +3139,9 @@ def send_telegram():
     """Endpoint: kirim signal ke Telegram."""
     try:
         body       = request.get_json() or {}
-        bot_token  = body.get("bot_token",  os.getenv("TELEGRAM_BOT_TOKEN", ""))
-        chat_id    = body.get("chat_id",    os.getenv("TELEGRAM_CHAT_ID",   ""))
+        # Server env var diprioritaskan — lihat catatan yang sama di vision_confirm()
+        bot_token  = os.getenv("TELEGRAM_BOT_TOKEN", "") or body.get("bot_token", "")
+        chat_id    = os.getenv("TELEGRAM_CHAT_ID",   "") or body.get("chat_id", "")
         message    = body.get("message",    "")
 
         if not bot_token or not chat_id:
