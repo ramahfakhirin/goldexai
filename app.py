@@ -1919,24 +1919,29 @@ _leader_lock_handle = None
 def _acquire_leader_lock() -> bool:
     """Klaim status leader (jalankan scheduler & monitor) via lock file.
 
-    Lock HARUS ada di DATA_DIR (volume persisten /data), bukan /tmp —
-    /tmp tidak dibagi antar container, jadi kalau dipakai, container LAMA
-    dan container BARU (yang sempat overlap saat Coolify redeploy) akan
-    sama-sama lolos jadi "leader" masing-masing dengan /tmp kosongnya
-    sendiri, menyebabkan dua scheduler+monitor jalan paralel dan berpotensi
-    mengirim sinyal/Telegram ganda untuk candle yang sama.
+    Coba DATA_DIR (/data) dulu — volume persisten yang dibagi antar
+    container, supaya container lama & baru yang sempat overlap saat
+    redeploy tidak sama-sama jadi "leader". Tapi beberapa volume Docker
+    tidak mendukung flock() dengan benar (silently gagal untuk SEMUA
+    proses, bukan cuma yang kalah race) — kalau itu terjadi, scheduler
+    mati total. Jadi fallback ke /tmp kalau /data gagal, supaya scheduler
+    tetap jalan walau proteksi cross-container-nya berkurang.
     """
     global _leader_lock_handle
-    try:
-        import fcntl
-        lock_path = DATA_DIR / "goldex_scheduler.lock"
-        _leader_lock_handle = open(lock_path, "w")
-        fcntl.flock(_leader_lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        _leader_lock_handle.write(str(os.getpid()))
-        _leader_lock_handle.flush()
-        return True
-    except Exception:
-        return False
+    for lock_path, label in ((DATA_DIR / "goldex_scheduler.lock", "/data"),
+                              (Path("/tmp/goldex_scheduler.lock"), "/tmp")):
+        try:
+            import fcntl
+            handle = open(lock_path, "w")
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            handle.write(str(os.getpid()))
+            handle.flush()
+            _leader_lock_handle = handle
+            print(f"[Leader] Lock berhasil diklaim di {label} ({lock_path})")
+            return True
+        except Exception as e:
+            print(f"[Leader] Gagal klaim lock di {label}: {e}")
+    return False
 
 load_session_schedule_from_db()   # restore state toggle sesi dari DB
 if _acquire_leader_lock():
