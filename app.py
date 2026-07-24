@@ -1917,10 +1917,20 @@ def format_signal_message(analysis: dict, price: float, timeframe: str, signal_i
 _leader_lock_handle = None
 
 def _acquire_leader_lock() -> bool:
+    """Klaim status leader (jalankan scheduler & monitor) via lock file.
+
+    Lock HARUS ada di DATA_DIR (volume persisten /data), bukan /tmp —
+    /tmp tidak dibagi antar container, jadi kalau dipakai, container LAMA
+    dan container BARU (yang sempat overlap saat Coolify redeploy) akan
+    sama-sama lolos jadi "leader" masing-masing dengan /tmp kosongnya
+    sendiri, menyebabkan dua scheduler+monitor jalan paralel dan berpotensi
+    mengirim sinyal/Telegram ganda untuk candle yang sama.
+    """
     global _leader_lock_handle
     try:
         import fcntl
-        _leader_lock_handle = open("/tmp/goldex_scheduler.lock", "w")
+        lock_path = DATA_DIR / "goldex_scheduler.lock"
+        _leader_lock_handle = open(lock_path, "w")
         fcntl.flock(_leader_lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
         _leader_lock_handle.write(str(os.getpid()))
         _leader_lock_handle.flush()
