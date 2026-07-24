@@ -1515,26 +1515,11 @@ def run_multi_timeframe_scan(
     # ── RESTORE BRIDGE_DF ke M5 (default) ──
     BRIDGE_DF = bridge_df_m5
 
-    # ── M1 SUBORDINAT KE M5 ──
-    # Sinyal M1 hanya valid jika M5 searah, ATAU skor arah M5 >= 3
-    # (M5 hampir setuju). Mencegah M1 solo melawan struktur M5.
-    _m1 = results.get("m1") or {}
-    _m5 = results.get("m5") or {}
-    if _m1.get("signal") in ("BUY", "SELL"):
-        _d          = _m1["signal"]
-        _m5_sig     = _m5.get("signal", "WAIT")
-        _m5_conds   = _m5.get("conditions") or {}
-        _m5_d_score = _m5_conds.get("score_buy" if _d == "BUY" else "score_sell", 0)
-        if _m5_sig != _d and _m5_d_score < 3:
-            print(f"  🚫 M1 {_d} diveto — M5={_m5_sig}, skor arah M5={_m5_d_score}/7 < 3")
-            results["m1"] = {
-                **_m1,
-                "signal":     "WAIT",
-                "confidence": "M1_VETOED",
-                "reason":     (f"M1 {_d} diveto — M5 tidak konfirmasi "
-                               f"(M5={_m5_sig}, skor {_d.lower()} M5={_m5_d_score}/7). "
-                               + str(_m1.get("reason", ""))[:120]),
-            }
+    # ── M1 INDEPENDEN ──
+    # M1 tidak lagi butuh persetujuan M5 untuk lolos — sinyalnya berdiri
+    # sendiri berdasarkan hasil detect_berkah_signal miliknya sendiri.
+    # M5 tetap dapat prioritas di tie-break "PILIH SINYAL TERBAIK" di bawah
+    # kalau skor & confidence keduanya sama persis.
 
     # ── PILIH SINYAL TERBAIK ──
     # Prioritas: HIGH_CONFIDENCE > NORMAL, M5 > M1 jika skor sama
