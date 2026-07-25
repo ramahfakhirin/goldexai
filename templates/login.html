@@ -204,21 +204,22 @@
     <div class="logo-sub">
       <span class="live-dot"></span>XAU/USD SIGNAL TERMINAL
     </div>
+    <div id="login-lang-toggle" style="margin-top:14px;display:flex;justify-content:center;"></div>
   </div>
 
   <!-- Card -->
   <div class="login-card">
-    <div class="card-title">Log in to Dashboard</div>
+    <div class="card-title" data-i18n="card_title">Masuk ke Dashboard</div>
 
     <!-- Iframe Warning Box -->
     <div id="iframe-warning" style="display: none; background: rgba(240, 180, 41, 0.08); border: 1px dashed rgba(240, 180, 41, 0.4); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 11.5px; line-height: 1.5; color: var(--text-pri);">
       <div style="font-weight: 700; color: var(--gold); margin-bottom: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
         <span style="display:inline-block; width:6px; height:6px; background:var(--gold); border-radius:50%; animation: pulse 2s infinite;"></span>
-        ⚠️ IFRAME PREVIEW DETECTED
+        <span data-i18n="iframe_title">⚠️ PRATINJAU IFRAME TERDETEKSI</span>
       </div>
-      The browser blocks login cookies inside the AI Studio editor iframe. Click the button below to open in a New Tab to log in seamlessly:
+      <span data-i18n="iframe_body">Browser memblokir cookie login di dalam iframe editor AI Studio. Klik tombol di bawah untuk membuka di Tab Baru agar bisa login dengan lancar:</span>
       <a id="iframe-new-tab-btn" href="#" target="_blank" style="display: block; text-align: center; background: var(--gold); color: #0a0b0d; padding: 10px; border-radius: 6px; font-weight: 700; text-decoration: none; font-family: var(--mono); font-size: 11px; margin-top: 10px; transition: all 0.2s; box-shadow: 0 0 16px rgba(240,180,41,0.25);">
-        👉 OPEN IN NEW TAB (RECOMMENDED)
+        <span data-i18n="iframe_btn">👉 BUKA DI TAB BARU (DISARANKAN)</span>
       </a>
     </div>
 
@@ -228,23 +229,23 @@
 
     <form method="POST" action="/login">
       <div class="field">
-        <label>Username</label>
+        <label data-i18n="label_username">Username</label>
         <input type="text" name="username" placeholder="admin"
                autocomplete="username" autofocus required>
       </div>
       <div class="field">
-        <label>Password</label>
+        <label data-i18n="label_password">Password</label>
         <input type="password" name="password" placeholder="••••••••"
                autocomplete="current-password" required>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
         <input type="checkbox" name="remember" id="remember" value="on"
                checked style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer">
-        <label for="remember" style="font-size:11px;color:var(--text-sec);cursor:pointer;letter-spacing:.03em;margin:0">
-          Remember me (30 days)
+        <label for="remember" data-i18n="remember_me" style="font-size:11px;color:var(--text-sec);cursor:pointer;letter-spacing:.03em;margin:0">
+          Ingat saya (30 hari)
         </label>
       </div>
-      <button type="submit" class="btn-login">▶ LOG IN</button>
+      <button type="submit" class="btn-login" data-i18n="btn_login">▶ MASUK</button>
     </form>
   </div>
 
@@ -256,6 +257,7 @@
 
 </div>
 
+<script src="/static/js/i18n.js"></script>
 <script>
   // Detect if running inside an iframe
   if (window.self !== window.top) {
@@ -269,6 +271,30 @@
       newTabBtn.href = window.location.href;
     }
   }
+
+  initI18n({
+    id: {
+      card_title:    "Masuk ke Dashboard",
+      iframe_title:  "⚠️ PRATINJAU IFRAME TERDETEKSI",
+      iframe_body:   "Browser memblokir cookie login di dalam iframe editor AI Studio. Klik tombol di bawah untuk membuka di Tab Baru agar bisa login dengan lancar:",
+      iframe_btn:    "👉 BUKA DI TAB BARU (DISARANKAN)",
+      label_username: "Username",
+      label_password: "Password",
+      remember_me:   "Ingat saya (30 hari)",
+      btn_login:     "▶ MASUK",
+    },
+    en: {
+      card_title:    "Log in to Dashboard",
+      iframe_title:  "⚠️ IFRAME PREVIEW DETECTED",
+      iframe_body:   "The browser blocks login cookies inside the AI Studio editor iframe. Click the button below to open in a New Tab to log in seamlessly:",
+      iframe_btn:    "👉 OPEN IN NEW TAB (RECOMMENDED)",
+      label_username: "Username",
+      label_password: "Password",
+      remember_me:   "Remember me (30 days)",
+      btn_login:     "▶ LOG IN",
+    },
+  });
+  renderLangToggle("login-lang-toggle");
 </script>
 
 </body>

@@ -56,54 +56,57 @@ body{background:var(--bg0);color:var(--text);font-family:var(--body);padding:0;m
 <div class="admin-wrap">
   <div class="admin-topbar">
     <div>
-      <div class="admin-title">👥 User Management</div>
+      <div class="admin-title" data-i18n="admin_title">👥 Manajemen User</div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px">GOLDEX AI — Superadmin Panel</div>
     </div>
-    <a href="/" class="admin-back">← Back to Dashboard</a>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="admin-lang-toggle"></div>
+      <a href="/" class="admin-back" data-i18n="back_dashboard">← Kembali ke Dashboard</a>
+    </div>
   </div>
 
   <!-- Add User Form -->
   <div class="form-card">
-    <h3>➕ Add New User</h3>
+    <h3 data-i18n="add_user_title">➕ Tambah User Baru</h3>
     <div class="form-row">
       <div class="form-group">
-        <label>Full Name *</label>
-        <input type="text" id="f-fullname" placeholder="Full name">
+        <label data-i18n="full_name">Nama Lengkap *</label>
+        <input type="text" id="f-fullname" placeholder="Nama lengkap" data-i18n="full_name_ph" data-i18n-attr="placeholder">
       </div>
       <div class="form-group">
-        <label>Login Username *</label>
-        <input type="text" id="f-username" placeholder="username (no spaces)">
+        <label data-i18n="login_username">Username Login *</label>
+        <input type="text" id="f-username" placeholder="username (tanpa spasi)" data-i18n="login_username_ph" data-i18n-attr="placeholder">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Login Password *</label>
-        <input type="password" id="f-password" placeholder="Min. 6 characters">
+        <label data-i18n="login_password">Password Login *</label>
+        <input type="password" id="f-password" placeholder="Min. 6 karakter" data-i18n="login_password_ph" data-i18n-attr="placeholder">
       </div>
       <div class="form-group">
-        <label>City</label>
-        <input type="text" id="f-kota" placeholder="New York, London, etc.">
+        <label data-i18n="city">Kota</label>
+        <input type="text" id="f-kota" placeholder="Jakarta, Surabaya, dll." data-i18n="city_ph" data-i18n-attr="placeholder">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>WhatsApp Number</label>
+        <label data-i18n="whatsapp_no">Nomor WhatsApp</label>
         <input type="text" id="f-wa" placeholder="08123456789">
       </div>
       <div class="form-group">
-        <label>Telegram Username</label>
+        <label data-i18n="telegram_username">Username Telegram</label>
         <input type="text" id="f-telegram" placeholder="@username">
       </div>
     </div>
     <div class="form-row" style="grid-template-columns:1fr auto;align-items:end">
       <div class="form-group">
-        <label>Role</label>
+        <label data-i18n="role">Role</label>
         <select id="f-role">
-          <option value="user">User (Member)</option>
-          <option value="superadmin">Superadmin</option>
+          <option value="user" data-i18n="role_user">User (Member)</option>
+          <option value="superadmin" data-i18n="role_superadmin">Superadmin</option>
         </select>
       </div>
-      <button class="btn-add" onclick="createUser()">+ Create User</button>
+      <button class="btn-add" onclick="createUser()" data-i18n="create_user_btn">+ Buat User</button>
     </div>
     <div class="form-msg" id="form-msg"></div>
   </div>
@@ -113,26 +116,68 @@ body{background:var(--bg0);color:var(--text);font-family:var(--body);padding:0;m
     <table class="user-table">
       <thead>
         <tr>
-          <th>User</th>
-          <th>Contact</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Last Login</th>
+          <th data-i18n="th_user">User</th>
+          <th data-i18n="th_contact">Kontak</th>
+          <th data-i18n="th_role">Role</th>
+          <th data-i18n="th_status">Status</th>
+          <th data-i18n="th_last_login">Login Terakhir</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="user-tbody">
-        <tr><td colspan="6" class="empty-users">Loading data...</td></tr>
+        <tr><td colspan="6" class="empty-users" data-i18n="loading_data">Memuat data...</td></tr>
       </tbody>
     </table>
   </div>
 
   <p style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:12px;text-align:center">
-    Total: <span id="user-count">0</span> active users · Delete = deactivate (data is retained)
+    <span data-i18n="total_prefix">Total:</span> <span id="user-count">0</span> <span data-i18n="total_suffix">user aktif · Hapus = nonaktifkan (data tetap disimpan)</span>
   </p>
 </div>
 
+<script src="/static/js/i18n.js"></script>
 <script>
+initI18n({
+  id: {
+    admin_title: "👥 Manajemen User", back_dashboard: "← Kembali ke Dashboard",
+    add_user_title: "➕ Tambah User Baru",
+    full_name: "Nama Lengkap *", full_name_ph: "Nama lengkap",
+    login_username: "Username Login *", login_username_ph: "username (tanpa spasi)",
+    login_password: "Password Login *", login_password_ph: "Min. 6 karakter",
+    city: "Kota", city_ph: "Jakarta, Surabaya, dll.",
+    whatsapp_no: "Nomor WhatsApp", telegram_username: "Username Telegram",
+    role: "Role", role_user: "User (Member)", role_superadmin: "Superadmin",
+    create_user_btn: "+ Buat User",
+    th_user: "User", th_contact: "Kontak", th_role: "Role", th_status: "Status", th_last_login: "Login Terakhir",
+    loading_data: "Memuat data...",
+    total_prefix: "Total:", total_suffix: "user aktif · Hapus = nonaktifkan (data tetap disimpan)",
+    no_users: "Belum ada user", active: "Aktif", inactive: "Nonaktif", deactivate: "Nonaktifkan",
+    required_fields: "Nama lengkap, username, dan password wajib diisi",
+    failed: "Gagal",
+    confirm_deactivate: 'Nonaktifkan user "{u}"? User tidak akan bisa login, tapi data tetap disimpan.',
+  },
+  en: {
+    admin_title: "👥 User Management", back_dashboard: "← Back to Dashboard",
+    add_user_title: "➕ Add New User",
+    full_name: "Full Name *", full_name_ph: "Full name",
+    login_username: "Login Username *", login_username_ph: "username (no spaces)",
+    login_password: "Login Password *", login_password_ph: "Min. 6 characters",
+    city: "City", city_ph: "New York, London, etc.",
+    whatsapp_no: "WhatsApp Number", telegram_username: "Telegram Username",
+    role: "Role", role_user: "User (Member)", role_superadmin: "Superadmin",
+    create_user_btn: "+ Create User",
+    th_user: "User", th_contact: "Contact", th_role: "Role", th_status: "Status", th_last_login: "Last Login",
+    loading_data: "Loading data...",
+    total_prefix: "Total:", total_suffix: "active users · Delete = deactivate (data is retained)",
+    no_users: "No users yet", active: "Active", inactive: "Inactive", deactivate: "Deactivate",
+    required_fields: "Full name, username, and password are required",
+    failed: "Failed",
+    confirm_deactivate: 'Deactivate user "{u}"? User will not be able to log in, but data will be preserved.',
+  },
+});
+renderLangToggle("admin-lang-toggle");
+document.addEventListener("langchange", loadUsers);
+
 async function loadUsers() {
   const res  = await fetch('/api/admin/users');
   const data = await res.json();
@@ -144,7 +189,7 @@ async function loadUsers() {
   document.getElementById('user-count').textContent = active;
 
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-users">No users yet</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-users">${t('no_users')}</td></tr>`;
     return;
   }
 
@@ -160,10 +205,10 @@ async function loadUsers() {
         ${u.telegram ? `<div class="user-meta">✈ ${u.telegram}</div>` : ''}
       </td>
       <td><span class="badge-role ${u.role}">${u.role}</span></td>
-      <td><span class="badge-active ${u.is_active ? 'on' : 'off'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td><span class="badge-active ${u.is_active ? 'on' : 'off'}">${u.is_active ? t('active') : t('inactive')}</span></td>
       <td style="color:var(--text-dim);font-size:11px">${u.last_login ? u.last_login.substring(0,16).replace('T',' ') : '-'}</td>
       <td>
-        ${u.role !== 'superadmin' ? `<button class="btn-del" onclick="deleteUser(${u.id}, '${u.username}')">Deactivate</button>` : ''}
+        ${u.role !== 'superadmin' ? `<button class="btn-del" onclick="deleteUser(${u.id}, '${u.username}')">${t('deactivate')}</button>` : ''}
       </td>
     </tr>
   `).join('');
@@ -182,7 +227,7 @@ async function createUser() {
   };
 
   if (!body.full_name || !body.username || !body.password) {
-    showMsg('Full name, username, and password are required', false);
+    showMsg(t('required_fields'), false);
     return;
   }
 
@@ -201,12 +246,12 @@ async function createUser() {
     document.getElementById('f-role').value = 'user';
     loadUsers();
   } else {
-    showMsg('✗ ' + (data.error || 'Failed'), false);
+    showMsg('✗ ' + (data.error || t('failed')), false);
   }
 }
 
 async function deleteUser(id, username) {
-  if (!confirm(`Deactivate user "${username}"? User will not be able to log in, but data will be preserved.`)) return;
+  if (!confirm(t('confirm_deactivate').replace('{u}', username))) return;
   const res  = await fetch(`/api/admin/users/${id}`, {method: 'DELETE'});
   const data = await res.json();
   if (data.ok) { showMsg('✓ ' + data.message, true); loadUsers(); }

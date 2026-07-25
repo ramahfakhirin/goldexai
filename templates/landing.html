@@ -412,13 +412,14 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <nav>
   <div class="nav-logo">GOLDEX<span> AI</span></div>
   <ul class="nav-links">
-    <li><a href="#cara-kerja">How it Works</a></li>
-    <li><a href="#track-record">Track Record</a></li>
-    <li><a href="#harga">Pricing</a></li>
-    <li><a href="#faq">FAQ</a></li>
-    <li><a href="/login" style="color:var(--text2)">Login</a></li>
+    <li><a href="#cara-kerja" data-i18n="nav_how">Cara Kerja</a></li>
+    <li><a href="#track-record" data-i18n="nav_track">Track Record</a></li>
+    <li><a href="#harga" data-i18n="nav_pricing">Harga</a></li>
+    <li><a href="#faq" data-i18n="nav_faq">FAQ</a></li>
+    <li><a href="/login" style="color:var(--text2)" data-i18n="nav_login">Masuk</a></li>
   </ul>
-  <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="nav-cta">Get Access →</a>
+  <div id="landing-lang-toggle" style="display:inline-flex;margin-right:10px"></div>
+  <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="nav-cta" data-i18n="nav_cta">Dapatkan Akses →</a>
 </nav>
 
 <!-- TICKER TAPE -->
@@ -441,38 +442,38 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section class="hero">
   <div class="hero-eyebrow">
     <span class="hero-eyebrow-dot"></span>
-    GEMINI AI ACTIVE · LONDON/NY SESSION
+    <span data-i18n="hero_eyebrow">GEMINI AI AKTIF · SESI LONDON/NY</span>
   </div>
-  <h1>Real-Time <em>XAU/USD</em> Signals<br>from Gemini AI — Straight to Telegram</h1>
-  <p class="hero-sub">
-    Berkah Entry Signal + Gemini AI scanning XAU/USD every <strong>1 minute</strong> — automated Break of Structure, Liquidity Sweep, and Pin Bar detection. Exact Entry, TP, SL. Zero manual analysis.
+  <h1 data-i18n="hero_h1" data-i18n-html>Sinyal <em>XAU/USD</em> Real-Time<br>dari Gemini AI — Langsung ke Telegram</h1>
+  <p class="hero-sub" data-i18n="hero_sub" data-i18n-html>
+    Berkah Entry Signal + Gemini AI memindai XAU/USD setiap <strong>1 menit</strong> — deteksi otomatis Break of Structure, Liquidity Sweep, dan Pin Bar. Entry, TP, SL yang presisi. Tanpa analisis manual.
   </p>
   <div class="hero-stats">
-    <div class="stat-item"><span class="stat-num">M1</span><span class="stat-lbl">Timeframe</span></div>
-    <div class="stat-item"><span class="stat-num">24/5</span><span class="stat-lbl">London/NY Active</span></div>
-    <div class="stat-item"><span class="stat-num">5+</span><span class="stat-lbl">Confluence Filters</span></div>
-    <div class="stat-item"><span class="stat-num">0</span><span class="stat-lbl">Emotions</span></div>
+    <div class="stat-item"><span class="stat-num">M1</span><span class="stat-lbl" data-i18n="hero_stat_tf">Timeframe</span></div>
+    <div class="stat-item"><span class="stat-num">24/5</span><span class="stat-lbl" data-i18n="hero_stat_session">London/NY Aktif</span></div>
+    <div class="stat-item"><span class="stat-num">5+</span><span class="stat-lbl" data-i18n="hero_stat_filters">Filter Confluence</span></div>
+    <div class="stat-item"><span class="stat-num">0</span><span class="stat-lbl" data-i18n="hero_stat_emotion">Emosi</span></div>
   </div>
   <div class="hero-ctas">
-    <a href="#harga" class="btn-primary">Get Lifetime Access →</a>
-    <a href="#cara-kerja" class="btn-secondary">How It Works</a>
+    <a href="#harga" class="btn-primary" data-i18n="hero_cta_primary">Dapatkan Akses Seumur Hidup →</a>
+    <a href="#cara-kerja" class="btn-secondary" data-i18n="hero_cta_secondary">Cara Kerjanya</a>
   </div>
 
   <!-- Live Terminal Widget -->
   <div class="terminal-widget reveal">
     <div class="tw-header">
-      <div class="tw-pair">XAU/USD <span style="color:var(--text2);font-weight:400;font-size:12px">M1 · Gold Spot</span></div>
-      <div class="tw-live"><span class="hero-eyebrow-dot"></span> LIVE SCANNING</div>
+      <div class="tw-pair">XAU/USD <span style="color:var(--text2);font-weight:400;font-size:12px" data-i18n="gold_spot_landing">M1 · Gold Spot</span></div>
+      <div class="tw-live"><span class="hero-eyebrow-dot"></span> <span data-i18n="live_scanning_landing">MEMINDAI LIVE</span></div>
     </div>
     <div class="tw-price-row">
       <div class="tw-price" id="live-price">4,198.50</div>
       <div class="tw-chg">+$34.20 (+0.82%)</div>
     </div>
-    <div id="hero-price-source" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#454860;margin-top:4px">● Loading live price...</div>
+    <div id="hero-price-source" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#454860;margin-top:4px" data-i18n="loading_price_landing">● Memuat harga live...</div>
     <div class="tw-candles" id="candles"></div>
     <div class="tw-signal">
-      <div class="tw-signal-label">BERKAH SIGNAL ENGINE</div>
-      <div class="tw-signal-val">● SCANNING · ADX 23.4 · BoS DETECTED</div>
+      <div class="tw-signal-label" data-i18n="berkah_engine">BERKAH SIGNAL ENGINE</div>
+      <div class="tw-signal-val" data-i18n="scanning_status">● SCANNING · ADX 23.4 · BoS TERDETEKSI</div>
     </div>
   </div>
 </section>
@@ -507,43 +508,43 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section class="pain-section">
   <div class="container">
     <div class="reveal">
-      <p class="section-eyebrow">GOLD TRADER PAIN POINTS</p>
-      <h2 class="section-title">Why Do Most XAU/USD Traders Still Lose Money?</h2>
-      <p class="section-sub">Gold is one of the most volatile assets influenced by global sentiment. One wrong entry by a few points leads straight to Stop Loss.</p>
+      <p class="section-eyebrow" data-i18n="pain_eyebrow">MASALAH TRADER GOLD</p>
+      <h2 class="section-title" data-i18n="pain_title">Kenapa Mayoritas Trader XAU/USD Masih Rugi?</h2>
+      <p class="section-sub" data-i18n="pain_sub">Gold adalah salah satu aset paling volatil yang dipengaruhi sentimen global. Satu entry salah beberapa poin saja langsung kena Stop Loss.</p>
     </div>
     <div class="pain-grid">
       <div class="pain-card reveal">
         <div class="pain-icon">📊</div>
-        <h3>M1 Chart Moves Too Fast</h3>
-        <p>A single M1 gold candle can move 5–15 points in seconds. Manual analysis always gets you in late — far away from the ideal entry price.</p>
+        <h3 data-i18n="pain1_title">Chart M1 Bergerak Terlalu Cepat</h3>
+        <p data-i18n="pain1_body">Satu candle M1 gold bisa bergerak 5–15 poin dalam hitungan detik. Analisis manual selalu membuatmu masuk terlambat — jauh dari harga entry ideal.</p>
       </div>
       <div class="pain-card reveal">
         <div class="pain-icon">💸</div>
-        <h3>Trapped in Liquidity Hunts</h3>
-        <p>Market makers sweep high/low liquidity before reversing. Without automated detection, you become a victim of stop hunts sweeping your SL.</p>
+        <h3 data-i18n="pain2_title">Terjebak Liquidity Hunt</h3>
+        <p data-i18n="pain2_body">Market maker menyapu likuiditas high/low sebelum berbalik arah. Tanpa deteksi otomatis, kamu jadi korban stop hunt yang menyapu SL-mu.</p>
       </div>
       <div class="pain-card reveal">
         <div class="pain-icon">📰</div>
-        <h3>Fed/CPI News Causes Panic</h3>
-        <p>XAU/USD is highly sensitive to US economic data. Without sentiment filters and session awareness, you trade at dangerous times.</p>
+        <h3 data-i18n="pain3_title">Berita Fed/CPI Bikin Panik</h3>
+        <p data-i18n="pain3_body">XAU/USD sangat sensitif terhadap data ekonomi AS. Tanpa filter sentimen dan kesadaran sesi, kamu trading di waktu yang berbahaya.</p>
       </div>
       <div class="pain-card reveal">
         <div class="pain-icon">😰</div>
-        <h3>FOMO Entry at Peak Momentum</h3>
-        <p>Seeing gold jump $20 makes people buy instantly, only to hit the peak before it reverses into Stop Loss. Pin Bar + ADX filters prevent buying overbought conditions.</p>
+        <h3 data-i18n="pain4_title">Entry FOMO di Puncak Momentum</h3>
+        <p data-i18n="pain4_body">Melihat gold naik $20 bikin orang langsung beli, tapi malah kena puncak sebelum berbalik ke Stop Loss. Filter Pin Bar + ADX mencegah beli di kondisi overbought.</p>
       </div>
       <div class="pain-card reveal">
         <div class="pain-icon">⏰</div>
-        <h3>Cannot Monitor 24 Hours</h3>
-        <p>London and NY sessions are the best times for gold volatility. You cannot stare at screens continuously for hours.</p>
+        <h3 data-i18n="pain5_title">Tidak Bisa Pantau 24 Jam</h3>
+        <p data-i18n="pain5_body">Sesi London dan NY adalah waktu terbaik untuk volatilitas gold. Kamu tidak mungkin menatap layar terus-menerus berjam-jam.</p>
       </div>
       <div class="pain-card reveal">
         <div class="pain-icon">🎯</div>
-        <h3>Arbitrary SL & TP Levels</h3>
-        <p>Setting SL too tight leads to sweeps; setting it too wide leads to heavy losses. ATR-based SL calculated dynamically solves this issue.</p>
+        <h3 data-i18n="pain6_title">Level SL & TP Asal-asalan</h3>
+        <p data-i18n="pain6_body">SL terlalu ketat berujung tersapu; terlalu lebar berujung rugi besar. SL berbasis ATR yang dihitung dinamis menyelesaikan masalah ini.</p>
       </div>
     </div>
-    <p class="pain-cta reveal">What you need isn't more analysis.<br>What you need is <em>an AI that doesn't sleep or trade with emotions.</em></p>
+    <p class="pain-cta reveal" data-i18n="pain_cta" data-i18n-html>Yang kamu butuhkan bukan lebih banyak analisis.<br>Yang kamu butuhkan adalah <em>AI yang tidak tidur dan tidak trading pakai emosi.</em></p>
   </div>
 </section>
 
@@ -551,44 +552,44 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section id="cara-kerja">
   <div class="container">
     <div class="reveal">
-      <p class="section-eyebrow">HOW IT WORKS</p>
-      <h2 class="section-title">From Broker Data to Telegram Signals<br>in Seconds</h2>
-      <p class="section-sub">End-to-end automated pipeline. Zero human interference in the analysis process — pure data and algorithms.</p>
+      <p class="section-eyebrow" data-i18n="how_eyebrow">CARA KERJA</p>
+      <h2 class="section-title" data-i18n="how_title">Dari Data Broker ke Sinyal Telegram<br>dalam Hitungan Detik</h2>
+      <p class="section-sub" data-i18n="how_sub">Pipeline otomatis end-to-end. Nol campur tangan manusia dalam proses analisis — murni data dan algoritma.</p>
     </div>
     <div class="pipeline">
       <div class="pipe-step reveal">
-        <div class="pipe-num">01 — DATA</div>
+        <div class="pipe-num" data-i18n="pipe1_num">01 — DATA</div>
         <div class="pipe-icon-wrap">📡</div>
-        <h3>Live MT5 Bridge</h3>
-        <p>Fetches live OHLCV M1 data directly via MT5 bridge. 500 real-time candles identical to your broker feeds.</p>
+        <h3 data-i18n="pipe1_title">Live MT5 Bridge</h3>
+        <p data-i18n="pipe1_body">Mengambil data OHLCV M1 live langsung via MT5 bridge. 500 candle real-time identik dengan feed broker kamu.</p>
         <span class="pipe-badge">FBS Live Feed</span>
       </div>
       <div class="pipe-step reveal">
-        <div class="pipe-num">02 — ANALYSIS</div>
+        <div class="pipe-num" data-i18n="pipe2_num">02 — ANALISIS</div>
         <div class="pipe-icon-wrap">🔍</div>
-        <h3>Berkah Signal Engine</h3>
-        <p>5 confluence filters executed simultaneously: Break of Structure, HTF BoS, Liquidity Sweep, Pin Bar, ADX momentum.</p>
-        <span class="pipe-badge">Python Native · 0 Tokens</span>
+        <h3 data-i18n="pipe2_title">Berkah Signal Engine</h3>
+        <p data-i18n="pipe2_body">5 filter confluence dieksekusi bersamaan: Break of Structure, HTF BoS, Liquidity Sweep, Pin Bar, momentum ADX.</p>
+        <span class="pipe-badge">Python Native · 0 Token</span>
       </div>
       <div class="pipe-step reveal">
-        <div class="pipe-num">03 — AI</div>
+        <div class="pipe-num" data-i18n="pipe3_num">03 — AI</div>
         <div class="pipe-icon-wrap">🤖</div>
-        <h3>Gemini AI Narrative</h3>
-        <p>When BUY/SELL triggers, Gemini AI (Google) writes market context analysis and critical levels to watch.</p>
+        <h3 data-i18n="pipe3_title">Narasi Gemini AI</h3>
+        <p data-i18n="pipe3_body">Saat BUY/SELL terpicu, Gemini AI (Google) menulis analisis konteks pasar dan level kritis yang perlu diperhatikan.</p>
         <span class="pipe-badge">gemini-3.5-flash</span>
       </div>
       <div class="pipe-step reveal">
-        <div class="pipe-num">04 — SEND</div>
+        <div class="pipe-num" data-i18n="pipe4_num">04 — KIRIM</div>
         <div class="pipe-icon-wrap">📱</div>
-        <h3>Instant Telegram</h3>
-        <p>Direct notification to your Telegram group with Entry, TP1, TP2, TP3, SL, lot size, and AI narrative.</p>
-        <span class="pipe-badge">Real-time Push</span>
+        <h3 data-i18n="pipe4_title">Telegram Instan</h3>
+        <p data-i18n="pipe4_body">Notifikasi langsung ke grup Telegram kamu lengkap dengan Entry, TP1, TP2, TP3, SL, lot size, dan narasi AI.</p>
+        <span class="pipe-badge" data-i18n="pipe4_badge">Push Real-time</span>
       </div>
     </div>
 
     <!-- Signal example -->
     <div class="reveal" style="margin-top:48px;background:var(--bg1);border:1px solid var(--border2);border-radius:12px;padding:28px;max-width:520px;margin-left:auto;margin-right:auto">
-      <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:16px;letter-spacing:0.08em">TELEGRAM SIGNAL EXAMPLE</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:16px;letter-spacing:0.08em" data-i18n="signal_example_label">CONTOH SINYAL TELEGRAM</div>
       <div style="font-family:var(--mono);font-size:13px;line-height:2;color:var(--text)">
         <div style="font-size:18px;font-weight:700;color:var(--green);margin-bottom:8px">🟢 BUY SIGNAL — XAU/USD</div>
         <div><span style="color:var(--text2)">Timeframe  :</span> M1 | 22/06 20:45 UTC</div>
@@ -609,17 +610,17 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section id="track-record" class="track-section">
   <div class="container">
     <div class="reveal">
-      <p class="section-eyebrow">TRACK RECORD</p>
-      <h2 class="section-title">Live Performance — Last 4 Weeks</h2>
-      <p class="section-sub">Berkah Signal data on XAU/USD M1. Average 6 trades/day, $100 risk per trade, 3 point spread fee. Period: May 26 – Jun 22, 2026.</p>
+      <p class="section-eyebrow" data-i18n="track_eyebrow">TRACK RECORD</p>
+      <h2 class="section-title" data-i18n="track_title">Performa Live — 4 Minggu Terakhir</h2>
+      <p class="section-sub" data-i18n="track_sub">Data Berkah Signal pada XAU/USD M1. Rata-rata 6 trade/hari, risiko $100 per trade, biaya spread 3 poin. Periode: 26 Mei – 22 Jun 2026.</p>
     </div>
 
     <div class="stats-bar reveal">
-      <div class="stats-bar-item"><span class="stats-bar-num" style="color:var(--green)">90%</span><span class="stats-bar-lbl">Win Rate</span></div>
-      <div class="stats-bar-item"><span class="stats-bar-num">162</span><span class="stats-bar-lbl">Total Trades</span></div>
-      <div class="stats-bar-item"><span class="stats-bar-num" style="color:var(--green)">+$4,860</span><span class="stats-bar-lbl">Total Profit</span></div>
-      <div class="stats-bar-item"><span class="stats-bar-num">6/day</span><span class="stats-bar-lbl">Avg Trades</span></div>
-      <div class="stats-bar-item"><span class="stats-bar-num">146W/16L</span><span class="stats-bar-lbl">Win / Loss</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num" style="color:var(--green)">90%</span><span class="stats-bar-lbl" data-i18n="track_winrate">Win Rate</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num">162</span><span class="stats-bar-lbl" data-i18n="track_total">Total Trade</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num" style="color:var(--green)">+$4,860</span><span class="stats-bar-lbl" data-i18n="track_profit">Total Profit</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num">6/day</span><span class="stats-bar-lbl" data-i18n="track_avg">Rata-rata Trade</span></div>
+      <div class="stats-bar-item"><span class="stats-bar-num">146W/16L</span><span class="stats-bar-lbl" data-i18n="track_winloss">Win / Loss</span></div>
     </div>
 
     <!-- Weekly Summary Table -->
@@ -871,13 +872,13 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
         </tbody>
       </table>
     </div>
-    <p class="table-note">* Simulated performance data — not verified live trading results. Forex/Gold trading carries high risk. Past performance does not guarantee future results.</p>
+    <p class="table-note" data-i18n="track_disclaimer">* Data performa simulasi — bukan hasil live trading terverifikasi. Trading Forex/Gold berisiko tinggi. Performa masa lalu tidak menjamin hasil di masa depan.</p>
 
     <div style="text-align:center;margin-top:40px">
-      <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="btn-primary">
-        Claim Founding Member Access — Rp299,000 →
+      <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="btn-primary" data-i18n="track_cta">
+        Klaim Akses Founding Member — Rp299.000 →
       </a>
-      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:10px">37 of 50 slots remaining · Price increases to Rp399,000 once filled</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:10px" data-i18n="slots_note">37 dari 50 slot tersisa · Harga naik ke Rp399.000 setelah penuh</div>
     </div>
   </div>
 </section>
@@ -886,40 +887,40 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section>
   <div class="container">
     <div class="reveal">
-      <p class="section-eyebrow">TECHNOLOGY</p>
-      <h2 class="section-title">Features That Set GOLDEX AI Apart</h2>
+      <p class="section-eyebrow" data-i18n="feat_eyebrow">TEKNOLOGI</p>
+      <h2 class="section-title" data-i18n="feat_title">Fitur yang Membedakan GOLDEX AI</h2>
     </div>
     <div class="features-grid">
       <div class="feat-card featured reveal">
-        <span class="feat-tag">CORE ENGINE</span>
+        <span class="feat-tag" data-i18n="feat_tag_core">CORE ENGINE</span>
         <div class="feat-icon">⚡</div>
-        <h3>Berkah Entry Signal — 5 Confluence Filters</h3>
-        <p>Break of Structure + HTF BoS + Liquidity Sweep + Pin Bar Confirmation + ADX Momentum Filter. All must align simultaneously. False signals are automatically filtered out.</p>
+        <h3 data-i18n="feat1_title">Berkah Entry Signal — 5 Filter Confluence</h3>
+        <p data-i18n="feat1_body">Break of Structure + HTF BoS + Liquidity Sweep + Konfirmasi Pin Bar + Filter Momentum ADX. Semua harus align bersamaan. Sinyal palsu otomatis tersaring.</p>
       </div>
       <div class="feat-card reveal">
         <div class="feat-icon">🤖</div>
-        <h3>Real-Time Gemini AI Narrative</h3>
-        <p>Every BUY/SELL signal is accompanied by narrative from Gemini AI (Google) — market context, critical levels, and invalidation points. More than just numbers.</p>
+        <h3 data-i18n="feat2_title">Narasi Gemini AI Real-Time</h3>
+        <p data-i18n="feat2_body">Setiap sinyal BUY/SELL disertai narasi dari Gemini AI (Google) — konteks pasar, level kritis, dan titik invalidasi. Lebih dari sekadar angka.</p>
       </div>
       <div class="feat-card reveal">
         <div class="feat-icon">📡</div>
-        <h3>Live Broker Data via MT5 Bridge</h3>
-        <p>Analyzed prices are identical to your broker feeds. No data gaps, no delays. Real M1 candles directly from liquidity providers.</p>
+        <h3 data-i18n="feat3_title">Data Broker Live via MT5 Bridge</h3>
+        <p data-i18n="feat3_body">Harga yang dianalisis identik dengan feed broker kamu. Tanpa gap data, tanpa delay. Candle M1 asli langsung dari liquidity provider.</p>
       </div>
       <div class="feat-card reveal">
         <div class="feat-icon">🎯</div>
-        <h3>Dynamic ATR-Based SL/TP</h3>
-        <p>Stop Loss and Take Profit calculated automatically from ATR (Average True Range) — adaptive to current market volatility.</p>
+        <h3 data-i18n="feat4_title">SL/TP Dinamis Berbasis ATR</h3>
+        <p data-i18n="feat4_body">Stop Loss dan Take Profit dihitung otomatis dari ATR (Average True Range) — adaptif terhadap volatilitas pasar saat ini.</p>
       </div>
       <div class="feat-card reveal">
         <div class="feat-icon">🕐</div>
-        <h3>London/NY Session Filter</h3>
-        <p>System fully active during London and New York sessions — high volume, tight spreads, highly reliable signals.</p>
+        <h3 data-i18n="feat5_title">Filter Sesi London/NY</h3>
+        <p data-i18n="feat5_body">Sistem aktif penuh selama sesi London dan New York — volume tinggi, spread ketat, sinyal sangat andal.</p>
       </div>
       <div class="feat-card reveal">
         <div class="feat-icon">📱</div>
-        <h3>Dashboard + Real-Time Telegram</h3>
-        <p>Web dashboard for live monitoring plus instant Telegram notifications for every BUY/SELL. Auto-updates with zero manual refreshes needed.</p>
+        <h3 data-i18n="feat6_title">Dashboard + Telegram Real-Time</h3>
+        <p data-i18n="feat6_body">Dashboard web untuk pemantauan live plus notifikasi Telegram instan untuk setiap BUY/SELL. Auto-update tanpa perlu refresh manual.</p>
       </div>
     </div>
   </div>
@@ -929,27 +930,27 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section style="background:var(--bg1);border-top:1px solid var(--border)">
   <div class="container">
     <div class="reveal">
-      <p class="section-eyebrow">COMPARISON</p>
-      <h2 class="section-title">Manual Signals vs GOLDEX AI</h2>
+      <p class="section-eyebrow" data-i18n="comp_eyebrow">PERBANDINGAN</p>
+      <h2 class="section-title" data-i18n="comp_title">Sinyal Manual vs GOLDEX AI</h2>
     </div>
     <div style="overflow-x:auto" class="reveal">
       <table class="comp-table">
         <thead>
           <tr>
-            <th>Criteria</th>
-            <th>Manual Signals / Mentors</th>
+            <th data-i18n="comp_th_criteria">Kriteria</th>
+            <th data-i18n="comp_th_manual">Sinyal Manual / Mentor</th>
             <th class="highlight">GOLDEX AI</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>Analysis Source</td><td>Human gut feeling</td><td class="highlight">5 algorithmic filters + Gemini AI</td></tr>
-          <tr><td>Speed</td><td>Minutes – hours</td><td class="highlight">Detection in &lt;60 seconds</td></tr>
-          <tr><td>Active Hours</td><td>Depends on admin availability</td><td class="highlight">24/5 London & NY sessions</td></tr>
-          <tr><td>Price Data</td><td>Often delayed / broker mismatch</td><td class="highlight">Identical to broker via live MT5</td></tr>
-          <tr><td>SL/TP</td><td>Arbitrary / missing</td><td class="highlight">ATR-based, dynamic per signal</td></tr>
-          <tr><td>Emotions</td><td><span class="comp-no">✗ FOMO, Greed, Fear</span></td><td class="highlight"><span class="comp-yes">✓ Zero Emotion</span></td></tr>
-          <tr><td>Transparency</td><td>Cherry-picked screenshots</td><td class="highlight">Live dashboard + full signal history</td></tr>
-          <tr><td>Cost</td><td>$15–$35/month</td><td class="highlight"><span style="color:var(--gold);font-weight:700">Rp299,000 LIFETIME</span></td></tr>
+          <tr><td data-i18n="comp_r1">Sumber Analisis</td><td data-i18n="comp_r1a">Feeling manusia</td><td class="highlight" data-i18n="comp_r1b">5 filter algoritmik + Gemini AI</td></tr>
+          <tr><td data-i18n="comp_r2">Kecepatan</td><td data-i18n="comp_r2a">Menit – jam</td><td class="highlight" data-i18n="comp_r2b">Deteksi &lt;60 detik</td></tr>
+          <tr><td data-i18n="comp_r3">Jam Aktif</td><td data-i18n="comp_r3a">Tergantung ketersediaan admin</td><td class="highlight" data-i18n="comp_r3b">24/5 sesi London & NY</td></tr>
+          <tr><td data-i18n="comp_r4">Data Harga</td><td data-i18n="comp_r4a">Sering delay / beda broker</td><td class="highlight" data-i18n="comp_r4b">Identik broker via MT5 live</td></tr>
+          <tr><td data-i18n="comp_r5">SL/TP</td><td data-i18n="comp_r5a">Asal-asalan / tidak ada</td><td class="highlight" data-i18n="comp_r5b">Berbasis ATR, dinamis per sinyal</td></tr>
+          <tr><td data-i18n="comp_r6">Emosi</td><td><span class="comp-no" data-i18n="comp_r6a">✗ FOMO, Greed, Fear</span></td><td class="highlight"><span class="comp-yes" data-i18n="comp_r6b">✓ Nol Emosi</span></td></tr>
+          <tr><td data-i18n="comp_r7">Transparansi</td><td data-i18n="comp_r7a">Screenshot pilihan saja</td><td class="highlight" data-i18n="comp_r7b">Dashboard live + riwayat sinyal lengkap</td></tr>
+          <tr><td data-i18n="comp_r8">Biaya</td><td>$15–$35/bulan</td><td class="highlight"><span style="color:var(--gold);font-weight:700" data-i18n="comp_r8b">Rp299.000 SEUMUR HIDUP</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -960,59 +961,59 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section id="harga" class="pricing-section">
   <div class="container" style="text-align:center">
     <div class="reveal">
-      <p class="section-eyebrow">PRICING</p>
-      <h2 class="section-title">One-Time Payment. Lifetime Access.</h2>
-      <p class="section-sub" style="margin:0 auto">No recurring subscriptions. No hidden fees. Pay once, receive signals forever.</p>
+      <p class="section-eyebrow" data-i18n="pricing_eyebrow">HARGA</p>
+      <h2 class="section-title" data-i18n="pricing_title">Bayar Sekali. Akses Seumur Hidup.</h2>
+      <p class="section-sub" style="margin:0 auto" data-i18n="pricing_sub">Tanpa langganan berulang. Tanpa biaya tersembunyi. Bayar sekali, terima sinyal selamanya.</p>
     </div>
 
     <div class="pricing-card reveal">
-      <div class="pricing-badge">LIFETIME</div>
+      <div class="pricing-badge" data-i18n="pricing_badge">SEUMUR HIDUP</div>
       <div class="pricing-label">GOLDEX AI</div>
-      <div class="pricing-name">Full Access Forever</div>
+      <div class="pricing-name" data-i18n="pricing_name">Akses Penuh Selamanya</div>
       <div class="pricing-price">
-        <span class="pricing-price-old">Rp1,499,000</span>
-        <span class="pricing-price-new">Rp299,000</span>
+        <span class="pricing-price-old">Rp1.499.000</span>
+        <span class="pricing-price-new">Rp299.000</span>
       </div>
-      <div class="pricing-price-period">One-time payment · Not a monthly subscription</div>
-      <div class="pricing-note">Founding Member Price — limited to first 50 buyers, increases to Rp399,000 once filled</div>
+      <div class="pricing-price-period" data-i18n="pricing_period">Bayar sekali · Bukan langganan bulanan</div>
+      <div class="pricing-note" data-i18n="pricing_note">Harga Founding Member — terbatas untuk 50 pembeli pertama, naik ke Rp399.000 setelah penuh</div>
       <ul class="pricing-features">
-        <li>Real-time XAU/USD M1 signals (London & NY sessions)</li>
-        <li>Exact Entry, TP1, TP2, TP3, SL for every signal</li>
-        <li>Gemini AI narrative per BUY/SELL signal</li>
-        <li>5 automated Berkah Signal confluence filters</li>
-        <li>Dynamic ATR-based Stop Loss</li>
-        <li>24/7 web dashboard access</li>
-        <li>Instant VIP Telegram group notifications</li>
-        <li>Free lifetime algorithm & system updates</li>
-        <li>Automated TP/SL monitoring with real-time WIN alerts</li>
+        <li data-i18n="pricing_f1">Sinyal XAU/USD M1 real-time (sesi London & NY)</li>
+        <li data-i18n="pricing_f2">Entry, TP1, TP2, TP3, SL presisi untuk setiap sinyal</li>
+        <li data-i18n="pricing_f3">Narasi Gemini AI per sinyal BUY/SELL</li>
+        <li data-i18n="pricing_f4">5 filter confluence Berkah Signal otomatis</li>
+        <li data-i18n="pricing_f5">Stop Loss dinamis berbasis ATR</li>
+        <li data-i18n="pricing_f6">Akses dashboard web 24/7</li>
+        <li data-i18n="pricing_f7">Notifikasi grup Telegram VIP instan</li>
+        <li data-i18n="pricing_f8">Update algoritma & sistem gratis selamanya</li>
+        <li data-i18n="pricing_f9">Monitoring TP/SL otomatis dengan alert WIN real-time</li>
       </ul>
-      <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="pricing-btn">
-        Get Lifetime Access — Rp299,000
+      <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="pricing-btn" data-i18n="pricing_btn">
+        Dapatkan Akses Seumur Hidup — Rp299.000
       </a>
-      <div class="pricing-slots"><span id="slots-left">37</span> of 50 Founding Member slots remaining</div>
+      <div class="pricing-slots"><span id="slots-left">37</span> <span data-i18n="pricing_slots_text">dari 50 slot Founding Member tersisa</span></div>
 
       <div class="urgency-bar">
-        <div class="urgency-text">Price increases to Rp399,000 once <span>50 slots fill up</span></div>
+        <div class="urgency-text" data-i18n="pricing_urgency" data-i18n-html>Harga naik ke Rp399.000 setelah <span>50 slot terisi</span></div>
         <div class="countdown">
-          <div class="count-unit"><span class="count-num" id="cd-h">02</span><span class="count-lbl">HRS</span></div>
+          <div class="count-unit"><span class="count-num" id="cd-h">02</span><span class="count-lbl" data-i18n="cd_hrs">JAM</span></div>
           <div class="count-sep">:</div>
-          <div class="count-unit"><span class="count-num" id="cd-m">47</span><span class="count-lbl">MIN</span></div>
+          <div class="count-unit"><span class="count-num" id="cd-m">47</span><span class="count-lbl" data-i18n="cd_min">MNT</span></div>
           <div class="count-sep">:</div>
-          <div class="count-unit"><span class="count-num" id="cd-s">30</span><span class="count-lbl">SEC</span></div>
+          <div class="count-unit"><span class="count-num" id="cd-s">30</span><span class="count-lbl" data-i18n="cd_sec">DTK</span></div>
         </div>
       </div>
     </div>
 
     <div class="payment-methods reveal">
-      <div style="font-family:var(--mono);font-size:11px;color:var(--text2);width:100%;margin-bottom:8px">Payment methods:</div>
-      <div class="payment-method">Bank Transfer</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text2);width:100%;margin-bottom:8px" data-i18n="payment_methods_label">Metode pembayaran:</div>
+      <div class="payment-method" data-i18n="pay_bank">Transfer Bank</div>
       <div class="payment-method">BCA · BRI · BNI · Mandiri</div>
       <div class="payment-method">QRIS</div>
       <div class="payment-method">GoPay · OVO · Dana</div>
     </div>
 
-    <p style="font-size:12px;color:var(--text2);margin-top:20px;font-style:italic">
-      After payment confirmation, you will receive dashboard account details and the VIP Telegram link within 24 hours.
+    <p style="font-size:12px;color:var(--text2);margin-top:20px;font-style:italic" data-i18n="payment_confirm_note">
+      Setelah pembayaran dikonfirmasi, kamu akan menerima detail akun dashboard dan link Telegram VIP dalam 24 jam.
     </p>
   </div>
 </section>
@@ -1021,45 +1022,45 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section id="faq">
   <div class="container">
     <div class="reveal">
-      <p class="section-eyebrow">FAQ</p>
-      <h2 class="section-title">Frequently Asked Questions</h2>
+      <p class="section-eyebrow" data-i18n="faq_eyebrow">FAQ</p>
+      <h2 class="section-title" data-i18n="faq_title">Pertanyaan yang Sering Diajukan</h2>
     </div>
     <div class="faq-list">
       <div class="faq-item reveal">
-        <div class="faq-q" onclick="toggleFaq(this)">Is this an automated trading robot that executes trades directly?<span class="faq-icon">+</span></div>
-        <div class="faq-a">No. GOLDEX AI provides signals (BUY/SELL with Entry, TP, SL). You execute the trades manually on your preferred broker. GOLDEX AI has zero access to your broker account.</div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span data-i18n="faq1_q">Apakah ini robot trading otomatis yang eksekusi trade langsung?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a" data-i18n="faq1_a">Tidak. GOLDEX AI menyediakan sinyal (BUY/SELL dengan Entry, TP, SL). Kamu eksekusi trade secara manual di broker pilihanmu. GOLDEX AI tidak punya akses sama sekali ke akun broker kamu.</div>
       </div>
       <div class="faq-item reveal">
-        <div class="faq-q" onclick="toggleFaq(this)">Which brokers are supported?<span class="faq-icon">+</span></div>
-        <div class="faq-a">Any broker offering XAU/USD — FBS, XM, IC Markets, Exness, HFM, and others. Since GOLDEX AI sends entry/exit prices, you can execute on any broker platform.</div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span data-i18n="faq2_q">Broker apa saja yang didukung?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a" data-i18n="faq2_a">Broker manapun yang menyediakan XAU/USD — FBS, XM, IC Markets, Exness, HFM, dan lainnya. Karena GOLDEX AI mengirim harga entry/exit, kamu bisa eksekusi di platform broker manapun.</div>
       </div>
       <div class="faq-item reveal">
-        <div class="faq-q" onclick="toggleFaq(this)">What is the recommended minimum balance?<span class="faq-icon">+</span></div>
-        <div class="faq-a">A minimum of $100 is recommended to follow signals with standard position sizing. Ideally $500–$1,000 for flexible risk management. Signal lot sizes adapt to 1.5% risk per trade.</div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span data-i18n="faq3_q">Berapa saldo minimum yang direkomendasikan?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a" data-i18n="faq3_a">Minimal $100 direkomendasikan untuk mengikuti sinyal dengan ukuran posisi standar. Idealnya $500–$1.000 untuk manajemen risiko yang fleksibel. Ukuran lot sinyal menyesuaikan risiko 1.5% per trade.</div>
       </div>
       <div class="faq-item reveal">
-        <div class="faq-q" onclick="toggleFaq(this)">How many signals are generated per day and when?<span class="faq-icon">+</span></div>
-        <div class="faq-a">An average of 2–5 signals per day during the London and New York sessions. Signal frequency varies based on market conditions — signals only trigger when all 5 confluence filters align simultaneously.</div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span data-i18n="faq4_q">Berapa banyak sinyal dihasilkan per hari dan kapan?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a" data-i18n="faq4_a">Rata-rata 2–5 sinyal per hari selama sesi London dan New York. Frekuensi sinyal bervariasi tergantung kondisi pasar — sinyal hanya terpicu saat semua 5 filter confluence align bersamaan.</div>
       </div>
       <div class="faq-item reveal">
-        <div class="faq-q" onclick="toggleFaq(this)">Is profit guaranteed?<span class="faq-icon">+</span></div>
-        <div class="faq-a">No trading system can guarantee profits. Every signal includes a mandatory Stop Loss to protect capital. The system is designed for high probability setups with minimum 1:1 RRR, but past performance does not guarantee future results. Gold trading involves substantial risk.</div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span data-i18n="faq5_q">Apakah profit dijamin?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a" data-i18n="faq5_a">Tidak ada sistem trading yang bisa menjamin profit. Setiap sinyal punya Stop Loss wajib untuk melindungi modal. Sistem dirancang untuk setup probabilitas tinggi dengan minimum RRR 1:1, tapi performa masa lalu tidak menjamin hasil masa depan. Trading gold mengandung risiko substansial.</div>
       </div>
       <div class="faq-item reveal">
-        <div class="faq-q" onclick="toggleFaq(this)">What is the difference between Telegram VIP and the Dashboard?<span class="faq-icon">+</span></div>
-        <div class="faq-a">Telegram VIP delivers instant real-time push notifications for every signal. The web dashboard provides 24/7 access to recent signals, historical logs, performance stats, and live TP/SL monitors. Both are included in the lifetime package.</div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span data-i18n="faq6_q">Apa bedanya Telegram VIP dan Dashboard?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a" data-i18n="faq6_a">Telegram VIP mengirim notifikasi push real-time instan untuk setiap sinyal. Dashboard web menyediakan akses 24/7 ke sinyal terbaru, log historis, statistik performa, dan monitor TP/SL live. Keduanya termasuk dalam paket seumur hidup.</div>
       </div>
       <div class="faq-item reveal">
-        <div class="faq-q" onclick="toggleFaq(this)">Will there be future system updates?<span class="faq-icon">+</span></div>
-        <div class="faq-a">Yes. All algorithm refinements, new filters, and system upgrades are included in your lifetime membership at no extra charge.</div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span data-i18n="faq7_q">Apakah akan ada update sistem di masa depan?</span><span class="faq-icon">+</span></div>
+        <div class="faq-a" data-i18n="faq7_a">Ya. Semua penyempurnaan algoritma, filter baru, dan upgrade sistem termasuk dalam keanggotaan seumur hidup kamu tanpa biaya tambahan.</div>
       </div>
     </div>
 
     <div style="text-align:center;margin-top:44px">
-      <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="btn-primary">
-        Secure Your Slot Now — Rp299,000 →
+      <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="btn-primary" data-i18n="faq_cta">
+        Amankan Slot Kamu Sekarang — Rp299.000 →
       </a>
-      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:10px">Pay once, signals forever · 37 of 50 slots remaining</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:10px" data-i18n="faq_cta_sub">Bayar sekali, sinyal selamanya · 37 dari 50 slot tersisa</div>
     </div>
   </div>
 </section>
@@ -1068,9 +1069,9 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <section class="payment-section" id="order">
   <div class="container">
     <div style="text-align:center;margin-bottom:40px" class="reveal">
-      <p style="font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.1em;margin-bottom:12px">🔒 SECURE YOUR SLOT NOW</p>
-      <h2 style="font-family:var(--disp);font-size:clamp(26px,4vw,42px);font-weight:700;line-height:1.2;margin-bottom:12px">One-Time Payment.<br>Signals Forever.</h2>
-      <p style="color:var(--text2);font-size:15px">Complete the information below — access confirmed in <strong style="color:var(--text)">under 24 hours</strong></p>
+      <p style="font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.1em;margin-bottom:12px" data-i18n="final_eyebrow">🔒 AMANKAN SLOT KAMU SEKARANG</p>
+      <h2 style="font-family:var(--disp);font-size:clamp(26px,4vw,42px);font-weight:700;line-height:1.2;margin-bottom:12px" data-i18n="final_title" data-i18n-html>Bayar Sekali.<br>Sinyal Selamanya.</h2>
+      <p style="color:var(--text2);font-size:15px" data-i18n="final_sub" data-i18n-html>Lengkapi informasi di bawah — akses dikonfirmasi dalam <strong style="color:var(--text)">kurang dari 24 jam</strong></p>
     </div>
 
     <div class="payment-form-wrap reveal">
@@ -1084,45 +1085,45 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
         <!-- Price banner -->
         <div class="form-price-banner">
           <div>
-            <div class="form-price-name">GOLDEX AI — Lifetime Access</div>
-            <div style="font-size:11px;color:var(--text2);margin-top:2px">Dashboard + VIP Telegram + Lifetime Updates</div>
+            <div class="form-price-name" data-i18n="form_price_name">GOLDEX AI — Akses Seumur Hidup</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px" data-i18n="form_price_sub">Dashboard + Telegram VIP + Update Selamanya</div>
           </div>
           <div style="text-align:right">
-            <div class="form-price-old">Rp1,499,000</div>
-            <div class="form-price-tag">Rp299,000</div>
+            <div class="form-price-old">Rp1.499.000</div>
+            <div class="form-price-tag">Rp299.000</div>
           </div>
         </div>
 
-        <div class="form-title">Complete Your Information</div>
-        <div class="form-sub">All fields required. Access will be sent to your WhatsApp & email.</div>
+        <div class="form-title" data-i18n="form_title">Lengkapi Informasi Kamu</div>
+        <div class="form-sub" data-i18n="form_sub">Semua kolom wajib diisi. Akses akan dikirim ke WhatsApp & email kamu.</div>
 
         <!-- Form -->
         <div class="form-group">
-          <label class="form-label">Full Name *</label>
-          <input class="form-input" type="text" placeholder="Enter your full name" id="f-nama">
+          <label class="form-label" data-i18n="form_name">Nama Lengkap *</label>
+          <input class="form-input" type="text" placeholder="Masukkan nama lengkap kamu" id="f-nama" data-i18n="form_name_ph" data-i18n-attr="placeholder">
         </div>
         <div class="form-group">
-          <label class="form-label">WhatsApp Number *</label>
+          <label class="form-label" data-i18n="form_wa">Nomor WhatsApp *</label>
           <div style="display:flex;gap:8px">
             <div style="background:var(--bg1);border:1px solid var(--border2);border-radius:7px;padding:12px 14px;display:flex;align-items:center;gap:6px;color:var(--text2);font-size:14px;flex-shrink:0;white-space:nowrap">🇮🇩 +62</div>
             <input class="form-input" type="tel" placeholder="8123456789" id="f-wa" style="flex:1">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Email Address *</label>
-          <input class="form-input" type="email" placeholder="email@example.com" id="f-email">
+          <label class="form-label" data-i18n="form_email">Alamat Email *</label>
+          <input class="form-input" type="email" placeholder="email@contoh.com" id="f-email" data-i18n="form_email_ph" data-i18n-attr="placeholder">
         </div>
         <div class="form-group">
-          <label class="form-label">Telegram Username *</label>
-          <input class="form-input" type="text" placeholder="@telegram_username" id="f-tg">
+          <label class="form-label" data-i18n="form_tg">Username Telegram *</label>
+          <input class="form-input" type="text" placeholder="@username_telegram" id="f-tg">
         </div>
 
-        <div class="form-divider">Select Payment Method</div>
+        <div class="form-divider" data-i18n="form_pay_select">Pilih Metode Pembayaran</div>
 
         <div class="payment-opts" id="pay-opts">
           <div class="pay-opt selected" onclick="selectPay(this)">
             <span class="pay-opt-icon">🏦</span>
-            <span>Bank Transfer</span>
+            <span data-i18n="pay_bank2">Transfer Bank</span>
           </div>
           <div class="pay-opt" onclick="selectPay(this)">
             <span class="pay-opt-icon">📱</span>
@@ -1134,24 +1135,24 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
           </div>
           <div class="pay-opt" onclick="selectPay(this)">
             <span class="pay-opt-icon">💳</span>
-            <span>Virtual Account</span>
+            <span data-i18n="pay_va">Virtual Account</span>
           </div>
         </div>
 
         <div style="background:var(--bg1);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.7">
-          <div style="color:var(--text);font-weight:600;margin-bottom:4px">What you get:</div>
-          <div>✓ GOLDEX AI dashboard account</div>
-          <div>✓ VIP Telegram group link</div>
-          <div>✓ Real-time XAU/USD M1 signals</div>
-          <div>✓ Lifetime system updates</div>
+          <div style="color:var(--text);font-weight:600;margin-bottom:4px" data-i18n="what_you_get">Yang kamu dapatkan:</div>
+          <div data-i18n="get1">✓ Akun dashboard GOLDEX AI</div>
+          <div data-i18n="get2">✓ Link grup Telegram VIP</div>
+          <div data-i18n="get3">✓ Sinyal XAU/USD M1 real-time</div>
+          <div data-i18n="get4">✓ Update sistem seumur hidup</div>
         </div>
 
-        <button class="form-submit" onclick="submitOrder()">
-          🔒 Secure Lifetime Access — Rp299,000
+        <button class="form-submit" onclick="submitOrder()" data-i18n="form_submit_btn">
+          🔒 Amankan Akses Seumur Hidup — Rp299.000
         </button>
 
-        <div class="form-security">
-          🔒 Your information is secure & will not be shared with third parties
+        <div class="form-security" data-i18n="form_security">
+          🔒 Informasi kamu aman & tidak akan dibagikan ke pihak ketiga
         </div>
 
         <div id="form-msg" style="display:none;margin-top:14px;padding:12px 16px;border-radius:7px;font-size:13px;text-align:center"></div>
@@ -1162,46 +1163,46 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
       <div id="checkout-scalev" style="display:block">
         <div class="form-card" style="text-align:center">
           <div style="font-size:32px;margin-bottom:12px">💳</div>
-          <div class="form-title">Direct Payment — Instant Checkout</div>
-          <div class="form-sub">Click the button below for secure checkout via lynk.id. Access details delivered to your email & WhatsApp within 24 hours.</div>
+          <div class="form-title" data-i18n="direct_pay_title">Pembayaran Langsung — Checkout Instan</div>
+          <div class="form-sub" data-i18n="direct_pay_sub">Klik tombol di bawah untuk checkout aman via lynk.id. Detail akses dikirim ke email & WhatsApp kamu dalam 24 jam.</div>
 
           <div class="form-price-banner" style="margin-top:24px">
             <div>
-              <div class="form-price-name">GOLDEX AI — Lifetime Access</div>
-              <div style="font-size:11px;color:var(--text2);margin-top:2px">Dashboard + VIP Telegram + Lifetime Updates</div>
+              <div class="form-price-name" data-i18n="form_price_name">GOLDEX AI — Akses Seumur Hidup</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px" data-i18n="form_price_sub">Dashboard + Telegram VIP + Update Selamanya</div>
             </div>
             <div style="text-align:right">
-              <div class="form-price-old">Rp1,499,000</div>
-              <div class="form-price-tag">Rp299,000</div>
+              <div class="form-price-old">Rp1.499.000</div>
+              <div class="form-price-tag">Rp299.000</div>
             </div>
           </div>
 
           <div style="background:var(--bg1);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--text2);margin:20px 0;line-height:1.7;text-align:left">
-            <div style="color:var(--text);font-weight:600;margin-bottom:4px">What you get:</div>
-            <div>✓ GOLDEX AI dashboard account</div>
-            <div>✓ VIP Telegram group link</div>
-            <div>✓ Real-time XAU/USD M1 signals</div>
-            <div>✓ Lifetime system updates</div>
+            <div style="color:var(--text);font-weight:600;margin-bottom:4px" data-i18n="what_you_get">Yang kamu dapatkan:</div>
+            <div data-i18n="get1">✓ Akun dashboard GOLDEX AI</div>
+            <div data-i18n="get2">✓ Link grup Telegram VIP</div>
+            <div data-i18n="get3">✓ Sinyal XAU/USD M1 real-time</div>
+            <div data-i18n="get4">✓ Update sistem seumur hidup</div>
           </div>
 
           <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout"
              style="display:block;width:100%;background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:16px;padding:15px;border-radius:8px;text-decoration:none;transition:all .2s;text-align:center"
-             onmouseover="this.style.background='#F0B429'" onmouseout="this.style.background='#D4A843'">
-            🔒 Checkout Now — Rp299,000
+             onmouseover="this.style.background='#F0B429'" onmouseout="this.style.background='#D4A843'" data-i18n="checkout_now_btn">
+            🔒 Checkout Sekarang — Rp299.000
           </a>
 
-          <div style="margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--text3)">
-            Secure payment via lynk.id · Bank Transfer · QRIS · E-Wallet · Virtual Account
+          <div style="margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--text3)" data-i18n="secure_pay_note">
+            Pembayaran aman via lynk.id · Transfer Bank · QRIS · E-Wallet · Virtual Account
           </div>
         </div>
       </div><!-- end #checkout-scalev -->
 
       <!-- Trust badges -->
       <div style="display:flex;justify-content:center;gap:16px;margin-top:20px;flex-wrap:wrap">
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ Secure payment</div>
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ Setup &lt; 24 hrs</div>
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ Lifetime access</div>
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ <span id="live-slots">37</span> of 50 slots remaining</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px" data-i18n="trust1">✓ Pembayaran aman</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px" data-i18n="trust2">✓ Setup &lt; 24 jam</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px" data-i18n="trust3">✓ Akses seumur hidup</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">✓ <span id="live-slots">37</span> <span data-i18n="trust4">dari 50 slot tersisa</span></div>
       </div>
     </div>
   </div>
@@ -1212,7 +1213,7 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
   <div class="fn-avatar" id="fn-avatar">A</div>
   <div class="fn-body">
     <div class="fn-name" id="fn-name">Ahmad from Jakarta</div>
-    <div class="fn-action">just acquired lifetime access</div>
+    <div class="fn-action" data-i18n="fn_action">baru saja mendapat akses seumur hidup</div>
     <div class="fn-badge">GOLDEX AI ✓</div>
     <div class="fn-time" id="fn-time">2 minutes ago</div>
   </div>
@@ -1221,26 +1222,226 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">GOLDEX AI</div>
-  <div style="font-size:12px;color:var(--text2);margin-top:4px">Gemini AI-Powered XAU/USD Signals · Real-Time · Lifetime Access</div>
+  <div style="font-size:12px;color:var(--text2);margin-top:4px" data-i18n="footer_tagline">Sinyal XAU/USD Bertenaga Gemini AI · Real-Time · Akses Seumur Hidup</div>
   <div class="footer-links">
-    <a href="#">Terms & Conditions</a>
-    <a href="#">Privacy Policy</a>
-    <a href="#">Contact Us</a>
+    <a href="#" data-i18n="footer_terms">Syarat & Ketentuan</a>
+    <a href="#" data-i18n="footer_privacy">Kebijakan Privasi</a>
+    <a href="#" data-i18n="footer_contact">Hubungi Kami</a>
   </div>
-  <div class="footer-disclaimer">
-    ⚠ Trading forex and gold carries high risk and may not be suitable for all investors. You could lose some or all of your investment. GOLDEX AI provides educational signals — not financial advice. Always practice strict risk management.
+  <div class="footer-disclaimer" data-i18n="footer_disclaimer">
+    ⚠ Trading forex dan gold berisiko tinggi dan mungkin tidak cocok untuk semua investor. Kamu bisa kehilangan sebagian atau seluruh investasimu. GOLDEX AI menyediakan sinyal edukasi — bukan nasihat finansial. Selalu terapkan manajemen risiko yang ketat.
   </div>
 </footer>
 
 <!-- STICKY CHECKOUT CTA -->
 <div class="sticky-cta" id="sticky-cta">
   <div class="sticky-cta-info">
-    <div class="sticky-cta-price"><s>Rp1,499,000</s>Rp299,000</div>
-    <div class="sticky-cta-sub">Founding Member · 37/50 slots left</div>
+    <div class="sticky-cta-price"><s>Rp1.499.000</s>Rp299.000</div>
+    <div class="sticky-cta-sub" data-i18n="sticky_sub">Founding Member · 37/50 slot tersisa</div>
   </div>
-  <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="sticky-cta-btn">Get Access →</a>
+  <a href="https://lynk.id/suksesberkahsugih/3z6q31517ynx/checkout" class="sticky-cta-btn" data-i18n="sticky_btn">Dapatkan Akses →</a>
 </div>
 
+<script src="/static/js/i18n.js"></script>
+<script>
+initI18n({
+  id: {
+    nav_how: "Cara Kerja", nav_track: "Track Record", nav_pricing: "Harga", nav_faq: "FAQ", nav_login: "Masuk", nav_cta: "Dapatkan Akses →",
+    hero_eyebrow: "GEMINI AI AKTIF · SESI LONDON/NY",
+    hero_h1: "Sinyal <em>XAU/USD</em> Real-Time<br>dari Gemini AI — Langsung ke Telegram",
+    hero_sub: "Berkah Entry Signal + Gemini AI memindai XAU/USD setiap <strong>1 menit</strong> — deteksi otomatis Break of Structure, Liquidity Sweep, dan Pin Bar. Entry, TP, SL yang presisi. Tanpa analisis manual.",
+    hero_stat_tf: "Timeframe", hero_stat_session: "London/NY Aktif", hero_stat_filters: "Filter Confluence", hero_stat_emotion: "Emosi",
+    hero_cta_primary: "Dapatkan Akses Seumur Hidup →", hero_cta_secondary: "Cara Kerjanya",
+    gold_spot_landing: "M1 · Gold Spot", live_scanning_landing: "MEMINDAI LIVE", loading_price_landing: "● Memuat harga live...",
+    berkah_engine: "BERKAH SIGNAL ENGINE", scanning_status: "● SCANNING · ADX 23.4 · BoS TERDETEKSI",
+    pain_eyebrow: "MASALAH TRADER GOLD", pain_title: "Kenapa Mayoritas Trader XAU/USD Masih Rugi?",
+    pain_sub: "Gold adalah salah satu aset paling volatil yang dipengaruhi sentimen global. Satu entry salah beberapa poin saja langsung kena Stop Loss.",
+    pain1_title: "Chart M1 Bergerak Terlalu Cepat", pain1_body: "Satu candle M1 gold bisa bergerak 5–15 poin dalam hitungan detik. Analisis manual selalu membuatmu masuk terlambat — jauh dari harga entry ideal.",
+    pain2_title: "Terjebak Liquidity Hunt", pain2_body: "Market maker menyapu likuiditas high/low sebelum berbalik arah. Tanpa deteksi otomatis, kamu jadi korban stop hunt yang menyapu SL-mu.",
+    pain3_title: "Berita Fed/CPI Bikin Panik", pain3_body: "XAU/USD sangat sensitif terhadap data ekonomi AS. Tanpa filter sentimen dan kesadaran sesi, kamu trading di waktu yang berbahaya.",
+    pain4_title: "Entry FOMO di Puncak Momentum", pain4_body: "Melihat gold naik $20 bikin orang langsung beli, tapi malah kena puncak sebelum berbalik ke Stop Loss. Filter Pin Bar + ADX mencegah beli di kondisi overbought.",
+    pain5_title: "Tidak Bisa Pantau 24 Jam", pain5_body: "Sesi London dan NY adalah waktu terbaik untuk volatilitas gold. Kamu tidak mungkin menatap layar terus-menerus berjam-jam.",
+    pain6_title: "Level SL & TP Asal-asalan", pain6_body: "SL terlalu ketat berujung tersapu; terlalu lebar berujung rugi besar. SL berbasis ATR yang dihitung dinamis menyelesaikan masalah ini.",
+    pain_cta: "Yang kamu butuhkan bukan lebih banyak analisis.<br>Yang kamu butuhkan adalah <em>AI yang tidak tidur dan tidak trading pakai emosi.</em>",
+    how_eyebrow: "CARA KERJA", how_title: "Dari Data Broker ke Sinyal Telegram<br>dalam Hitungan Detik",
+    how_sub: "Pipeline otomatis end-to-end. Nol campur tangan manusia dalam proses analisis — murni data dan algoritma.",
+    pipe1_num: "01 — DATA", pipe1_title: "Live MT5 Bridge", pipe1_body: "Mengambil data OHLCV M1 live langsung via MT5 bridge. 500 candle real-time identik dengan feed broker kamu.",
+    pipe2_num: "02 — ANALISIS", pipe2_title: "Berkah Signal Engine", pipe2_body: "5 filter confluence dieksekusi bersamaan: Break of Structure, HTF BoS, Liquidity Sweep, Pin Bar, momentum ADX.",
+    pipe3_num: "03 — AI", pipe3_title: "Narasi Gemini AI", pipe3_body: "Saat BUY/SELL terpicu, Gemini AI (Google) menulis analisis konteks pasar dan level kritis yang perlu diperhatikan.",
+    pipe4_num: "04 — KIRIM", pipe4_title: "Telegram Instan", pipe4_body: "Notifikasi langsung ke grup Telegram kamu lengkap dengan Entry, TP1, TP2, TP3, SL, lot size, dan narasi AI.", pipe4_badge: "Push Real-time",
+    signal_example_label: "CONTOH SINYAL TELEGRAM",
+    track_eyebrow: "TRACK RECORD", track_title: "Performa Live — 4 Minggu Terakhir",
+    track_sub: "Data Berkah Signal pada XAU/USD M1. Rata-rata 6 trade/hari, risiko $100 per trade, biaya spread 3 poin. Periode: 26 Mei – 22 Jun 2026.",
+    track_winrate: "Win Rate", track_total: "Total Trade", track_profit: "Total Profit", track_avg: "Rata-rata Trade", track_winloss: "Win / Loss",
+    track_disclaimer: "* Data performa simulasi — bukan hasil live trading terverifikasi. Trading Forex/Gold berisiko tinggi. Performa masa lalu tidak menjamin hasil di masa depan.",
+    track_cta: "Klaim Akses Founding Member — Rp299.000 →", slots_note: "37 dari 50 slot tersisa · Harga naik ke Rp399.000 setelah penuh",
+    feat_eyebrow: "TEKNOLOGI", feat_title: "Fitur yang Membedakan GOLDEX AI", feat_tag_core: "CORE ENGINE",
+    feat1_title: "Berkah Entry Signal — 5 Filter Confluence", feat1_body: "Break of Structure + HTF BoS + Liquidity Sweep + Konfirmasi Pin Bar + Filter Momentum ADX. Semua harus align bersamaan. Sinyal palsu otomatis tersaring.",
+    feat2_title: "Narasi Gemini AI Real-Time", feat2_body: "Setiap sinyal BUY/SELL disertai narasi dari Gemini AI (Google) — konteks pasar, level kritis, dan titik invalidasi. Lebih dari sekadar angka.",
+    feat3_title: "Data Broker Live via MT5 Bridge", feat3_body: "Harga yang dianalisis identik dengan feed broker kamu. Tanpa gap data, tanpa delay. Candle M1 asli langsung dari liquidity provider.",
+    feat4_title: "SL/TP Dinamis Berbasis ATR", feat4_body: "Stop Loss dan Take Profit dihitung otomatis dari ATR (Average True Range) — adaptif terhadap volatilitas pasar saat ini.",
+    feat5_title: "Filter Sesi London/NY", feat5_body: "Sistem aktif penuh selama sesi London dan New York — volume tinggi, spread ketat, sinyal sangat andal.",
+    feat6_title: "Dashboard + Telegram Real-Time", feat6_body: "Dashboard web untuk pemantauan live plus notifikasi Telegram instan untuk setiap BUY/SELL. Auto-update tanpa perlu refresh manual.",
+    comp_eyebrow: "PERBANDINGAN", comp_title: "Sinyal Manual vs GOLDEX AI",
+    comp_th_criteria: "Kriteria", comp_th_manual: "Sinyal Manual / Mentor",
+    comp_r1: "Sumber Analisis", comp_r1a: "Feeling manusia", comp_r1b: "5 filter algoritmik + Gemini AI",
+    comp_r2: "Kecepatan", comp_r2a: "Menit – jam", comp_r2b: "Deteksi &lt;60 detik",
+    comp_r3: "Jam Aktif", comp_r3a: "Tergantung ketersediaan admin", comp_r3b: "24/5 sesi London & NY",
+    comp_r4: "Data Harga", comp_r4a: "Sering delay / beda broker", comp_r4b: "Identik broker via MT5 live",
+    comp_r5: "SL/TP", comp_r5a: "Asal-asalan / tidak ada", comp_r5b: "Berbasis ATR, dinamis per sinyal",
+    comp_r6: "Emosi", comp_r6a: "✗ FOMO, Greed, Fear", comp_r6b: "✓ Nol Emosi",
+    comp_r7: "Transparansi", comp_r7a: "Screenshot pilihan saja", comp_r7b: "Dashboard live + riwayat sinyal lengkap",
+    comp_r8: "Biaya", comp_r8b: "Rp299.000 SEUMUR HIDUP",
+    pricing_eyebrow: "HARGA", pricing_title: "Bayar Sekali. Akses Seumur Hidup.", pricing_sub: "Tanpa langganan berulang. Tanpa biaya tersembunyi. Bayar sekali, terima sinyal selamanya.",
+    pricing_badge: "SEUMUR HIDUP", pricing_name: "Akses Penuh Selamanya", pricing_period: "Bayar sekali · Bukan langganan bulanan",
+    pricing_note: "Harga Founding Member — terbatas untuk 50 pembeli pertama, naik ke Rp399.000 setelah penuh",
+    pricing_f1: "Sinyal XAU/USD M1 real-time (sesi London & NY)", pricing_f2: "Entry, TP1, TP2, TP3, SL presisi untuk setiap sinyal",
+    pricing_f3: "Narasi Gemini AI per sinyal BUY/SELL", pricing_f4: "5 filter confluence Berkah Signal otomatis",
+    pricing_f5: "Stop Loss dinamis berbasis ATR", pricing_f6: "Akses dashboard web 24/7", pricing_f7: "Notifikasi grup Telegram VIP instan",
+    pricing_f8: "Update algoritma & sistem gratis selamanya", pricing_f9: "Monitoring TP/SL otomatis dengan alert WIN real-time",
+    pricing_btn: "Dapatkan Akses Seumur Hidup — Rp299.000", pricing_slots_text: "dari 50 slot Founding Member tersisa",
+    pricing_urgency: "Harga naik ke Rp399.000 setelah <span>50 slot terisi</span>",
+    cd_hrs: "JAM", cd_min: "MNT", cd_sec: "DTK",
+    payment_methods_label: "Metode pembayaran:", pay_bank: "Transfer Bank", pay_bank2: "Transfer Bank", pay_va: "Virtual Account",
+    payment_confirm_note: "Setelah pembayaran dikonfirmasi, kamu akan menerima detail akun dashboard dan link Telegram VIP dalam 24 jam.",
+    faq_eyebrow: "FAQ", faq_title: "Pertanyaan yang Sering Diajukan",
+    faq1_q: "Apakah ini robot trading otomatis yang eksekusi trade langsung?",
+    faq1_a: "Tidak. GOLDEX AI menyediakan sinyal (BUY/SELL dengan Entry, TP, SL). Kamu eksekusi trade secara manual di broker pilihanmu. GOLDEX AI tidak punya akses sama sekali ke akun broker kamu.",
+    faq2_q: "Broker apa saja yang didukung?",
+    faq2_a: "Broker manapun yang menyediakan XAU/USD — FBS, XM, IC Markets, Exness, HFM, dan lainnya. Karena GOLDEX AI mengirim harga entry/exit, kamu bisa eksekusi di platform broker manapun.",
+    faq3_q: "Berapa saldo minimum yang direkomendasikan?",
+    faq3_a: "Minimal $100 direkomendasikan untuk mengikuti sinyal dengan ukuran posisi standar. Idealnya $500–$1.000 untuk manajemen risiko yang fleksibel. Ukuran lot sinyal menyesuaikan risiko 1.5% per trade.",
+    faq4_q: "Berapa banyak sinyal dihasilkan per hari dan kapan?",
+    faq4_a: "Rata-rata 2–5 sinyal per hari selama sesi London dan New York. Frekuensi sinyal bervariasi tergantung kondisi pasar — sinyal hanya terpicu saat semua 5 filter confluence align bersamaan.",
+    faq5_q: "Apakah profit dijamin?",
+    faq5_a: "Tidak ada sistem trading yang bisa menjamin profit. Setiap sinyal punya Stop Loss wajib untuk melindungi modal. Sistem dirancang untuk setup probabilitas tinggi dengan minimum RRR 1:1, tapi performa masa lalu tidak menjamin hasil masa depan. Trading gold mengandung risiko substansial.",
+    faq6_q: "Apa bedanya Telegram VIP dan Dashboard?",
+    faq6_a: "Telegram VIP mengirim notifikasi push real-time instan untuk setiap sinyal. Dashboard web menyediakan akses 24/7 ke sinyal terbaru, log historis, statistik performa, dan monitor TP/SL live. Keduanya termasuk dalam paket seumur hidup.",
+    faq7_q: "Apakah akan ada update sistem di masa depan?",
+    faq7_a: "Ya. Semua penyempurnaan algoritma, filter baru, dan upgrade sistem termasuk dalam keanggotaan seumur hidup kamu tanpa biaya tambahan.",
+    faq_cta: "Amankan Slot Kamu Sekarang — Rp299.000 →", faq_cta_sub: "Bayar sekali, sinyal selamanya · 37 dari 50 slot tersisa",
+    final_eyebrow: "🔒 AMANKAN SLOT KAMU SEKARANG", final_title: "Bayar Sekali.<br>Sinyal Selamanya.",
+    final_sub: "Lengkapi informasi di bawah — akses dikonfirmasi dalam <strong style=\"color:var(--text)\">kurang dari 24 jam</strong>",
+    form_price_name: "GOLDEX AI — Akses Seumur Hidup", form_price_sub: "Dashboard + Telegram VIP + Update Selamanya",
+    form_title: "Lengkapi Informasi Kamu", form_sub: "Semua kolom wajib diisi. Akses akan dikirim ke WhatsApp & email kamu.",
+    form_name: "Nama Lengkap *", form_name_ph: "Masukkan nama lengkap kamu",
+    form_wa: "Nomor WhatsApp *", form_email: "Alamat Email *", form_email_ph: "email@contoh.com", form_tg: "Username Telegram *",
+    form_pay_select: "Pilih Metode Pembayaran",
+    what_you_get: "Yang kamu dapatkan:", get1: "✓ Akun dashboard GOLDEX AI", get2: "✓ Link grup Telegram VIP",
+    get3: "✓ Sinyal XAU/USD M1 real-time", get4: "✓ Update sistem seumur hidup",
+    form_submit_btn: "🔒 Amankan Akses Seumur Hidup — Rp299.000", form_submit_btn_raw: "🔒 Amankan Akses Seumur Hidup — Rp299.000",
+    form_security: "🔒 Informasi kamu aman & tidak akan dibagikan ke pihak ketiga",
+    direct_pay_title: "Pembayaran Langsung — Checkout Instan", direct_pay_sub: "Klik tombol di bawah untuk checkout aman via lynk.id. Detail akses dikirim ke email & WhatsApp kamu dalam 24 jam.",
+    checkout_now_btn: "🔒 Checkout Sekarang — Rp299.000", secure_pay_note: "Pembayaran aman via lynk.id · Transfer Bank · QRIS · E-Wallet · Virtual Account",
+    trust1: "✓ Pembayaran aman", trust2: "✓ Setup &lt; 24 jam", trust3: "✓ Akses seumur hidup", trust4: "dari 50 slot tersisa",
+    fn_action: "baru saja mendapat akses seumur hidup",
+    footer_tagline: "Sinyal XAU/USD Bertenaga Gemini AI · Real-Time · Akses Seumur Hidup",
+    footer_terms: "Syarat & Ketentuan", footer_privacy: "Kebijakan Privasi", footer_contact: "Hubungi Kami",
+    footer_disclaimer: "⚠ Trading forex dan gold berisiko tinggi dan mungkin tidak cocok untuk semua investor. Kamu bisa kehilangan sebagian atau seluruh investasimu. GOLDEX AI menyediakan sinyal edukasi — bukan nasihat finansial. Selalu terapkan manajemen risiko yang ketat.",
+    sticky_sub: "Founding Member · 37/50 slot tersisa", sticky_btn: "Dapatkan Akses →",
+    err_required: "⚠ Semua kolom wajib diisi sebelum lanjut.", err_email: "⚠ Format email tidak valid.",
+    processing_order: "⏳ Memproses pesanan...", order_received: "✅ Pesanan diterima! Mengalihkan ke WhatsApp untuk konfirmasi pembayaran...",
+  },
+  en: {
+    nav_how: "How it Works", nav_track: "Track Record", nav_pricing: "Pricing", nav_faq: "FAQ", nav_login: "Login", nav_cta: "Get Access →",
+    hero_eyebrow: "GEMINI AI ACTIVE · LONDON/NY SESSION",
+    hero_h1: "Real-Time <em>XAU/USD</em> Signals<br>from Gemini AI — Straight to Telegram",
+    hero_sub: "Berkah Entry Signal + Gemini AI scanning XAU/USD every <strong>1 minute</strong> — automated Break of Structure, Liquidity Sweep, and Pin Bar detection. Exact Entry, TP, SL. Zero manual analysis.",
+    hero_stat_tf: "Timeframe", hero_stat_session: "London/NY Active", hero_stat_filters: "Confluence Filters", hero_stat_emotion: "Emotions",
+    hero_cta_primary: "Get Lifetime Access →", hero_cta_secondary: "How It Works",
+    gold_spot_landing: "M1 · Gold Spot", live_scanning_landing: "LIVE SCANNING", loading_price_landing: "● Loading live price...",
+    berkah_engine: "BERKAH SIGNAL ENGINE", scanning_status: "● SCANNING · ADX 23.4 · BoS DETECTED",
+    pain_eyebrow: "GOLD TRADER PAIN POINTS", pain_title: "Why Do Most XAU/USD Traders Still Lose Money?",
+    pain_sub: "Gold is one of the most volatile assets influenced by global sentiment. One wrong entry by a few points leads straight to Stop Loss.",
+    pain1_title: "M1 Chart Moves Too Fast", pain1_body: "A single M1 gold candle can move 5–15 points in seconds. Manual analysis always gets you in late — far away from the ideal entry price.",
+    pain2_title: "Trapped in Liquidity Hunts", pain2_body: "Market makers sweep high/low liquidity before reversing. Without automated detection, you become a victim of stop hunts sweeping your SL.",
+    pain3_title: "Fed/CPI News Causes Panic", pain3_body: "XAU/USD is highly sensitive to US economic data. Without sentiment filters and session awareness, you trade at dangerous times.",
+    pain4_title: "FOMO Entry at Peak Momentum", pain4_body: "Seeing gold jump $20 makes people buy instantly, only to hit the peak before it reverses into Stop Loss. Pin Bar + ADX filters prevent buying overbought conditions.",
+    pain5_title: "Cannot Monitor 24 Hours", pain5_body: "London and NY sessions are the best times for gold volatility. You cannot stare at screens continuously for hours.",
+    pain6_title: "Arbitrary SL & TP Levels", pain6_body: "Setting SL too tight leads to sweeps; setting it too wide leads to heavy losses. ATR-based SL calculated dynamically solves this issue.",
+    pain_cta: "What you need isn't more analysis.<br>What you need is <em>an AI that doesn't sleep or trade with emotions.</em>",
+    how_eyebrow: "HOW IT WORKS", how_title: "From Broker Data to Telegram Signals<br>in Seconds",
+    how_sub: "End-to-end automated pipeline. Zero human interference in the analysis process — pure data and algorithms.",
+    pipe1_num: "01 — DATA", pipe1_title: "Live MT5 Bridge", pipe1_body: "Fetches live OHLCV M1 data directly via MT5 bridge. 500 real-time candles identical to your broker feeds.",
+    pipe2_num: "02 — ANALYSIS", pipe2_title: "Berkah Signal Engine", pipe2_body: "5 confluence filters executed simultaneously: Break of Structure, HTF BoS, Liquidity Sweep, Pin Bar, ADX momentum.",
+    pipe3_num: "03 — AI", pipe3_title: "Gemini AI Narrative", pipe3_body: "When BUY/SELL triggers, Gemini AI (Google) writes market context analysis and critical levels to watch.",
+    pipe4_num: "04 — SEND", pipe4_title: "Instant Telegram", pipe4_body: "Direct notification to your Telegram group with Entry, TP1, TP2, TP3, SL, lot size, and AI narrative.", pipe4_badge: "Real-time Push",
+    signal_example_label: "TELEGRAM SIGNAL EXAMPLE",
+    track_eyebrow: "TRACK RECORD", track_title: "Live Performance — Last 4 Weeks",
+    track_sub: "Berkah Signal data on XAU/USD M1. Average 6 trades/day, $100 risk per trade, 3 point spread fee. Period: May 26 – Jun 22, 2026.",
+    track_winrate: "Win Rate", track_total: "Total Trades", track_profit: "Total Profit", track_avg: "Avg Trades", track_winloss: "Win / Loss",
+    track_disclaimer: "* Simulated performance data — not verified live trading results. Forex/Gold trading carries high risk. Past performance does not guarantee future results.",
+    track_cta: "Claim Founding Member Access — Rp299,000 →", slots_note: "37 of 50 slots remaining · Price increases to Rp399,000 once filled",
+    feat_eyebrow: "TECHNOLOGY", feat_title: "Features That Set GOLDEX AI Apart", feat_tag_core: "CORE ENGINE",
+    feat1_title: "Berkah Entry Signal — 5 Confluence Filters", feat1_body: "Break of Structure + HTF BoS + Liquidity Sweep + Pin Bar Confirmation + ADX Momentum Filter. All must align simultaneously. False signals are automatically filtered out.",
+    feat2_title: "Real-Time Gemini AI Narrative", feat2_body: "Every BUY/SELL signal is accompanied by narrative from Gemini AI (Google) — market context, critical levels, and invalidation points. More than just numbers.",
+    feat3_title: "Live Broker Data via MT5 Bridge", feat3_body: "Analyzed prices are identical to your broker feeds. No data gaps, no delays. Real M1 candles directly from liquidity providers.",
+    feat4_title: "Dynamic ATR-Based SL/TP", feat4_body: "Stop Loss and Take Profit calculated automatically from ATR (Average True Range) — adaptive to current market volatility.",
+    feat5_title: "London/NY Session Filter", feat5_body: "System fully active during London and New York sessions — high volume, tight spreads, highly reliable signals.",
+    feat6_title: "Dashboard + Real-Time Telegram", feat6_body: "Web dashboard for live monitoring plus instant Telegram notifications for every BUY/SELL. Auto-updates with zero manual refreshes needed.",
+    comp_eyebrow: "COMPARISON", comp_title: "Manual Signals vs GOLDEX AI",
+    comp_th_criteria: "Criteria", comp_th_manual: "Manual Signals / Mentors",
+    comp_r1: "Analysis Source", comp_r1a: "Human gut feeling", comp_r1b: "5 algorithmic filters + Gemini AI",
+    comp_r2: "Speed", comp_r2a: "Minutes – hours", comp_r2b: "Detection in &lt;60 seconds",
+    comp_r3: "Active Hours", comp_r3a: "Depends on admin availability", comp_r3b: "24/5 London & NY sessions",
+    comp_r4: "Price Data", comp_r4a: "Often delayed / broker mismatch", comp_r4b: "Identical to broker via live MT5",
+    comp_r5: "SL/TP", comp_r5a: "Arbitrary / missing", comp_r5b: "ATR-based, dynamic per signal",
+    comp_r6: "Emotions", comp_r6a: "✗ FOMO, Greed, Fear", comp_r6b: "✓ Zero Emotion",
+    comp_r7: "Transparency", comp_r7a: "Cherry-picked screenshots", comp_r7b: "Live dashboard + full signal history",
+    comp_r8: "Cost", comp_r8b: "Rp299,000 LIFETIME",
+    pricing_eyebrow: "PRICING", pricing_title: "One-Time Payment. Lifetime Access.", pricing_sub: "No recurring subscriptions. No hidden fees. Pay once, receive signals forever.",
+    pricing_badge: "LIFETIME", pricing_name: "Full Access Forever", pricing_period: "One-time payment · Not a monthly subscription",
+    pricing_note: "Founding Member Price — limited to first 50 buyers, increases to Rp399,000 once filled",
+    pricing_f1: "Real-time XAU/USD M1 signals (London & NY sessions)", pricing_f2: "Exact Entry, TP1, TP2, TP3, SL for every signal",
+    pricing_f3: "Gemini AI narrative per BUY/SELL signal", pricing_f4: "5 automated Berkah Signal confluence filters",
+    pricing_f5: "Dynamic ATR-based Stop Loss", pricing_f6: "24/7 web dashboard access", pricing_f7: "Instant VIP Telegram group notifications",
+    pricing_f8: "Free lifetime algorithm & system updates", pricing_f9: "Automated TP/SL monitoring with real-time WIN alerts",
+    pricing_btn: "Get Lifetime Access — Rp299,000", pricing_slots_text: "of 50 Founding Member slots remaining",
+    pricing_urgency: "Price increases to Rp399,000 once <span>50 slots fill up</span>",
+    cd_hrs: "HRS", cd_min: "MIN", cd_sec: "SEC",
+    payment_methods_label: "Payment methods:", pay_bank: "Bank Transfer", pay_bank2: "Bank Transfer", pay_va: "Virtual Account",
+    payment_confirm_note: "After payment confirmation, you will receive dashboard account details and the VIP Telegram link within 24 hours.",
+    faq_eyebrow: "FAQ", faq_title: "Frequently Asked Questions",
+    faq1_q: "Is this an automated trading robot that executes trades directly?",
+    faq1_a: "No. GOLDEX AI provides signals (BUY/SELL with Entry, TP, SL). You execute the trades manually on your preferred broker. GOLDEX AI has zero access to your broker account.",
+    faq2_q: "Which brokers are supported?",
+    faq2_a: "Any broker offering XAU/USD — FBS, XM, IC Markets, Exness, HFM, and others. Since GOLDEX AI sends entry/exit prices, you can execute on any broker platform.",
+    faq3_q: "What is the recommended minimum balance?",
+    faq3_a: "A minimum of $100 is recommended to follow signals with standard position sizing. Ideally $500–$1,000 for flexible risk management. Signal lot sizes adapt to 1.5% risk per trade.",
+    faq4_q: "How many signals are generated per day and when?",
+    faq4_a: "An average of 2–5 signals per day during the London and New York sessions. Signal frequency varies based on market conditions — signals only trigger when all 5 confluence filters align simultaneously.",
+    faq5_q: "Is profit guaranteed?",
+    faq5_a: "No trading system can guarantee profits. Every signal includes a mandatory Stop Loss to protect capital. The system is designed for high probability setups with minimum 1:1 RRR, but past performance does not guarantee future results. Gold trading involves substantial risk.",
+    faq6_q: "What is the difference between Telegram VIP and the Dashboard?",
+    faq6_a: "Telegram VIP delivers instant real-time push notifications for every signal. The web dashboard provides 24/7 access to recent signals, historical logs, performance stats, and live TP/SL monitors. Both are included in the lifetime package.",
+    faq7_q: "Will there be future system updates?",
+    faq7_a: "Yes. All algorithm refinements, new filters, and system upgrades are included in your lifetime membership at no extra charge.",
+    faq_cta: "Secure Your Slot Now — Rp299,000 →", faq_cta_sub: "Pay once, signals forever · 37 of 50 slots remaining",
+    final_eyebrow: "🔒 SECURE YOUR SLOT NOW", final_title: "One-Time Payment.<br>Signals Forever.",
+    final_sub: "Complete the information below — access confirmed in <strong style=\"color:var(--text)\">under 24 hours</strong>",
+    form_price_name: "GOLDEX AI — Lifetime Access", form_price_sub: "Dashboard + VIP Telegram + Lifetime Updates",
+    form_title: "Complete Your Information", form_sub: "All fields required. Access will be sent to your WhatsApp & email.",
+    form_name: "Full Name *", form_name_ph: "Enter your full name",
+    form_wa: "WhatsApp Number *", form_email: "Email Address *", form_email_ph: "email@example.com", form_tg: "Telegram Username *",
+    form_pay_select: "Select Payment Method",
+    what_you_get: "What you get:", get1: "✓ GOLDEX AI dashboard account", get2: "✓ VIP Telegram group link",
+    get3: "✓ Real-time XAU/USD M1 signals", get4: "✓ Lifetime system updates",
+    form_submit_btn: "🔒 Secure Lifetime Access — Rp299,000", form_submit_btn_raw: "🔒 Secure Lifetime Access — Rp299,000",
+    form_security: "🔒 Your information is secure & will not be shared with third parties",
+    direct_pay_title: "Direct Payment — Instant Checkout", direct_pay_sub: "Click the button below for secure checkout via lynk.id. Access details delivered to your email & WhatsApp within 24 hours.",
+    checkout_now_btn: "🔒 Checkout Now — Rp299,000", secure_pay_note: "Secure payment via lynk.id · Bank Transfer · QRIS · E-Wallet · Virtual Account",
+    trust1: "✓ Secure payment", trust2: "✓ Setup &lt; 24 hrs", trust3: "✓ Lifetime access", trust4: "of 50 slots remaining",
+    fn_action: "just acquired lifetime access",
+    footer_tagline: "Gemini AI-Powered XAU/USD Signals · Real-Time · Lifetime Access",
+    footer_terms: "Terms & Conditions", footer_privacy: "Privacy Policy", footer_contact: "Contact Us",
+    footer_disclaimer: "⚠ Trading forex and gold carries high risk and may not be suitable for all investors. You could lose some or all of your investment. GOLDEX AI provides educational signals — not financial advice. Always practice strict risk management.",
+    sticky_sub: "Founding Member · 37/50 slots left", sticky_btn: "Get Access →",
+    err_required: "⚠ All fields are required before proceeding.", err_email: "⚠ Invalid email format.",
+    processing_order: "⏳ Processing order...", order_received: "✅ Order received! Redirecting to WhatsApp for payment confirmation...",
+  },
+});
+renderLangToggle("landing-lang-toggle");
+</script>
 <script>
 // ── Sticky checkout CTA show/hide ──
 (function(){
@@ -1382,7 +1583,7 @@ function submitOrder() {
     msg.style.background = 'rgba(224,82,82,0.1)';
     msg.style.border = '1px solid rgba(224,82,82,0.25)';
     msg.style.color = '#E05252';
-    msg.textContent = '⚠ All fields are required before proceeding.';
+    msg.textContent = t('err_required');
     return;
   }
   if(!/^[\w.-]+@[\w.-]+\.\w+$/.test(email)) {
@@ -1390,13 +1591,13 @@ function submitOrder() {
     msg.style.background = 'rgba(224,82,82,0.1)';
     msg.style.border = '1px solid rgba(224,82,82,0.25)';
     msg.style.color = '#E05252';
-    msg.textContent = '⚠ Invalid email format.';
+    msg.textContent = t('err_email');
     return;
   }
 
   const btn = document.querySelector('.form-submit');
   btn.disabled = true;
-  btn.innerHTML = '⏳ Processing order...';
+  btn.innerHTML = t('processing_order');
 
   const waNum = '628XXXXXXXXXX';
   const text  = encodeURIComponent(
@@ -1412,12 +1613,12 @@ function submitOrder() {
 
   setTimeout(() => {
     btn.disabled = false;
-    btn.innerHTML = '🔒 Secure Lifetime Access — Rp299,000';
+    btn.innerHTML = t('form_submit_btn_raw');
     msg.style.display = 'block';
     msg.style.background = 'rgba(38,193,126,0.1)';
     msg.style.border = '1px solid rgba(38,193,126,0.25)';
     msg.style.color = '#26C17E';
-    msg.innerHTML = '✅ Order received! Redirecting to WhatsApp for payment confirmation...';
+    msg.innerHTML = t('order_received');
     setTimeout(() => {
       window.open(`https://wa.me/${waNum}?text=${text}`, '_blank');
     }, 1500);
@@ -1483,7 +1684,12 @@ const NOTIF_PEOPLE = [
   {name:'Tika Andriani',  kota:'Ternate'},
 ];
 
-const WAKTU_AGO = [
+const WAKTU_AGO_ID = [
+  'baru saja','1 menit lalu','2 menit lalu','3 menit lalu',
+  '5 menit lalu','7 menit lalu','10 menit lalu',
+  '12 menit lalu','15 menit lalu','20 menit lalu',
+];
+const WAKTU_AGO_EN = [
   'just now','1 minute ago','2 minutes ago','3 minutes ago',
   '5 minutes ago','7 minutes ago','10 minutes ago',
   '12 minutes ago','15 minutes ago','20 minutes ago',
@@ -1515,7 +1721,8 @@ function showNextNotif() {
 
   const p      = notifQueue[notifIdx++];
   const inisial= p.name.charAt(0).toUpperCase();
-  const waktu  = WAKTU_AGO[Math.floor(Math.random() * WAKTU_AGO.length)];
+  const agoList= (typeof getCurrentLang === 'function' && getCurrentLang() === 'en') ? WAKTU_AGO_EN : WAKTU_AGO_ID;
+  const waktu  = agoList[Math.floor(Math.random() * agoList.length)];
   const color  = AV_COLORS[Math.floor(Math.random() * AV_COLORS.length)];
 
   const el  = document.getElementById('float-notif');
@@ -1523,9 +1730,10 @@ function showNextNotif() {
   const nm  = document.getElementById('fn-name');
   const tm  = document.getElementById('fn-time');
 
+  const fromWord = (typeof getCurrentLang === 'function' && getCurrentLang() === 'en') ? ' from ' : ' dari ';
   av.textContent   = inisial;
   av.style.background = color;
-  nm.textContent   = p.name + ' from ' + p.kota;
+  nm.textContent   = p.name + fromWord + p.kota;
   tm.textContent   = waktu;
 
   notifBusy = true;
