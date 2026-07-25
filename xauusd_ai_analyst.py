@@ -1076,6 +1076,16 @@ def detect_berkah_signal(
         "ema_price":     (ema_price_bull,   f"+1 Price {price:.2f} > EMA50 {ema_50_val:.2f}"),
         "session":       (session_ok,       f"+1 Session OK jam {_hour_wib}:xx WIB"),
     }
+    score_detail_buy_en = {
+        "bos_bull":      (bos_bull,         "+1 BoS↑ M5 structure break"),
+        "htf_bos_bull":  (htf_bos_bull,     "+1 HTF BoS↑ H1 structure align"),
+        "liq_sweep_buy": (liq_buy,          "+1 Liquidity Sweep below"),
+        "pin_bar_bull":  (is_bull_pin,      "+1 Bull Pin Bar / Hammer"),
+        "adx_ok":        (adx_current > adx_threshold,
+                                            f"+1 ADX {adx_current:.1f}>{adx_threshold}"),
+        "ema_price":     (ema_price_bull,   f"+1 Price {price:.2f} > EMA50 {ema_50_val:.2f}"),
+        "session":       (session_ok,       f"+1 Session OK at {_hour_wib}:xx WIB"),
+    }
 
     score_detail_sell = {
         "bos_bear":       (bos_bear,        "+1 BoS↓ M5 break struktur"),
@@ -1086,6 +1096,16 @@ def detect_berkah_signal(
                                             f"+1 ADX {adx_current:.1f}>{adx_threshold}"),
         "ema_price":      (ema_price_bear,  f"+1 Price {price:.2f} < EMA50 {ema_50_val:.2f}"),
         "session":        (session_ok,      f"+1 Session OK jam {_hour_wib}:xx WIB"),
+    }
+    score_detail_sell_en = {
+        "bos_bear":       (bos_bear,        "+1 BoS↓ M5 structure break"),
+        "htf_bos_bear":   (htf_bos_bear,   "+1 HTF BoS↓ H1 structure align"),
+        "liq_sweep_sell": (liq_sell,        "+1 Liquidity Sweep above"),
+        "pin_bar_bear":   (is_bear_pin,     "+1 Bear Pin Bar / Shooting Star"),
+        "adx_ok":         (adx_current > adx_threshold,
+                                            f"+1 ADX {adx_current:.1f}>{adx_threshold}"),
+        "ema_price":      (ema_price_bear,  f"+1 Price {price:.2f} < EMA50 {ema_50_val:.2f}"),
+        "session":        (session_ok,      f"+1 Session OK at {_hour_wib}:xx WIB"),
     }
 
     score_buy  = sum(1 for v, _ in score_detail_buy.values()  if v)
@@ -1131,8 +1151,15 @@ def detect_berkah_signal(
             f"HTF BULL [{htf_src}] | "
             + " | ".join(active_factors)
         )
+        active_factors_en = [desc for v, desc in score_detail_buy_en.values() if v]
+        reason_en = (
+            f"Confluence BUY [{score}/7] {conf_label} — "
+            f"HTF BULL [{htf_src}] | "
+            + " | ".join(active_factors_en)
+        )
         if mult > 1:
-            reason += f" | Martingale {mult}x Aktif"
+            reason    += f" | Martingale {mult}x Aktif"
+            reason_en += f" | Martingale {mult}x Active"
 
     elif can_sell:
         sl       = float(h_now + sl_buffer_points + atr_val * 0.8)
@@ -1156,8 +1183,15 @@ def detect_berkah_signal(
             f"HTF BEAR [{htf_src}] | "
             + " | ".join(active_factors)
         )
+        active_factors_en = [desc for v, desc in score_detail_sell_en.values() if v]
+        reason_en = (
+            f"Confluence SELL [{score}/7] {conf_label} — "
+            f"HTF BEAR [{htf_src}] | "
+            + " | ".join(active_factors_en)
+        )
         if mult > 1:
-            reason += f" | Martingale {mult}x Aktif"
+            reason    += f" | Martingale {mult}x Aktif"
+            reason_en += f" | Martingale {mult}x Active"
 
     else:
         signal   = "WAIT"
@@ -1182,6 +1216,8 @@ def detect_berkah_signal(
             f"BUY miss [{score_buy}/7 < {score_threshold}]: {miss_buy} | "
             f"SELL miss [{score_sell}/7 < {score_threshold}]: {miss_sell}"
         )
+        # WAIT reason bersifat debug/teknis — versi EN tidak signifikan, pakai apa adanya
+        reason_en = reason
 
     return {
         "signal":     signal,
@@ -1199,6 +1235,7 @@ def detect_berkah_signal(
         "max_score":  7,
         "confidence": conf_label,
         "reason":     reason,
+        "reason_en":  reason_en,
         "conditions": {
             "htf_bias_bull":  htf_bias_bull,
             "htf_bias_bear":  htf_bias_bear,

@@ -145,7 +145,6 @@ function renderSignal(data) {
   const rm  = a.risk_management || {};
   const ms  = a.market_structure || {};
   const cf  = a.confluence_factors || [];
-  const wrn = a.warning_signs || [];
   const tm  = a.session_timing || {};
   const en  = a.entry || {};
 
@@ -240,30 +239,8 @@ function renderSignal(data) {
     }
   }
 
-  // Narrative — bersihkan kalau masih ada JSON wrapper
-  let narrativeText = a.narrative || "-";
-  if (narrativeText.trim().startsWith("{")) {
-    // Coba extract dari JSON string
-    try {
-      const parsed = JSON.parse(narrativeText);
-      narrativeText = parsed.narrative || narrativeText;
-    } catch(e) {
-      // Coba regex extract
-      const m = narrativeText.match(/"narrative"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-      if (m) narrativeText = m[1].replace(/\\"/g, '"').replace(/\\n/g, ' ');
-    }
-  }
-  // Bersihkan escape characters
-  narrativeText = narrativeText.replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
-  document.getElementById("sig-narrative").textContent = narrativeText;
-
-  // Confluence
-  const cfList = document.getElementById("cf-list");
-  cfList.innerHTML = cf.map(f => `<li>${f}</li>`).join("");
-
-  // Warnings
-  const warnList = document.getElementById("warn-list");
-  warnList.innerHTML = wrn.map(w => `<li>${w}</li>`).join("");
+  renderConfluence(a, cf);
+  renderNarrativeAndWarnings(a);
 
   // Timing
   document.getElementById("timing-best").textContent  = tm.best_entry_window || "-";
@@ -272,6 +249,54 @@ function renderSignal(data) {
 
   document.getElementById("chart-card").style.display = "block";
 }
+
+// ─── RENDER CONFLUENCE (bahasa-aware) ──
+function renderConfluence(a, cfFallback) {
+  const cfList = document.getElementById("cf-list");
+  if (!cfList) return;
+  const isEn = typeof getCurrentLang === "function" && getCurrentLang() === "en";
+  const cf = (isEn && Array.isArray(a?.confluence_factors_en) && a.confluence_factors_en.length)
+    ? a.confluence_factors_en
+    : (a?.confluence_factors || cfFallback || []);
+  cfList.innerHTML = cf.map(f => `<li>${f}</li>`).join("");
+}
+
+// ─── RENDER NARRATIVE + WARNINGS (bahasa-aware) ──
+// Dipisah dari renderSignal supaya bisa dipanggil ulang saat toggle bahasa
+// berubah, tanpa perlu menunggu poll /api/latest_signal berikutnya.
+function renderNarrativeAndWarnings(a) {
+  if (!a) return;
+  const isEn = typeof getCurrentLang === "function" && getCurrentLang() === "en";
+
+  // Narrative — pakai versi EN kalau ada & bahasa saat ini EN, fallback ke ID
+  let narrativeText = (isEn && a.narrative_en) ? a.narrative_en : (a.narrative || "-");
+  if (narrativeText.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(narrativeText);
+      narrativeText = parsed.narrative || narrativeText;
+    } catch(e) {
+      const m = narrativeText.match(/"narrative"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (m) narrativeText = m[1].replace(/\\"/g, '"').replace(/\\n/g, ' ');
+    }
+  }
+  narrativeText = narrativeText.replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
+  const narrEl = document.getElementById("sig-narrative");
+  if (narrEl) narrEl.textContent = narrativeText;
+
+  // Warnings — sama, pakai versi EN kalau tersedia & bahasa aktif EN
+  const wrn = (isEn && Array.isArray(a.warning_signs_en) && a.warning_signs_en.length)
+    ? a.warning_signs_en
+    : (a.warning_signs || []);
+  const warnList = document.getElementById("warn-list");
+  if (warnList) warnList.innerHTML = wrn.map(w => `<li>${w}</li>`).join("");
+}
+
+document.addEventListener("langchange", () => {
+  if (window._lastSignalData) {
+    renderConfluence(window._lastSignalData);
+    renderNarrativeAndWarnings(window._lastSignalData);
+  }
+});
 
 // ─── RENDER INDICATORS ───────────────────
 function renderIndicators(ind, price) {
