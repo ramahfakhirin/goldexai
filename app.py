@@ -1531,7 +1531,8 @@ def run_scheduled_analysis():
         atr_val_n = berkah.get("atr", 0)
         sl_dist   = abs(berkah["entry"] - berkah["sl"])
 
-        # Narasi otomatis berdasarkan data sinyal
+        # Narasi otomatis berdasarkan data sinyal (ID + EN — lihat format_signal_message
+        # untuk bagaimana keduanya digabung jadi satu pesan Telegram bilingual)
         if sig == "BUY":
             narrative = (
                 f"Pasar XAU/USD [{tf_label}] menunjukkan konfirmasi BUY {conf} "
@@ -1542,10 +1543,24 @@ def run_scheduled_analysis():
                 f"(jarak {sl_dist:.2f} poin dari entry), "
                 f"target bertahap TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
             )
+            narrative_en = (
+                f"XAU/USD market [{tf_label}] shows a {conf} BUY confirmation "
+                f"with a confluence score of {score}/7 — "
+                f"EMA50 above EMA200 confirms bullish bias, "
+                f"ADX {adx_val:.1f} indicates strong trend momentum. "
+                f"Critical level: maintain SL at ${berkah['sl']:.2f} "
+                f"({sl_dist:.2f} points from entry), "
+                f"staged targets TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
+            )
             warning_signs = [
                 f"Waspadai reversal jika harga close di bawah ${berkah['sl']:.2f}",
                 f"Hindari entry jika spread > {atr_val_n*0.3:.1f} poin",
                 "Perhatikan rilis news high-impact yang bisa invalidate struktur",
+            ]
+            warning_signs_en = [
+                f"Watch for reversal if price closes below ${berkah['sl']:.2f}",
+                f"Avoid entry if spread > {atr_val_n*0.3:.1f} points",
+                "Watch for high-impact news releases that could invalidate the structure",
             ]
         else:  # SELL
             narrative = (
@@ -1557,10 +1572,24 @@ def run_scheduled_analysis():
                 f"(jarak {sl_dist:.2f} poin dari entry), "
                 f"target bertahap TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
             )
+            narrative_en = (
+                f"XAU/USD market [{tf_label}] shows a {conf} SELL confirmation "
+                f"with a confluence score of {score}/7 — "
+                f"EMA50 below EMA200 confirms bearish bias, "
+                f"ADX {adx_val:.1f} indicates selling pressure remains strong. "
+                f"Critical level: maintain SL at ${berkah['sl']:.2f} "
+                f"({sl_dist:.2f} points from entry), "
+                f"staged targets TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
+            )
             warning_signs = [
                 f"Waspadai reversal jika harga close di atas ${berkah['sl']:.2f}",
                 f"Hindari entry jika spread > {atr_val_n*0.3:.1f} poin",
                 "Perhatikan rilis news high-impact yang bisa invalidate struktur",
+            ]
+            warning_signs_en = [
+                f"Watch for reversal if price closes above ${berkah['sl']:.2f}",
+                f"Avoid entry if spread > {atr_val_n*0.3:.1f} points",
+                "Watch for high-impact news releases that could invalidate the structure",
             ]
 
         confidence_note = (
@@ -1570,9 +1599,11 @@ def run_scheduled_analysis():
         )
 
         narasi_data = {
-            "narrative":       narrative,
-            "warning_signs":   warning_signs,
-            "confidence_note": confidence_note,
+            "narrative":        narrative,
+            "narrative_en":     narrative_en,
+            "warning_signs":    warning_signs,
+            "warning_signs_en": warning_signs_en,
+            "confidence_note":  confidence_note,
         }
 
         print(f"[Scheduler] ✅ Narasi auto-generated (0 token) — {conf} {score}/7")
@@ -1625,6 +1656,8 @@ def run_scheduled_analysis():
             "confluence_factors": [berkah["reason"]],
             "warning_signs":      narasi_data.get("warning_signs", []),
             "narrative":          narasi_data.get("narrative", berkah["reason"]),
+            "warning_signs_en":   narasi_data.get("warning_signs_en", []),
+            "narrative_en":       narasi_data.get("narrative_en", ""),
             "session_timing": {
                 "best_entry_window": session,
                 "avoid_trading":     "Sesi Asia (02:00–08:00 WIB)",
@@ -1837,12 +1870,14 @@ def format_signal_message(analysis: dict, price: float, timeframe: str, signal_i
         print("[Telegram] Skip formatting message — missing signal_id from DB confirmation")
         return ""
 
-    sig  = analysis.get("signal", "WAIT")
-    conf = analysis.get("confidence", 0)
-    rm   = analysis.get("risk_management", {})
-    en   = analysis.get("entry", {})
-    narr = analysis.get("narrative", "")
-    warn = analysis.get("warning_signs", [])
+    sig     = analysis.get("signal", "WAIT")
+    conf    = analysis.get("confidence", 0)
+    rm      = analysis.get("risk_management", {})
+    en      = analysis.get("entry", {})
+    narr    = analysis.get("narrative", "")
+    warn    = analysis.get("warning_signs", [])
+    narr_en = analysis.get("narrative_en", "")
+    warn_en = analysis.get("warning_signs_en", [])
 
     sig_emoji = "🟢" if sig == "BUY" else "🔴"
     now_str   = now_wib_str()
@@ -1893,16 +1928,28 @@ def format_signal_message(analysis: dict, price: float, timeframe: str, signal_i
     ]
     lines = [l for l in lines if l is not None]
 
-    # Narasi AI — penuh, tidak dipotong
+    # Narasi AI — Bahasa Indonesia (penuh, tidak dipotong)
     if narr:
         lines.append(f"🤖 <i>{narr}</i>")
         lines.append("─────────────────────")
 
-    # Warning signs (kalau ada)
+    # Warning signs — Bahasa Indonesia
     if warn and isinstance(warn, list):
         valid_warns = [w for w in warn if w and isinstance(w, str) and len(w) > 3]
         if valid_warns:
             lines.append("⚠️ " + " | ".join(valid_warns[:2]))
+            lines.append("─────────────────────")
+
+    # Narasi AI — English (mirror otomatis dari versi Indonesia, disiapkan bareng
+    # supaya user global tetap paham tanpa perlu toggle bahasa terpisah di Telegram)
+    if narr_en:
+        lines.append(f"🌐 <i>{narr_en}</i>")
+        lines.append("─────────────────────")
+
+    if warn_en and isinstance(warn_en, list):
+        valid_warns_en = [w for w in warn_en if w and isinstance(w, str) and len(w) > 3]
+        if valid_warns_en:
+            lines.append("⚠️ " + " | ".join(valid_warns_en[:2]))
             lines.append("─────────────────────")
 
     lines.append(f"🕐 {now_str}")
