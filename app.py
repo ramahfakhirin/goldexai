@@ -1671,9 +1671,15 @@ def run_scheduled_analysis():
         active_monitor = has_active_monitor()
 
         # ── Confluence score filter ──
+        # Gerbang kualitas TAMBAHAN di luar score_threshold bawaan detect_berkah_signal
+        # (yang defaultnya 4/7 — lihat run_multi_timeframe_scan). Ambang di sini bisa
+        # diatur lewat env var MIN_CONFLUENCE_SCORE tanpa perlu redeploy kode:
+        # turunkan ke 4 supaya sinyal NORMAL (skor 4/7) ikut lolos dan sinyal lebih
+        # sering muncul, atau naikkan untuk lebih ketat/lebih jarang tapi lebih selektif.
+        min_confluence = int(os.getenv("MIN_CONFLUENCE_SCORE", "5"))
         score_val = berkah.get("score", 0) if isinstance(berkah, dict) else 0
-        if sig in ("BUY", "SELL") and score_val < 5 and analysis.get("confidence") != "HIGH_CONFIDENCE":
-            print(f"[Scheduler] ⚠️ Skor {score_val}/7 < 5 — skip sinyal low-confluence {sig}")
+        if sig in ("BUY", "SELL") and score_val < min_confluence and berkah.get("confidence") != "HIGH_CONFIDENCE":
+            print(f"[Scheduler] ⚠️ Skor {score_val}/7 < {min_confluence} — skip sinyal low-confluence {sig}")
             return None
 
         # ── Signal cooldown — jangan emit sinyal baru terlalu cepat ──
