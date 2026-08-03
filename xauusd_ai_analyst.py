@@ -1260,6 +1260,209 @@ def detect_berkah_signal(
 
 
 # ─────────────────────────────────────────────
+# 5B. MEAN-REVERSION SIGNAL — setup independen untuk kondisi RANGING
+# ─────────────────────────────────────────────
+def detect_mean_reversion_signal(
+    market: MarketData,
+    indicators: Indicators,
+    swing_lookback: int      = 20,
+    proximity_atr: float     = 0.5,
+    rsi_overbought: int      = 70,
+    rsi_oversold: int        = 30,
+    pin_bar_body_ratio: float = 0.3,
+    liquidity_lookback: int  = 5,
+    score_threshold: int     = 3,
+    sl_buffer_points: float  = 1.0,
+    reward_risk_ratio: float = 1.0,
+    capital: float           = 2000.0,
+    risk_percent: float      = 1.5,
+    value_per_lot: float     = 10.0,
+) -> dict:
+    """
+    Setup Mean-Reversion — jalan KHUSUS saat HTF RANGING, kondisi yang
+    membuat detect_berkah_signal (trend-continuation) selalu WAIT karena
+    tidak ada bias arah yang jelas untuk diikuti. Alih-alih menunggu tren,
+    setup ini mencari pembalikan harga di level support/resistance kunci.
+
+    Confluence 0-5 poin (skala terpisah dari Berkah Signal 0-7 — kedua
+    setup tidak pernah aktif bersamaan karena syarat HTF-nya saling
+    eksklusif, jadi tidak perlu dinormalisasi):
+      +1  Harga dekat swing high/low (dalam proximity_atr x ATR)
+      +1  RSI extreme (>70 di resistance utk SELL, <30 di support utk BUY)
+      +1  Reversal candle (pin bar) di level itu
+      +1  Bollinger Band touch/breach (harga di luar/nyaris band)
+      +1  Liquidity sweep di level itu (wick tembus level lalu close balik)
+
+    TIDAK mensyaratkan ADX tinggi — ranging (ADX rendah) justru prasyaratnya,
+    bukan penghalang seperti di trend-continuation.
+    """
+    df = market.df.copy()
+    if len(df) < max(swing_lookback + 5, liquidity_lookback + 5, 30):
+        return {"signal": "WAIT", "reason": "Data tidak cukup untuk Mean-Reversion Signal",
+                "reason_en": "Insufficient data for Mean-Reversion Signal", "score": 0}
+
+    high  = df["high"].values
+    low   = df["low"].values
+    close = df["close"].values
+    open_ = df["open"].values
+    n     = len(df)
+    price = float(close[-1])
+    atr_val = float(indicators.atr_14)
+    rsi_val = float(indicators.rsi_14)
+
+    # ── Swing high/low sebagai proxy resistance/support ──
+    # PENTING: exclude candle terakhir dari perhitungan level — kalau tidak,
+    # candle sweep/reversal itu sendiri (yang biasanya bikin low/high BARU)
+    # akan menggeser level itu ke titik sweep-nya sendiri, membuat "harga
+    # dekat level" nyaris selalu False persis saat sinyal reversal terjadi.
+    # Level harus mencerminkan support/resistance yang SUDAH ada SEBELUM
+    # candle konfirmasi ini, konsisten dengan cara liquidity sweep (lowest_n/
+    # highest_n di bawah) sudah dihitung.
+    win = min(swing_lookback, n - 1)
+    swing_high = float(high[-win-1:-1].max()) if n > win else float(high[-win:].max())
+    swing_low  = float(low[-win-1:-1].min())  if n > win else float(low[-win:].min())
+
+    dist_to_res = abs(price - swing_high)
+    dist_to_sup = abs(price - swing_low)
+    near_res = atr_val > 0 and dist_to_res <= proximity_atr * atr_val
+    near_sup = atr_val > 0 and dist_to_sup <= proximity_atr * atr_val
+
+    # ── OHLC candle terakhir (reversal candle & sweep) ──
+    o_now, c_now = float(open_[-1]), float(close[-1])
+    h_now, l_now = float(high[-1]),  float(low[-1])
+    body_size    = abs(c_now - o_now)
+    candle_range = h_now - l_now
+    upper_wick   = h_now - max(c_now, o_now)
+    lower_wick   = min(c_now, o_now) - l_now
+    stable_ratio = (body_size / candle_range) if candle_range > 0 else 1.0
+    is_bull_pin  = (lower_wick > upper_wick * 2) and (stable_ratio < pin_bar_body_ratio)
+    is_bear_pin  = (upper_wick > lower_wick * 2) and (stable_ratio < pin_bar_body_ratio)
+
+    # ── Liquidity sweep di level swing (mirror logika Berkah Signal) ──
+    lowest_n  = float(low[-1-liquidity_lookback:-1].min())  if n > liquidity_lookback + 1 else l_now
+    highest_n = float(high[-1-liquidity_lookback:-1].max()) if n > liquidity_lookback + 1 else h_now
+    liq_buy_sweep  = (l_now < lowest_n)  and (c_now > lowest_n)
+    liq_sell_sweep = (h_now > highest_n) and (c_now < highest_n)
+
+    # ── Bollinger Band touch (dihitung dari Indicators, sudah tersedia) ──
+    bb_touch_lower = price <= float(getattr(indicators, "bb_lower", 0) or 0)
+    bb_touch_upper = price >= float(getattr(indicators, "bb_upper", 1e18) or 1e18)
+
+    score_detail_buy = {
+        "near_support": (near_sup,               f"+1 Harga {price:.2f} dekat support {swing_low:.2f}"),
+        "rsi_oversold": (rsi_val < rsi_oversold,  f"+1 RSI {rsi_val:.1f} oversold (<{rsi_oversold})"),
+        "pin_bar":      (is_bull_pin,             "+1 Bull Pin Bar reversal"),
+        "bb_touch":     (bb_touch_lower,          "+1 Sentuh Bollinger Band bawah"),
+        "liq_sweep":    (liq_buy_sweep,           "+1 Liquidity Sweep bawah"),
+    }
+    score_detail_buy_en = {
+        "near_support": (near_sup,               f"+1 Price {price:.2f} near support {swing_low:.2f}"),
+        "rsi_oversold": (rsi_val < rsi_oversold,  f"+1 RSI {rsi_val:.1f} oversold (<{rsi_oversold})"),
+        "pin_bar":      (is_bull_pin,             "+1 Bull Pin Bar reversal"),
+        "bb_touch":     (bb_touch_lower,          "+1 Touched lower Bollinger Band"),
+        "liq_sweep":    (liq_buy_sweep,           "+1 Liquidity Sweep below"),
+    }
+    score_detail_sell = {
+        "near_resistance": (near_res,               f"+1 Harga {price:.2f} dekat resistance {swing_high:.2f}"),
+        "rsi_overbought":  (rsi_val > rsi_overbought, f"+1 RSI {rsi_val:.1f} overbought (>{rsi_overbought})"),
+        "pin_bar":         (is_bear_pin,             "+1 Bear Pin Bar reversal"),
+        "bb_touch":        (bb_touch_upper,          "+1 Sentuh Bollinger Band atas"),
+        "liq_sweep":       (liq_sell_sweep,          "+1 Liquidity Sweep atas"),
+    }
+    score_detail_sell_en = {
+        "near_resistance": (near_res,               f"+1 Price {price:.2f} near resistance {swing_high:.2f}"),
+        "rsi_overbought":  (rsi_val > rsi_overbought, f"+1 RSI {rsi_val:.1f} overbought (>{rsi_overbought})"),
+        "pin_bar":         (is_bear_pin,             "+1 Bear Pin Bar reversal"),
+        "bb_touch":        (bb_touch_upper,          "+1 Touched upper Bollinger Band"),
+        "liq_sweep":       (liq_sell_sweep,          "+1 Liquidity Sweep above"),
+    }
+
+    score_buy  = sum(1 for v, _ in score_detail_buy.values()  if v)
+    score_sell = sum(1 for v, _ in score_detail_sell.values() if v)
+
+    # Syarat mutlak: harus benar-benar dekat level (near_sup/near_res) —
+    # tanpa ini, "mean-reversion" tanpa level jadi cuma tebak arah RSI.
+    can_buy  = near_sup and (score_buy  >= score_threshold)
+    can_sell = near_res and (score_sell >= score_threshold)
+    if can_buy and can_sell:
+        can_buy  = score_buy >= score_sell
+        can_sell = not can_buy
+
+    if can_buy:
+        sl      = float(swing_low - sl_buffer_points - atr_val * 0.5)
+        sl_dist = price - sl
+        tp1     = float(price + sl_dist * 1.0)
+        tp2     = float(price + sl_dist * 1.5)
+        tp_full = float(min(price + sl_dist * 2.0, swing_high))  # TP3 dibatasi resistance seberang
+        lot_risk = (capital * risk_percent / 100) / (sl_dist * value_per_lot) if sl_dist > 0 else 0.01
+        mult = get_martingale_multiplier()
+        lot_risk *= mult
+        signal, score = "BUY", score_buy
+        conf_label = "HIGH_CONFIDENCE" if score >= 4 else "NORMAL"
+        active = [d for v, d in score_detail_buy.values() if v]
+        active_en = [d for v, d in score_detail_buy_en.values() if v]
+        reason = f"Mean-Reversion BUY [{score}/5] {conf_label} di support {swing_low:.2f} — " + " | ".join(active)
+        reason_en = f"Mean-Reversion BUY [{score}/5] {conf_label} at support {swing_low:.2f} — " + " | ".join(active_en)
+    elif can_sell:
+        sl      = float(swing_high + sl_buffer_points + atr_val * 0.5)
+        sl_dist = sl - price
+        tp1     = float(price - sl_dist * 1.0)
+        tp2     = float(price - sl_dist * 1.5)
+        tp_full = float(max(price - sl_dist * 2.0, swing_low))  # TP3 dibatasi support seberang
+        lot_risk = (capital * risk_percent / 100) / (sl_dist * value_per_lot) if sl_dist > 0 else 0.01
+        mult = get_martingale_multiplier()
+        lot_risk *= mult
+        signal, score = "SELL", score_sell
+        conf_label = "HIGH_CONFIDENCE" if score >= 4 else "NORMAL"
+        active = [d for v, d in score_detail_sell.values() if v]
+        active_en = [d for v, d in score_detail_sell_en.values() if v]
+        reason = f"Mean-Reversion SELL [{score}/5] {conf_label} di resistance {swing_high:.2f} — " + " | ".join(active)
+        reason_en = f"Mean-Reversion SELL [{score}/5] {conf_label} at resistance {swing_high:.2f} — " + " | ".join(active_en)
+    else:
+        signal = "WAIT"
+        tp_full = tp1 = tp2 = sl = lot_risk = 0.0
+        score = max(score_buy, score_sell)
+        conf_label = "WAIT"
+        reason = (f"WAIT — Mean-Reversion tidak ada setup di level kunci "
+                  f"(near_sup={near_sup}, near_res={near_res}, score_buy={score_buy}/5, score_sell={score_sell}/5)")
+        reason_en = reason
+
+    # Normalisasi skor 0-5 ke skala 0-7 (sama dengan Berkah Signal) supaya
+    # MIN_CONFLUENCE_SCORE / VISION_RESCUE_MIN_SCORE di app.py berlaku
+    # konsisten untuk kedua setup — reason/reason_en tetap tampilkan skor
+    # asli "[x/5]" untuk transparansi ke user.
+    score_raw = score
+    score_normalized = round(score_raw * 7 / 5)
+
+    return {
+        "signal":     signal,
+        "entry":      round(price, 2),
+        "tp":         round(tp_full, 2),
+        "tp1":        round(tp1, 2),
+        "tp2":        round(tp2, 2),
+        "tp3":        round(tp_full, 2),
+        "sl":         round(sl, 2),
+        "atr":        round(atr_val, 2),
+        "adx":        0.0,   # tidak relevan untuk setup ini (ranging = ADX rendah by design)
+        "lot_size":   round(lot_risk, 2),
+        "rrr":        "1:1 / 1:1.5 / 1:2",
+        "score":      score_normalized,
+        "score_raw":  score_raw,
+        "max_score":  7,
+        "max_score_raw": 5,
+        "confidence": conf_label,
+        "reason":     reason,
+        "reason_en":  reason_en,
+        "setup_type": "MEAN_REVERSION",
+        "conditions": {
+            "near_support": near_sup, "near_resistance": near_res,
+            "score_buy": score_buy, "score_sell": score_sell,
+            "score_threshold": score_threshold,
+        },
+    }
+
+
+# ─────────────────────────────────────────────
 # 6. FORMAT & TAMPILKAN HASIL
 # ─────────────────────────────────────────────
 def print_signal(
@@ -1483,6 +1686,12 @@ def run_multi_timeframe_scan(
 
     results = {}
 
+    # score_threshold M5/M1 diturunkan ke VISION_RESCUE_MIN_SCORE (default 3) supaya
+    # setup borderline tetap dapat entry/sl/tp nyata dihitung, bukan langsung WAIT
+    # kosong — gate kelulusan sinyal (auto-pass vs vision-rescue vs buang) ada di
+    # app.py run_scheduled_analysis, bukan di sini.
+    _vision_floor = int(os.getenv("VISION_RESCUE_MIN_SCORE", "3"))
+
     # ── HTF BIAS dari H1 ASLI (satu bias untuk M1 & M5) ──
     htf_bias, htf_note = compute_htf_bias_from_h1(bridge_df_h1)
     if htf_bias is not None:
@@ -1500,7 +1709,7 @@ def run_multi_timeframe_scan(
         sig_m5    = detect_berkah_signal(
             market_m5, indic_m5,
             max_extension_atr = _max_ext,
-            score_threshold = 4,      # M5 lebih ketat — butuh 4/7 kondisi
+            score_threshold = _vision_floor,
             score_high_conf = 5,
             htf_bias_override = htf_bias,   # HTF H1 asli
             htf_agg_factor    = 12,          # 12xM5 = struktur H1
@@ -1532,7 +1741,7 @@ def run_multi_timeframe_scan(
         sig_m1    = detect_berkah_signal(
             market_m1, indic_m1,
             max_extension_atr = float(os.getenv("MAX_EXTENSION_ATR", "1.5")),
-            score_threshold  = 4,     # M1 juga 4/7 untuk kualitas lebih baik
+            score_threshold  = _vision_floor,
             score_high_conf  = 5,
             liquidity_lookback = 3,   # lookback lebih pendek untuk M1
             adx_threshold    = 18,    # ADX lebih rendah di M1
@@ -1552,6 +1761,35 @@ def run_multi_timeframe_scan(
     # ── RESTORE BRIDGE_DF ke M5 (default) ──
     BRIDGE_DF = bridge_df_m5
 
+    # ── SCAN MEAN-REVERSION — hanya saat HTF RANGING/tidak jelas ──
+    # detect_berkah_signal (M5 & M1 di atas) SELALU WAIT kalau htf_bias bukan
+    # BULL/BEAR — mean-reversion mengisi celah itu dengan mencari pembalikan
+    # di level support/resistance, bukan mengikuti tren yang memang tidak ada.
+    if htf_bias not in ("BULL", "BEAR"):
+        try:
+            BRIDGE_DF = bridge_df_m5 if bridge_df_m5 is not None else BRIDGE_DF
+            market_mr = fetch_market_data("5m")
+            indic_mr  = calculate_indicators(market_mr)
+            sig_mr    = detect_mean_reversion_signal(
+                market_mr, indic_mr,
+                capital = capital, risk_percent = risk_percent, value_per_lot = value_per_lot,
+            )
+            sig_mr["timeframe"] = "M5-MR"
+            results["mean_reversion"] = sig_mr
+            print(f"  📊 MR  → {sig_mr['signal']} | score={sig_mr.get('score_raw', 0)}/5 "
+                  f"(normalisasi {sig_mr.get('score', 0)}/7) | {sig_mr.get('confidence','')}")
+        except Exception as e:
+            print(f"  ⚠️  Mean-Reversion scan error: {e}")
+            results["mean_reversion"] = {"signal": "WAIT", "timeframe": "M5-MR", "reason": str(e), "score": 0}
+    else:
+        results["mean_reversion"] = {
+            "signal": "WAIT", "timeframe": "M5-MR",
+            "reason": f"HTF bias jelas ({htf_bias}) — Mean-Reversion tidak diaktifkan, biarkan trend-continuation yang jalan",
+            "score": 0,
+        }
+
+    BRIDGE_DF = bridge_df_m5
+
     # ── M1 INDEPENDEN ──
     # M1 tidak lagi butuh persetujuan M5 untuk lolos — sinyalnya berdiri
     # sendiri berdasarkan hasil detect_berkah_signal miliknya sendiri.
@@ -1559,9 +1797,11 @@ def run_multi_timeframe_scan(
     # kalau skor & confidence keduanya sama persis.
 
     # ── PILIH SINYAL TERBAIK ──
-    # Prioritas: HIGH_CONFIDENCE > NORMAL, M5 > M1 jika skor sama
+    # Prioritas: HIGH_CONFIDENCE > NORMAL, M5 > M1 > Mean-Reversion kalau skor sama
+    # (dalam praktiknya trend-continuation & mean-reversion tidak pernah aktif
+    # bersamaan, karena syarat HTF-nya saling eksklusif)
     active = [
-        r for r in [results.get("m5"), results.get("m1")]
+        r for r in [results.get("m5"), results.get("m1"), results.get("mean_reversion")]
         if r and r.get("signal") in ("BUY", "SELL")
     ]
 
@@ -1586,11 +1826,15 @@ def run_multi_timeframe_scan(
     m1_sc   = results["m1"].get("score", 0)
     m5_conf = results["m5"].get("confidence", "")
     m1_conf = results["m1"].get("confidence", "")
+    mr_res  = results.get("mean_reversion") or {}
+    mr_sig  = mr_res.get("signal", "WAIT")
+    mr_sc   = mr_res.get("score_raw", 0)
 
     results["summary"] = (
         f"MTF Scan — "
         f"M5: {m5_sig} [{m5_sc}/7 {m5_conf}] | "
         f"M1: {m1_sig} [{m1_sc}/7 {m1_conf}] | "
+        f"MR: {mr_sig} [{mr_sc}/5] | "
         f"BEST: {best.get('signal')} dari {best.get('timeframe','?')}"
     )
 

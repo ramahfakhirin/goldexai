@@ -49,6 +49,7 @@ CHART_STYLE = {
 }
 
 TIMEFRAME_OUTPUTSIZE = {
+    "1m":  100,
     "5m":  100,
     "15m": 100,
     "1h":  80,
@@ -67,7 +68,7 @@ def fetch_ohlcv(timeframe: str = "15min",
 
     # Twelve Data pakai format: 1min, 5min, 15min, 1h, 4h, 1day
     tf_map = {
-        "5m": "5min", "15m": "15min",
+        "1m": "1min", "5m": "5min", "15m": "15min",
         "1h": "1h",   "4h": "4h", "1d": "1day"
     }
     interval = tf_map.get(timeframe, "15min")

@@ -1377,6 +1377,59 @@ def _save_wait_ratelimited(reason: str, market, indicators, smc, timeframe: str)
     _set_latest_signal(wait_signal_id, wait_analysis, market, indicators, smc, timeframe)
 
 
+def _try_vision_rescue(sig: str, market, berkah: dict, indicators, smc, tf_label: str,
+                        twelve_key: str, api_key: str) -> bool:
+    """Vision Rescue: konfirmasi visual untuk sinyal borderline (skor di antara
+    VISION_RESCUE_MIN_SCORE dan MIN_CONFLUENCE_SCORE) yang gagal lolos gerbang
+    numerik saja. Fail-safe — apapun errornya, return False (tetap WAIT), TIDAK
+    PERNAH mempromosikan sinyal kalau vision gagal/timeout/error.
+    """
+    try:
+        chart_tf = {"M5": "5m", "M1": "1m"}.get(tf_label, "5m")
+        entry = float(berkah.get("entry", 0))
+        sl    = float(berkah.get("sl", 0))
+        tp1   = float(berkah.get("tp1", 0))
+        tp2   = float(berkah.get("tp2", 0))
+        tp3   = float(berkah.get("tp3", 0))
+        score = int(berkah.get("score", 0))
+        pseudo_conf = min(100, max(0, score * 100 // 7))
+
+        gen   = get_chart_generator()
+        chart = gen(
+            timeframe  = chart_tf,
+            api_key    = twelve_key,
+            signal     = sig,
+            entry      = entry, stop_loss = sl,
+            tp1        = tp1, tp2 = tp2, tp3 = tp3,
+            confidence = pseudo_conf,
+        )
+
+        confirm_fn, _ = get_vision_analyzer()
+        indic_dict = {
+            "ema_21": indicators.ema_21, "ema_50": indicators.ema_50, "ema_200": indicators.ema_200,
+            "rsi": indicators.rsi_14, "macd": indicators.macd, "macd_signal": indicators.macd_signal,
+            "atr": indicators.atr_14,
+        }
+        smc_dict = {
+            "trend": smc.trend, "bos": smc.last_bos, "choch": smc.last_choch,
+            "swing_high": smc.swing_high, "swing_low": smc.swing_low,
+        }
+        vision = confirm_fn(
+            chart_b64  = chart["b64"], signal = sig,
+            price      = market.current_price, timeframe = chart_tf,
+            entry      = entry, stop_loss = sl, tp1 = tp1, tp2 = tp2, tp3 = tp3,
+            confidence = pseudo_conf,
+            indicators = indic_dict, smc = smc_dict, api_key = api_key,
+        )
+        verdict = vision.get("verdict", "SKIP")
+        print(f"[Vision Rescue] {sig} skor {score}/7 → verdict={verdict} | "
+              f"{str(vision.get('reasoning',''))[:150]}")
+        return verdict == "VALID"
+    except Exception as e:
+        print(f"[Vision Rescue] Error: {e} — fail-safe, sinyal TIDAK dipromosikan")
+        return False
+
+
 def run_scheduled_analysis():
     """Jalankan analisis XAU/USD dan simpan ke DB. Dipanggil oleh scheduler."""
     try:
@@ -1670,17 +1723,23 @@ def run_scheduled_analysis():
         # ── Cek monitor aktif SEBELUM simpan apapun ──
         active_monitor = has_active_monitor()
 
-        # ── Confluence score filter ──
-        # Gerbang kualitas TAMBAHAN di luar score_threshold bawaan detect_berkah_signal
-        # (yang defaultnya 4/7 — lihat run_multi_timeframe_scan). Ambang di sini bisa
-        # diatur lewat env var MIN_CONFLUENCE_SCORE tanpa perlu redeploy kode:
-        # turunkan ke 4 supaya sinyal NORMAL (skor 4/7) ikut lolos dan sinyal lebih
-        # sering muncul, atau naikkan untuk lebih ketat/lebih jarang tapi lebih selektif.
-        min_confluence = int(os.getenv("MIN_CONFLUENCE_SCORE", "5"))
+        # ── Confluence score filter (3 tingkat: auto-pass / vision-rescue / buang) ──
+        # score >= MIN_CONFLUENCE_SCORE           → lolos langsung, tanpa panggil AI
+        # VISION_RESCUE_MIN_SCORE <= score < MIN_CONFLUENCE_SCORE → borderline,
+        #   ditahan dulu dan baru diputuskan lewat Vision AI setelah cek cooldown/
+        #   loss-streak/monitor aktif lolos (supaya tidak buang panggilan API untuk
+        #   sinyal yang toh akan diblokir gerbang lain).
+        # score < VISION_RESCUE_MIN_SCORE         → langsung WAIT, tidak ada rescue.
+        min_confluence     = int(os.getenv("MIN_CONFLUENCE_SCORE", "5"))
+        vision_rescue_min  = int(os.getenv("VISION_RESCUE_MIN_SCORE", "3"))
         score_val = berkah.get("score", 0) if isinstance(berkah, dict) else 0
+        needs_vision_rescue = False
         if sig in ("BUY", "SELL") and score_val < min_confluence and berkah.get("confidence") != "HIGH_CONFIDENCE":
-            print(f"[Scheduler] ⚠️ Skor {score_val}/7 < {min_confluence} — skip sinyal low-confluence {sig}")
-            return None
+            if score_val < vision_rescue_min:
+                print(f"[Scheduler] ⚠️ Skor {score_val}/7 < {vision_rescue_min} — skip sinyal low-confluence {sig}")
+                return None
+            needs_vision_rescue = True
+            print(f"[Scheduler] 🔍 Skor {score_val}/7 di zona rescue [{vision_rescue_min}-{min_confluence}) — ditahan, cek gerbang lain dulu sebelum panggil Vision AI")
 
         # ── Signal cooldown — jangan emit sinyal baru terlalu cepat ──
         if sig in ("BUY", "SELL"):
@@ -1702,6 +1761,22 @@ def run_scheduled_analysis():
 
         if sig in ("BUY", "SELL"):
             if not active_monitor and berkah.get("sl") and berkah.get("entry"):
+
+                # ── Vision Rescue: baru panggil AI sekarang, setelah semua gerbang
+                # murah (cooldown, loss-streak, monitor aktif) lolos ──
+                if needs_vision_rescue:
+                    rescued = _try_vision_rescue(
+                        sig, market, berkah, indicators, smc, tf_label, twelve_key, api_key
+                    )
+                    if not rescued:
+                        print(f"[Scheduler] 🔍❌ Vision rescue gagal untuk {sig} skor {score_val}/7 — tetap WAIT")
+                        return None
+                    print(f"[Scheduler] 🔍✅ Vision rescue berhasil — {sig} skor {score_val}/7 dipromosikan jadi sinyal")
+                    analysis["narrative"] = (analysis.get("narrative") or "") + \
+                        " 🔍 Dikonfirmasi Vision AI (skor numerik borderline)."
+                    analysis["narrative_en"] = (analysis.get("narrative_en") or "") + \
+                        " 🔍 Confirmed by Vision AI (borderline numeric score)."
+
                 signal_id = save_signal(analysis, tf_label, market.current_price)
 
                 monitor_id = create_trade_monitor(
