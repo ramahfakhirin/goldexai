@@ -2078,13 +2078,32 @@ def _acquire_leader_lock() -> bool:
             print(f"[Leader] Gagal klaim lock di {label}: {e} — coba lokasi berikutnya")
     return False
 
+def _leader_election_retry_loop(interval_sec: int = 30):
+    """Follower terus coba klaim lock secara berkala. Ini menangani rolling
+    deploy: saat container baru start, container LAMA kadang masih hidup
+    sesaat (overlap normal) dan masih memegang lock — worker baru jadi
+    follower bukan karena kalah lawan sesama worker baru, tapi karena lock
+    lama belum dilepas. Tanpa retry ini, worker itu follower SELAMANYA
+    walau lock lama sudah lama dilepas, karena keputusan awal cuma diambil
+    sekali saat modul di-import (root cause "Scheduler tidak aktif!" pasca
+    redeploy meski tidak ada masalah flock sama sekali)."""
+    while True:
+        time.sleep(interval_sec)
+        if _acquire_leader_lock():
+            print(f"[Leader] Worker PID {os.getpid()} PROMOTED ke LEADER (lock lama sudah dilepas) — scheduler & monitor aktif")
+            start_background_monitor()
+            start_scheduled_analysis()
+            return
+
+
 load_session_schedule_from_db()   # restore state toggle sesi dari DB
 if _acquire_leader_lock():
     print(f"[Leader] Worker PID {os.getpid()} = LEADER — scheduler & monitor aktif")
     start_background_monitor()
     start_scheduled_analysis()
 else:
-    print(f"[Leader] Worker PID {os.getpid()} = follower — scheduler skip (anti duplikat)")
+    print(f"[Leader] Worker PID {os.getpid()} = follower — scheduler skip (anti duplikat), akan coba lagi tiap 30s")
+    threading.Thread(target=_leader_election_retry_loop, daemon=True, name="LeaderElectionThread").start()
 
 
 # ─────────────────────────────────────────────
