@@ -19,7 +19,7 @@ from pathlib import Path
 os.environ.setdefault('MPLBACKEND', 'Agg')
 
 from flask import (Flask, jsonify, redirect, render_template,
-                   request, session, url_for)
+                   request, session, url_for, send_from_directory)
 
 # ── Timezone WIB (UTC+7) ──
 from datetime import timezone, timedelta
@@ -2392,6 +2392,17 @@ def api_user_detail(user_id):
 def landing():
     """Landing page publik — tidak butuh login."""
     return render_template("landing.html")
+
+
+@app.route("/sw.js")
+def service_worker():
+    """Service worker PWA disajikan dari root (bukan /static/sw.js) supaya
+    scope-nya otomatis mencakup seluruh situs (termasuk /dashboard, /login),
+    bukan cuma /static/ — syarat instalasi PWA penuh di Chrome/Android."""
+    resp = send_from_directory(app.static_folder, "sw.js", mimetype="application/javascript")
+    resp.headers["Service-Worker-Allowed"] = "/"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
 
 
 @app.route("/dashboard_dummy")
