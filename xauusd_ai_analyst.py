@@ -1623,6 +1623,17 @@ def compute_htf_bias_from_h1(df_h1: "pd.DataFrame | None") -> tuple:
     Hitung HTF bias dari data H1 ASLI (bukan simulasi rolling window).
     Return: ("BULL"|"BEAR"|"RANGING"|None, keterangan)
     None = data tidak cukup → caller pakai fallback lama.
+
+    Ambang RANGING berbasis ATR H1 (bukan persentase harga tetap). Dulu
+    pakai `harga * 0.1%` — di gold $2000-an itu ~$2, tapi di $4000+ jadi
+    ~$4 tanpa memperhitungkan apakah volatilitas ikut naik proporsional.
+    Akibatnya nyata: gap EMA50/200 bisa bergerak konsisten dari -3.19 ke
+    +2.21 selama 15+ jam (tren pelan sedang terbentuk) tapi tidak pernah
+    tembus ambang $4.05, jadi selalu terbaca RANGING — mengunci total
+    trend-continuation dan memaksa Mean-Reversion trading (termasuk
+    melawan arah tren asli) padahal harusnya diam juga. ATR mengikuti
+    volatilitas riil H1 saat itu, bukan level harga nominal, jadi ambang
+    otomatis proporsional kapanpun harga gold naik/turun jauh.
     """
     if df_h1 is None or getattr(df_h1, "empty", True):
         return None, "H1 tidak tersedia"
@@ -1642,13 +1653,36 @@ def compute_htf_bias_from_h1(df_h1: "pd.DataFrame | None") -> tuple:
 
         price_h1 = float(closes.iloc[-1])
         gap      = fast - slow
-        min_gap  = price_h1 * 0.001   # 0.1% dari harga — ~$4 di gold $4rb
+
+        atr_h1 = None
+        try:
+            if "high" in df_h1.columns and "low" in df_h1.columns:
+                high = df_h1["high"].astype(float)
+                low  = df_h1["low"].astype(float)
+                prev_close = closes.shift(1)
+                tr = pd.concat([
+                    high - low,
+                    (high - prev_close).abs(),
+                    (low  - prev_close).abs(),
+                ], axis=1).max(axis=1)
+                atr_h1 = float(tr.tail(14).mean())
+        except Exception:
+            atr_h1 = None
+
+        if atr_h1 and atr_h1 > 0:
+            mult    = float(os.getenv("HTF_RANGE_ATR_MULT", "0.5"))
+            min_gap = atr_h1 * mult
+            basis   = f"{mult}xATR({atr_h1:.2f})"
+        else:
+            # Fallback kalau H1 tidak punya kolom high/low (mis. sumber data lama)
+            min_gap = price_h1 * 0.001
+            basis   = "0.1% harga (fallback, ATR tidak tersedia)"
 
         if gap > min_gap:
-            return "BULL", f"{pair} bull, gap {gap:+.2f}"
+            return "BULL", f"{pair} bull, gap {gap:+.2f} > {min_gap:.2f} [{basis}]"
         if gap < -min_gap:
-            return "BEAR", f"{pair} bear, gap {gap:+.2f}"
-        return "RANGING", f"{pair} flat, gap {gap:+.2f} < {min_gap:.2f}"
+            return "BEAR", f"{pair} bear, gap {gap:+.2f} < -{min_gap:.2f} [{basis}]"
+        return "RANGING", f"{pair} flat, gap {gap:+.2f} < {min_gap:.2f} [{basis}]"
     except Exception as e:
         return None, f"H1 error: {e}"
 
