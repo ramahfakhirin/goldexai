@@ -445,30 +445,45 @@ def save_signal(data: dict, timeframe: str, price: float):
     return signal_id
 
 
-def get_history(limit: int = 50, signal_filter: str = "ALL") -> list:
-    """Ambil history signal dari database dengan filter tepat."""
+def get_history(limit: int = 50, signal_filter: str = "ALL", offset: int = 0) -> list:
+    """Ambil history signal dari database dengan filter tepat, mendukung
+    pagination lewat offset (dipakai bareng get_history_count())."""
     conn = get_db()
     conn.row_factory = sqlite3.Row
-    
+
     if signal_filter in ("TRADE", "BUY_SELL"):
         rows = conn.execute(
-            "SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ?",
-            (limit,)
+            "SELECT * FROM signals WHERE signal IN ('BUY', 'SELL') ORDER BY id DESC LIMIT ? OFFSET ?",
+            (limit, offset)
         ).fetchall()
     elif signal_filter in ("BUY", "SELL", "WAIT"):
         rows = conn.execute(
-            "SELECT * FROM signals WHERE signal=? ORDER BY id DESC LIMIT ?",
-            (signal_filter, limit)
+            "SELECT * FROM signals WHERE signal=? ORDER BY id DESC LIMIT ? OFFSET ?",
+            (signal_filter, limit, offset)
         ).fetchall()
     else:
         # Default ALL: Ambil semua signal terbaru berurutan
         rows = conn.execute(
-            "SELECT * FROM signals ORDER BY id DESC LIMIT ?",
-            (limit,)
+            "SELECT * FROM signals ORDER BY id DESC LIMIT ? OFFSET ?",
+            (limit, offset)
         ).fetchall()
 
     conn.close()
     return [dict(r) for r in rows]
+
+
+def get_history_count(signal_filter: str = "ALL") -> int:
+    """Hitung total baris signal yang cocok dengan filter — dipakai untuk
+    menghitung jumlah halaman pagination di /api/history."""
+    conn = get_db()
+    if signal_filter in ("TRADE", "BUY_SELL"):
+        row = conn.execute("SELECT COUNT(*) FROM signals WHERE signal IN ('BUY', 'SELL')").fetchone()
+    elif signal_filter in ("BUY", "SELL", "WAIT"):
+        row = conn.execute("SELECT COUNT(*) FROM signals WHERE signal=?", (signal_filter,)).fetchone()
+    else:
+        row = conn.execute("SELECT COUNT(*) FROM signals").fetchone()
+    conn.close()
+    return int(row[0]) if row else 0
 
 
 def get_stats() -> dict:
@@ -3288,10 +3303,16 @@ def analyze():
 @app.route("/api/history")
 @login_required
 def history():
-    """Endpoint: ambil history signal."""
-    limit = int(request.args.get("limit", 50))
+    """Endpoint: ambil history signal, mendukung pagination via offset."""
+    limit  = int(request.args.get("limit", 50))
+    offset = int(request.args.get("offset", 0))
     signal_filter = request.args.get("filter") or request.args.get("type") or "ALL"
-    return jsonify({"ok": True, "data": get_history(limit, signal_filter)})
+    data  = get_history(limit, signal_filter, offset)
+    total = get_history_count(signal_filter)
+    return jsonify({
+        "ok": True, "data": data,
+        "total": total, "limit": limit, "offset": offset,
+    })
 
 
 @app.route("/api/stats")

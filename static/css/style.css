@@ -526,6 +526,38 @@ html, body {
 .history-item.is-wait .hist-signal { font-size: 11px; }
 .hist-conf.muted { color: var(--text-dim); font-style: italic; }
 
+/* ── HISTORY PAGINATION ── */
+.hist-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.hist-page-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.hist-page-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+.hist-page-btn:disabled { opacity: 0.35; cursor: default; }
+.hist-page-info {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-align: center;
+  flex: 1;
+}
+
 /* ── TOAST ── */
 .toast {
   position: fixed;

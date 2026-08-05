@@ -388,19 +388,45 @@ function renderSMC(smc) {
 }
 
 // ─── HISTORY ─────────────────────────────
+const HISTORY_PAGE_SIZE = 10;
+let historyPage  = 1;
+let historyTotal = 0;
+
 async function loadHistory() {
+  // Confidence chart selalu pakai signal terbaru keseluruhan, terlepas dari
+  // halaman/filter yang lagi dibuka di daftar history — supaya tetap
+  // menunjukkan tren terkini, bukan ikut ter-paginate.
+  try {
+    const chartRes  = await fetch(`/api/history?limit=20&filter=ALL`);
+    const chartResp = await chartRes.json();
+    if (chartResp.ok) renderConfChart(chartResp.data);
+  } catch (e) {
+    console.error("Failed to load chart data:", e);
+  }
+
+  await loadHistoryPage();
+}
+
+async function loadHistoryPage() {
   try {
     const filterParam = historyFilter || "TRADE";
-    const res  = await fetch(`/api/history?limit=50&filter=${filterParam}`);
+    const offset = (historyPage - 1) * HISTORY_PAGE_SIZE;
+    const res  = await fetch(`/api/history?limit=${HISTORY_PAGE_SIZE}&offset=${offset}&filter=${filterParam}`);
     const data = await res.json();
     if (!data.ok) return;
 
-    historyData = data.data;
+    historyData  = data.data;
+    historyTotal = data.total || 0;
     renderHistory(historyData);
-    renderConfChart(historyData);
   } catch (e) {
     console.error("Failed to load history:", e);
   }
+}
+
+function goToHistoryPage(page) {
+  const maxPage = Math.max(1, Math.ceil(historyTotal / HISTORY_PAGE_SIZE));
+  historyPage = Math.min(Math.max(1, page), maxPage);
+  loadHistoryPage();
 }
 
 // PnL Multiplier based on lot (sent by backend via /api/performance).
@@ -413,7 +439,8 @@ let historyFilter = "ALL"; // TRADE | ALL | BUY | SELL | WAIT
 
 function setHistoryFilter(mode) {
   historyFilter = mode;
-  loadHistory();
+  historyPage = 1;
+  loadHistoryPage();
 }
 
 function renderHistory(items) {
@@ -459,7 +486,7 @@ function renderHistory(items) {
     return;
   }
 
-  el.innerHTML = chipsHtml + filtered.map(item => {
+  const itemsHtml = filtered.map(item => {
     const ts     = new Date(item.timestamp).toLocaleString("id-ID");
     const price  = Number(item.price).toLocaleString("en-US", { minimumFractionDigits: 2 });
     const isWait = item.signal === "WAIT";
@@ -483,7 +510,26 @@ function renderHistory(items) {
     </div>`;
   }).join("");
 
+  el.innerHTML = chipsHtml + itemsHtml + renderHistoryPagination();
+
   syncHistoryToMobile();
+}
+
+// ─── HISTORY PAGINATION ──────────────────
+function renderHistoryPagination() {
+  if (historyTotal <= HISTORY_PAGE_SIZE) return ""; // muat semua di satu halaman, tak perlu kontrol
+
+  const maxPage = Math.max(1, Math.ceil(historyTotal / HISTORY_PAGE_SIZE));
+  const page    = historyPage;
+  const from    = (page - 1) * HISTORY_PAGE_SIZE + 1;
+  const to      = Math.min(page * HISTORY_PAGE_SIZE, historyTotal);
+
+  return `
+    <div class="hist-pagination">
+      <button class="hist-page-btn" ${page <= 1 ? "disabled" : ""} onclick="goToHistoryPage(${page - 1})">‹ Prev</button>
+      <span class="hist-page-info">${from}–${to} of ${historyTotal} · Page ${page}/${maxPage}</span>
+      <button class="hist-page-btn" ${page >= maxPage ? "disabled" : ""} onclick="goToHistoryPage(${page + 1})">Next ›</button>
+    </div>`;
 }
 
 // Salin isi history desktop → mobile (chips ikut tersalin, onclick tetap jalan)
@@ -607,7 +653,9 @@ async function clearHistory() {
   if (!confirm("Delete all signal history?")) return;
   try {
     await fetch("/api/clear_history", { method: "POST" });
-    historyData = [];
+    historyData  = [];
+    historyPage  = 1;
+    historyTotal = 0;
     renderHistory([]);
     if (confChart) { confChart.destroy(); confChart = null; }
     document.getElementById("chart-card").style.display = "none";
