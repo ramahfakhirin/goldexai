@@ -1492,6 +1492,8 @@ async function loadPerformance() {
     }
     const beEl = document.getElementById("perf-be");
     if (beEl) beEl.textContent = p.be_count || 0;
+    const neutralEl = document.getElementById("perf-neutral");
+    if (neutralEl) neutralEl.textContent = p.neutral || 0;
 
     const rateEl = document.getElementById("perf-rate");
     if (rateEl) {

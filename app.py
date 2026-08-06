@@ -599,7 +599,7 @@ def get_performance_stats(days: int = 7) -> dict:
 
     if total == 0:
         return {
-            "total": 0, "wins": 0, "losses": 0,
+            "total": 0, "wins": 0, "losses": 0, "neutral": 0,
             "win_rate": 0, "total_pips": 0, "total_pnl": 0,
             "avg_pips": 0, "avg_pnl": 0, "best": 0, "worst": 0,
             "tp1_hits": 0, "tp2_hits": 0, "tp3_hits": 0,
@@ -619,9 +619,12 @@ def get_performance_stats(days: int = 7) -> dict:
         return 0.0
 
     # Konversi poin → USD basis DISPLAY_LOT_SIZE (win/loss & PF tak terpengaruh skala)
+    # Scratch/breakeven (~$0.00) TIDAK dihitung win maupun loss — dipisah ke "neutral"
+    # supaya win rate mencerminkan trade yang benar-benar menang/kalah saja.
     pnl_list = [_money(get_pnl(t)) for t in closed]
-    wins     = sum(1 for v in pnl_list if v > 0)
-    losses   = sum(1 for v in pnl_list if v <= 0)
+    wins     = sum(1 for v in pnl_list if v > 0.01)
+    losses   = sum(1 for v in pnl_list if v < -0.01)
+    neutral  = total - wins - losses
     total_pnl  = round(sum(pnl_list), 2)
     avg_pnl    = round(total_pnl / total, 2) if total else 0
     best       = round(max(pnl_list), 2) if pnl_list else 0
@@ -640,11 +643,13 @@ def get_performance_stats(days: int = 7) -> dict:
     be_count = sum(1 for t in closed if (t.get("outcome") or "") == "BE_HIT")
     sl_count = sum(1 for t in closed if (t.get("outcome") or "") == "SL_HIT")
 
+    decisive = wins + losses
     return {
         "total":      total,
         "wins":       wins,
         "losses":     losses,
-        "win_rate":   round(wins / total * 100, 1) if total else 0,
+        "neutral":    neutral,
+        "win_rate":   round(wins / decisive * 100, 1) if decisive else 0,
         "total_pips": total_pnl,   # alias lama, tetap ada
         "total_pnl":  total_pnl,
         "avg_pips":   avg_pnl,     # alias lama
@@ -1066,7 +1071,9 @@ def run_monitor_check() -> list:
                 if hit_sl:
                     remaining = max(0.0, (3 - tp_hit) / 3.0)
                     pnl       = round(realized + remaining * _gain(sl), 2)
-                    outcome   = "SL_HIT" if tp_hit == 0 else "BE_HIT"
+                    # SL sudah pernah dipindah ke breakeven (via TP1 ATAU via
+                    # EARLY_BE_MOVE) → ini bukan loss murni, walau tp_hit==0.
+                    outcome   = "SL_HIT" if (tp_hit == 0 and not be_moved) else "BE_HIT"
                     should_close = True
 
                 elif hit_tp1 or hit_tp2 or hit_tp3:
@@ -3573,20 +3580,24 @@ def analytics():
         def _agg(trades):
             n = len(trades)
             if n == 0:
-                return {"total": 0, "wins": 0, "losses": 0, "be": 0,
+                return {"total": 0, "wins": 0, "losses": 0, "neutral": 0, "be": 0,
                         "win_rate": 0, "net_pnl": 0, "profit_factor": 0}
-            pnls  = [_money(t.get("pnl_pips")) for t in trades]
-            wins  = sum(1 for p in pnls if p > 0)
-            be    = sum(1 for t in trades if (t.get("outcome") or "") == "BE_HIT")
+            pnls     = [_money(t.get("pnl_pips")) for t in trades]
+            wins     = sum(1 for p in pnls if p > 0.01)
+            losses   = sum(1 for p in pnls if p < -0.01)
+            neutral  = n - wins - losses
+            be       = sum(1 for t in trades if (t.get("outcome") or "") == "BE_HIT")
             gp    = sum(p for p in pnls if p > 0)
             gl    = abs(sum(p for p in pnls if p < 0))
             pf    = round(gp / gl, 2) if gl > 0 else (round(gp, 2) if gp > 0 else 0)
+            decisive = wins + losses
             return {
                 "total":    n,
                 "wins":     wins,
-                "losses":   n - wins,
+                "losses":   losses,
+                "neutral":  neutral,
                 "be":       be,
-                "win_rate": round(wins / n * 100, 1),
+                "win_rate": round(wins / decisive * 100, 1) if decisive else 0,
                 "net_pnl":  round(sum(pnls), 2),
                 "profit_factor": pf,
             }

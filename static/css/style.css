@@ -874,6 +874,7 @@ html, body {
   color: var(--gold);
 }
 .tp-badge.be { color: var(--gold); }
+.tp-badge.neutral { color: var(--text-dim); }
 
 /* ── ANALITIK DIAGNOSIS ── */
 .analytics-period {
