@@ -641,6 +641,30 @@ function renderConfChart(items) {
 }
 
 // ─── STATS ───────────────────────────────
+let lastKnownMartingaleMult = null;  // null = belum pernah dicek
+
+function renderMartingaleBadge(mult) {
+  const isActive = mult > 1;
+  const label = isActive ? `🔥 Martingale ${mult}x Active` : "🛡 Normal Risk 1x";
+
+  [["mart-bar", "mart-status"], ["m-mart-bar", "m-mart-status"]].forEach(([barId, statusId]) => {
+    const bar    = document.getElementById(barId);
+    const status = document.getElementById(statusId);
+    if (bar)    bar.classList.toggle("active", isActive);
+    if (status) status.textContent = label;
+  });
+
+  // Notifikasi hanya saat multiplier BERUBAH (naik/turun), bukan tiap poll
+  if (lastKnownMartingaleMult !== null && mult !== lastKnownMartingaleMult) {
+    if (mult > lastKnownMartingaleMult) {
+      showToast(`🔥 Martingale ${mult}x Active — lot digandakan setelah rentetan loss`, "error");
+    } else if (mult === 1) {
+      showToast("🛡 Risk kembali normal (1x)", "success");
+    }
+  }
+  lastKnownMartingaleMult = mult;
+}
+
 async function loadStats() {
   try {
     const res  = await fetch("/api/stats");
@@ -652,6 +676,7 @@ async function loadStats() {
     document.getElementById("stat-sell").textContent  = s.sell;
     document.getElementById("stat-wait").textContent  = s.wait;
     document.getElementById("stat-conf").textContent  = s.avg_confidence + "%";
+    renderMartingaleBadge(Number(s.martingale_mult || 1));
     // Sync ke mobile sections
     if (window.innerWidth <= 768) {
       const mf = { "m-stat-total": s.total, "m-stat-buy": s.buy,

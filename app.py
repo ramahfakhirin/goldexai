@@ -209,6 +209,7 @@ def init_db():
             pnl_pips      REAL,
             tp_hit        INTEGER DEFAULT 0,
             created_at    TEXT,
+            martingale_mult REAL DEFAULT 1,
             FOREIGN KEY (signal_id) REFERENCES signals(id)
         )
     """)
@@ -275,6 +276,10 @@ def init_db():
         "ALTER TABLE trade_monitors ADD COLUMN be_moved INTEGER DEFAULT 0",
         "ALTER TABLE trade_monitors ADD COLUMN mfe REAL DEFAULT 0",
         "ALTER TABLE trade_monitors ADD COLUMN mae REAL DEFAULT 0",
+        # Multiplier martingale yang berlaku SAAT trade ini dibuka (1 = normal risk).
+        # Disimpan per-trade supaya kalkulasi PnL/outcome memakai lot riil saat itu,
+        # bukan basis lot statis — trade lama tanpa kolom ini otomatis default 1.
+        "ALTER TABLE trade_monitors ADD COLUMN martingale_mult REAL DEFAULT 1",
     ):
         try:
             conn.execute(_col_sql)
@@ -330,10 +335,15 @@ POINT_VALUE_PER_LOT = 100.0
 PNL_MULT            = DISPLAY_LOT_SIZE * POINT_VALUE_PER_LOT
 
 
-def _money(points) -> float:
-    """Konversi jarak poin → USD pada basis DISPLAY_LOT_SIZE."""
+def _money(points, mult: float = 1.0) -> float:
+    """Konversi jarak poin → USD pada basis DISPLAY_LOT_SIZE.
+
+    `mult` = martingale_mult trade tsb (default 1 = lot normal), supaya trade
+    yang dibuka saat martingale aktif dihitung dengan lot efektif yang riil,
+    bukan basis lot statis.
+    """
     try:
-        return round(float(points or 0) * PNL_MULT, 2)
+        return round(float(points or 0) * PNL_MULT * (float(mult) or 1.0), 2)
     except Exception:
         return 0.0
 
@@ -488,6 +498,9 @@ def get_history_count(signal_filter: str = "ALL") -> int:
 
 def get_stats() -> dict:
     """Hitung statistik performa signal."""
+    from xauusd_ai_analyst import get_martingale_multiplier
+    mart_mult = get_martingale_multiplier()
+
     conn = get_db()
     conn.row_factory = sqlite3.Row
     rows = conn.execute("SELECT signal, confidence FROM signals").fetchall()
@@ -495,7 +508,8 @@ def get_stats() -> dict:
 
     total = len(rows)
     if total == 0:
-        return {"total": 0, "buy": 0, "sell": 0, "wait": 0, "avg_confidence": 0}
+        return {"total": 0, "buy": 0, "sell": 0, "wait": 0, "avg_confidence": 0,
+                "martingale_mult": mart_mult}
 
     buy  = sum(1 for r in rows if r["signal"] == "BUY")
     sell = sum(1 for r in rows if r["signal"] == "SELL")
@@ -508,6 +522,7 @@ def get_stats() -> dict:
         "sell": sell,
         "wait": wait,
         "avg_confidence": round(avg_conf, 1),
+        "martingale_mult": mart_mult,
     }
 
 
@@ -516,21 +531,30 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          timeframe: str) -> int | None:
     """Buat trade monitor baru setelah signal BUY/SELL.
 
+    Menangkap martingale_mult SAAT INI (dari rentetan loss murni terbaru) dan
+    menyimpannya di trade ini — dipakai nanti untuk skala PnL riil trade ini
+    (lot efektif = DISPLAY_LOT_SIZE * martingale_mult), bukan basis lot statis.
+
     Return None jika ada monitor ACTIVE lain yang menang race (idx_one_active_monitor) —
     caller harus perlakukan sama seperti has_active_monitor()==True (skip alert).
     """
+    from xauusd_ai_analyst import get_martingale_multiplier
+    mult = get_martingale_multiplier()
     now_iso = datetime.now(WIB).isoformat()
     conn = get_db()
     try:
         cursor = conn.execute("""
             INSERT INTO trade_monitors
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
-             stop_loss, tp1, tp2, tp3, status)
-            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE')
+             stop_loss, tp1, tp2, tp3, status, martingale_mult)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?)
         """, (signal_id, now_iso, now_iso, timeframe,
-              direction, entry, sl, tp1, tp2, tp3))
+              direction, entry, sl, tp1, tp2, tp3, mult))
         monitor_id = cursor.lastrowid
         conn.commit()
+        if mult > 1:
+            print(f"[Monitor] #{monitor_id} dibuka dengan Martingale {mult}x "
+                  f"(lot efektif {DISPLAY_LOT_SIZE * mult:.2f})")
         return monitor_id
     except sqlite3.IntegrityError:
         print(f"[Monitor] Race terdeteksi — monitor ACTIVE lain sudah dibuat duluan untuk signal #{signal_id}, skip")
@@ -621,7 +645,7 @@ def get_performance_stats(days: int = 7) -> dict:
     # Konversi poin → USD basis DISPLAY_LOT_SIZE (win/loss & PF tak terpengaruh skala)
     # Scratch/breakeven (~$0.00) TIDAK dihitung win maupun loss — dipisah ke "neutral"
     # supaya win rate mencerminkan trade yang benar-benar menang/kalah saja.
-    pnl_list = [_money(get_pnl(t)) for t in closed]
+    pnl_list = [_money(get_pnl(t), t.get("martingale_mult")) for t in closed]
     wins     = sum(1 for v in pnl_list if v > 0.01)
     losses   = sum(1 for v in pnl_list if v < -0.01)
     neutral  = total - wins - losses
@@ -697,7 +721,7 @@ def get_trade_history(limit: int = 30, offset: int = 0, days: int = 0) -> list:
     out = []
     for r in rows:
         t = dict(r)
-        t["pnl_usd"] = _money(t.get("pnl_pips"))
+        t["pnl_usd"] = _money(t.get("pnl_pips"), t.get("martingale_mult"))
         out.append(t)
     return out
 
@@ -1163,13 +1187,15 @@ def run_monitor_check() -> list:
                     print(f"[Monitor] #{mid} {direction} -> {outcome} @ {price:.2f} "
                           f"(PnL: {pnl:+.2f} | realized: {realized:+.2f} | SL: {new_sl:.2f})")
 
+                    trade_mult = m.get("martingale_mult") or 1
+
                     updates.append({
                         "monitor_id": mid,
                         "direction":  direction,
                         "outcome":    outcome,
                         "price":      price,
                         "pnl_pips":   pnl,
-                        "pnl_usd":    _money(pnl),
+                        "pnl_usd":    _money(pnl, trade_mult),
                     })
 
                     # ── Notifikasi Telegram ──
@@ -1185,9 +1211,12 @@ def run_monitor_check() -> list:
                         emoji = ("🛡️" if outcome == "EARLY_BE_MOVE" else
                                  "✅" if outcome in ("TP1_HIT", "TP2_HIT", "TP3_HIT") else
                                  "⚖️" if outcome == "BE_HIT" else "🛑")
-                        pnl_usd   = _money(pnl)
+                        pnl_usd     = _money(pnl, trade_mult)
+                        effective_lot = DISPLAY_LOT_SIZE * trade_mult
                         pnl_str   = (f"{'+' if pnl_usd >= 0 else '-'}"
-                                     f"${abs(pnl_usd):,.2f} ({DISPLAY_LOT_SIZE:.2f} lot)")
+                                     f"${abs(pnl_usd):,.2f} ({effective_lot:.2f} lot"
+                                     + (f", Martingale {trade_mult:g}x" if trade_mult > 1 else "")
+                                     + ")")
                         dir_emoji = "🟢" if direction == "BUY" else "🔴"
                         parts = [
                             emoji + " <b>TRADE UPDATE</b>",
@@ -3611,7 +3640,7 @@ def analytics():
             if n == 0:
                 return {"total": 0, "wins": 0, "losses": 0, "neutral": 0, "be": 0,
                         "win_rate": 0, "net_pnl": 0, "profit_factor": 0}
-            pnls     = [_money(t.get("pnl_pips")) for t in trades]
+            pnls     = [_money(t.get("pnl_pips"), t.get("martingale_mult")) for t in trades]
             wins     = sum(1 for p in pnls if p > 0.01)
             losses   = sum(1 for p in pnls if p < -0.01)
             neutral  = n - wins - losses

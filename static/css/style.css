@@ -1734,6 +1734,22 @@ html, body {
   word-break: break-all;
 }
 
+.mart-bar {
+  margin-top: 6px;
+  transition: background .3s, border-color .3s;
+}
+.mart-bar .dt-status { color: var(--text-sec); }
+.mart-bar.active {
+  background: rgba(231, 76, 60, 0.10);
+  border-color: rgba(231, 76, 60, 0.35);
+  animation: mart-pulse 1.6s ease-in-out infinite;
+}
+.mart-bar.active .dt-status { color: var(--red); }
+@keyframes mart-pulse {
+  0%, 100% { background: rgba(231, 76, 60, 0.10); }
+  50%      { background: rgba(231, 76, 60, 0.20); }
+}
+
 /* ══════════════════════════════════════
    SESSION SCHEDULE PANEL (superadmin)
    ══════════════════════════════════════ */
