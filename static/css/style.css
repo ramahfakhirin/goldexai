@@ -763,22 +763,48 @@ html, body {
 }
 
 /* ── PERFORMANCE CARD ── */
+.perf-filter {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.perf-filter-btn {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 9px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: all .15s;
+}
+.perf-filter-btn:hover { border-color: var(--gold); color: var(--text-sec); }
+.perf-filter-btn.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--bg1);
+  font-weight: 700;
+}
 .perf-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
   margin-bottom: 10px;
 }
 .perf-item {
   background: var(--bg2);
   border-radius: 5px;
-  padding: 8px 4px;
+  padding: 8px 2px;
   text-align: center;
 }
-.perf-val  { font-family: var(--mono); font-size: 16px; font-weight: 700; }
-.perf-lbl  { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+.perf-val  { font-family: var(--mono); font-size: 15px; font-weight: 700; }
+.perf-lbl  { font-size: 8px; color: var(--text-dim); margin-top: 2px; }
 .perf-item.win  .perf-val { color: var(--green); }
 .perf-item.loss .perf-val { color: var(--red); }
+.perf-item.neutral .perf-val { color: var(--text-dim); }
 .perf-item.rate .perf-val { color: var(--blue); }
 
 .perf-pips-row {
@@ -874,7 +900,6 @@ html, body {
   color: var(--gold);
 }
 .tp-badge.be { color: var(--gold); }
-.tp-badge.neutral { color: var(--text-dim); }
 
 /* ── ANALITIK DIAGNOSIS ── */
 .analytics-period {

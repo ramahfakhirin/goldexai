@@ -703,7 +703,6 @@
       <div class="card-label-row">
         <span class="card-label" data-i18n="trade_performance">📊 PERFORMA TRADE</span>
         <div style="display:flex;align-items:center;gap:6px">
-          <span class="card-label" id="perf-period-label" style="color:var(--gold);font-size:8px" data-i18n="days_7">7 HARI</span>
           <button onclick="resetPerformance()" title="Reset performance data"
             style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all .2s"
             onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
@@ -713,6 +712,11 @@
           </button>
         </div>
       </div>
+      <div class="perf-filter" id="perf-filter">
+        <button class="perf-filter-btn" data-days="1">24H</button>
+        <button class="perf-filter-btn active" data-days="7">7D</button>
+        <button class="perf-filter-btn" data-days="30">30D</button>
+      </div>
       <div class="perf-grid">
         <div class="perf-item">
           <div class="perf-val" id="perf-total">0</div>
@@ -721,6 +725,10 @@
         <div class="perf-item win">
           <div class="perf-val" id="perf-wins">0</div>
           <div class="perf-lbl" data-i18n="win">Win</div>
+        </div>
+        <div class="perf-item neutral">
+          <div class="perf-val" id="perf-neutral">0</div>
+          <div class="perf-lbl" data-i18n="neutral">Neutral</div>
         </div>
         <div class="perf-item loss">
           <div class="perf-val" id="perf-losses">0</div>
@@ -746,7 +754,6 @@
         <div class="tp-badge tp2">TP2 <span id="perf-tp2">0</span>x</div>
         <div class="tp-badge tp3">TP3 <span id="perf-tp3">0</span>x</div>
         <div class="tp-badge be" title="Trade closed at breakeven after TP1 reached">BE <span id="perf-be">0</span>x</div>
-        <div class="tp-badge neutral" title="Scratch trade — closed at ~$0.00, excluded from Win/Loss/Win Rate">NEUTRAL <span id="perf-neutral">0</span>x</div>
         <div class="tp-badge best"><span data-i18n="best">Best</span> <span id="perf-best">$0</span></div>
         <div class="tp-badge worst"><span data-i18n="worst">Worst</span> <span id="perf-worst">$0</span></div>
         <div class="tp-badge pf" title="Profit Factor = gross profit ÷ gross loss">PF <span id="perf-pf">—</span></div>
@@ -897,6 +904,7 @@
       <div class="perf-grid">
         <div class="perf-item"><div class="perf-val" id="m-perf-total">0</div><div class="perf-lbl" data-i18n="total">Total</div></div>
         <div class="perf-item win"><div class="perf-val" id="m-perf-wins">0</div><div class="perf-lbl" data-i18n="win">Win</div></div>
+        <div class="perf-item neutral"><div class="perf-val" id="m-perf-neutral">0</div><div class="perf-lbl" data-i18n="neutral">Neutral</div></div>
         <div class="perf-item loss"><div class="perf-val" id="m-perf-losses">0</div><div class="perf-lbl" data-i18n="loss">Loss</div></div>
         <div class="perf-item rate"><div class="perf-val" id="m-perf-rate">0%</div><div class="perf-lbl" data-i18n="win_rate">Win Rate</div></div>
       </div>
@@ -1011,7 +1019,7 @@ initI18n({
     key_factors: "⚡ FAKTOR KUNCI", latest_headlines: "📰 HEADLINE TERBARU (48 Jam)",
     econ_calendar_week: "📅 KALENDER EKONOMI (Minggu Ini)", loading_calendar: "Memuat kalender...",
     trade_performance: "📊 PERFORMA TRADE", days_7: "7 HARI", reset: "↺ Reset",
-    win: "Win", loss: "Loss", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
+    win: "Win", loss: "Loss", neutral: "Netral", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
     best: "Best", worst: "Worst", profit_factor: "Profit Factor",
     analytics: "🔬 ANALYTICS", no_trade_data: "Belum ada data trade",
     live_monitors: "🔴 MONITOR LIVE", active_count: "0 aktif", no_monitored_positions: "Belum ada posisi dipantau",
@@ -1057,7 +1065,7 @@ initI18n({
     key_factors: "⚡ KEY FACTORS", latest_headlines: "📰 LATEST HEADLINES (48 Hours)",
     econ_calendar_week: "📅 ECONOMIC CALENDAR (This Week)", loading_calendar: "Loading calendar...",
     trade_performance: "📊 TRADE PERFORMANCE", days_7: "7 DAYS", reset: "↺ Reset",
-    win: "Win", loss: "Loss", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
+    win: "Win", loss: "Loss", neutral: "Neutral", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
     best: "Best", worst: "Worst", profit_factor: "Profit Factor",
     analytics: "🔬 ANALYTICS", no_trade_data: "No trade data yet",
     live_monitors: "🔴 LIVE MONITORS", active_count: "0 active", no_monitored_positions: "No monitored positions",

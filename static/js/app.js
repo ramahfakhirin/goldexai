@@ -6,6 +6,7 @@ let confChart     = null;
 let historyData   = [];
 let lastSignalId  = null;  // track signal terakhir yang ditampilkan
 let pollTimer     = null;  // timer polling /api/latest_signal
+let PERF_DAYS     = 7;     // filter periode Trade Performance: 1 (24H) / 7 (7D) / 30 (30D)
 
 // ─── SAFE FETCH HELPER ─────────────────────
 async function safeFetchJson(url, options = {}) {
@@ -37,12 +38,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   loadActiveMonitors();
   loadPerformance();
   loadTradeHistory();
+  initPerfFilter();
 
   // Mode baru: semua analisis dari server scheduler
   // Browser hanya polling hasil terbaru
   startServerPolling();
   syncSchedulerCountdown();
 });
+
+function initPerfFilter() {
+  const filterEl = document.getElementById("perf-filter");
+  if (!filterEl) return;
+  filterEl.querySelectorAll(".perf-filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const days = parseInt(btn.dataset.days, 10);
+      if (!days || days === PERF_DAYS) return;
+      PERF_DAYS = days;
+      filterEl.querySelectorAll(".perf-filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      loadPerformance();
+      loadAnalytics();
+    });
+  });
+}
 
 // ─── CLOCK ───────────────────────────────
 function startClock() {
@@ -1364,7 +1382,7 @@ const SESSION_LABEL = {
 
 async function loadAnalytics() {
   try {
-    const res  = await fetch("/api/analytics?days=7");
+    const res  = await fetch(`/api/analytics?days=${PERF_DAYS}`);
     const data = await res.json();
     if (!data.ok) return;
     const a  = data.data;
@@ -1432,7 +1450,7 @@ function syncAnalyticsToMobile() {
 
 async function loadPerformance() {
   try {
-    const res  = await fetch("/api/performance?days=7");
+    const res  = await fetch(`/api/performance?days=${PERF_DAYS}`);
     const data = await res.json();
     if (!data.ok) return;
     const p = data.data;
@@ -1442,17 +1460,19 @@ async function loadPerformance() {
       if (el) el.textContent = val;
     };
 
-    set("perf-total",  p.total);
-    set("perf-wins",   p.wins);
-    set("perf-losses", p.losses);
-    set("perf-rate",   p.win_rate + "%");
-    set("perf-tp1",    p.tp1_hits);
-    set("perf-tp2",    p.tp2_hits);
-    set("perf-tp3",    p.tp3_hits);
+    set("perf-total",   p.total);
+    set("perf-wins",    p.wins);
+    set("perf-neutral", p.neutral || 0);
+    set("perf-losses",  p.losses);
+    set("perf-rate",    p.win_rate + "%");
+    set("perf-tp1",     p.tp1_hits);
+    set("perf-tp2",     p.tp2_hits);
+    set("perf-tp3",     p.tp3_hits);
 
-    // Update period label
-    const periodEl = document.getElementById("perf-period-label");
-    if(periodEl) periodEl.textContent = p.period_days > 0 ? p.period_days + " DAYS" : "ALL TIME";
+    // Update period label (analytics card mirrors the same filter)
+    const periodLbl = PERF_DAYS === 1 ? "24H" : PERF_DAYS === 7 ? "7D" : PERF_DAYS === 30 ? "30D" : PERF_DAYS + "D";
+    const analyticsPeriodEl = document.getElementById("analytics-period");
+    if (analyticsPeriodEl) analyticsPeriodEl.textContent = periodLbl;
 
     const pipsEl = document.getElementById("perf-pips");
     const avgEl  = document.getElementById("perf-avg");
@@ -1504,11 +1524,12 @@ async function loadPerformance() {
 
     if (window.innerWidth <= 768) {
       const mf = {
-        "m-perf-total":  p.total,
-        "m-perf-wins":   p.wins,
-        "m-perf-losses": p.losses,
-        "m-perf-rate":   p.win_rate + "%",
-        "m-perf-pips":   (totalPnl >= 0 ? "+" : "-") + "$" + Math.abs(totalPnl).toFixed(2),
+        "m-perf-total":   p.total,
+        "m-perf-wins":    p.wins,
+        "m-perf-neutral": p.neutral || 0,
+        "m-perf-losses":  p.losses,
+        "m-perf-rate":    p.win_rate + "%",
+        "m-perf-pips":    (totalPnl >= 0 ? "+" : "-") + "$" + Math.abs(totalPnl).toFixed(2),
         "m-perf-avg":    (avgPnl >= 0 ? "+" : "-") + "$" + Math.abs(avgPnl).toFixed(2),
         "m-perf-pf":     Number(p.profit_factor || 0) > 0 ? Number(p.profit_factor).toFixed(2) : "—",
       };
