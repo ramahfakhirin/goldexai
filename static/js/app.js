@@ -1305,18 +1305,63 @@ async function loadActiveMonitors() {
 }
 
 // ─── LOAD TRADE HISTORY ──────────────────────
+const TRADE_HIST_PAGE_SIZE = 10;
+let tradeHistPage  = 1;
+let tradeHistTotal = 0;
+let tradeHistDays  = 7;   // filter periode: 1 (24H) / 7 (7D) / 30 (30D)
+
+function setTradeHistDays(days) {
+  if (days === tradeHistDays) return;
+  tradeHistDays = days;
+  tradeHistPage = 1;
+  loadTradeHistory();
+}
+
+function goToTradeHistPage(page) {
+  const maxPage = Math.max(1, Math.ceil(tradeHistTotal / TRADE_HIST_PAGE_SIZE));
+  tradeHistPage = Math.min(Math.max(1, page), maxPage);
+  loadTradeHistory();
+}
+
+function renderTradeHistFilter() {
+  const opts = [[1, "24H"], [7, "7D"], [30, "30D"]];
+  return `<div class="perf-filter hist-period-filter">` +
+    opts.map(([d, label]) =>
+      `<button class="perf-filter-btn ${tradeHistDays === d ? "active" : ""}" onclick="setTradeHistDays(${d})">${label}</button>`
+    ).join("") +
+    `</div>`;
+}
+
+function renderTradeHistPagination() {
+  if (tradeHistTotal <= TRADE_HIST_PAGE_SIZE) return "";
+  const maxPage = Math.max(1, Math.ceil(tradeHistTotal / TRADE_HIST_PAGE_SIZE));
+  const page    = tradeHistPage;
+  const from    = (page - 1) * TRADE_HIST_PAGE_SIZE + 1;
+  const to      = Math.min(page * TRADE_HIST_PAGE_SIZE, tradeHistTotal);
+  return `
+    <div class="hist-pagination">
+      <button class="hist-page-btn" ${page <= 1 ? "disabled" : ""} onclick="goToTradeHistPage(${page - 1})">‹ Prev</button>
+      <span class="hist-page-info">${from}–${to} of ${tradeHistTotal} · Page ${page}/${maxPage}</span>
+      <button class="hist-page-btn" ${page >= maxPage ? "disabled" : ""} onclick="goToTradeHistPage(${page + 1})">Next ›</button>
+    </div>`;
+}
+
 async function loadTradeHistory() {
   try {
-    const res  = await fetch("/api/trade_history?limit=20");
+    const offset = (tradeHistPage - 1) * TRADE_HIST_PAGE_SIZE;
+    const res  = await fetch(`/api/trade_history?limit=${TRADE_HIST_PAGE_SIZE}&offset=${offset}&days=${tradeHistDays}`);
     const data = await res.json();
     if (!data.ok) return;
 
     const trades = data.data || [];
-    const el     = document.getElementById("trade-history-list");
+    tradeHistTotal = data.total || 0;
+    const el = document.getElementById("trade-history-list");
     if (!el) return;
 
+    const filterHtml = renderTradeHistFilter();
+
     if (!trades.length) {
-      el.innerHTML = '<div class="history-empty">No completed trades yet</div>';
+      el.innerHTML = filterHtml + '<div class="history-empty">No completed trades yet</div>';
       return;
     }
 
@@ -1328,7 +1373,7 @@ async function loadTradeHistory() {
       TP3_HIT: "FULL TP",
     };
 
-    el.innerHTML = trades
+    const itemsHtml = trades
       .filter(t => t.status !== "ACTIVE")   // active positions shown in LIVE MONITORS
       .map(t => {
       const pnl   = Number(t.pnl_usd ?? (Number(t.pnl_pips || 0) * PNL_MULT));
@@ -1357,6 +1402,8 @@ async function loadTradeHistory() {
         </div>
       </div>`;
     }).join("") || '<div class="history-empty">No completed trades yet</div>';
+
+    el.innerHTML = filterHtml + itemsHtml + renderTradeHistPagination();
 
   } catch (e) {
     console.error("Trade history error:", e);

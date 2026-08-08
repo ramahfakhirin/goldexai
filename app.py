@@ -670,17 +670,29 @@ def get_performance_stats(days: int = 7) -> dict:
     }
 
 
-def get_trade_history(limit: int = 30) -> list:
-    """Ambil history trade yang sudah closed."""
+def get_trade_history(limit: int = 30, offset: int = 0, days: int = 0) -> list:
+    """Ambil history trade yang sudah closed, mendukung pagination (offset)
+    dan filter periode (days: 0 = semua, N = N hari terakhir)."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    rows = conn.execute("""
-        SELECT tm.*, s.confidence, s.narrative
-        FROM trade_monitors tm
-        LEFT JOIN signals s ON tm.signal_id = s.id
-        WHERE tm.status = 'CLOSED'
-        ORDER BY tm.id DESC LIMIT ?
-    """, (limit,)).fetchall()
+    if days > 0:
+        cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
+        rows = conn.execute("""
+            SELECT tm.*, s.confidence, s.narrative
+            FROM trade_monitors tm
+            LEFT JOIN signals s ON tm.signal_id = s.id
+            WHERE tm.status = 'CLOSED'
+            AND (tm.closed_at >= ? OR tm.outcome_time >= ? OR tm.timestamp >= ? OR tm.created_at >= ?)
+            ORDER BY tm.id DESC LIMIT ? OFFSET ?
+        """, (cutoff, cutoff, cutoff, cutoff, limit, offset)).fetchall()
+    else:
+        rows = conn.execute("""
+            SELECT tm.*, s.confidence, s.narrative
+            FROM trade_monitors tm
+            LEFT JOIN signals s ON tm.signal_id = s.id
+            WHERE tm.status = 'CLOSED'
+            ORDER BY tm.id DESC LIMIT ? OFFSET ?
+        """, (limit, offset)).fetchall()
     conn.close()
     out = []
     for r in rows:
@@ -688,6 +700,23 @@ def get_trade_history(limit: int = 30) -> list:
         t["pnl_usd"] = _money(t.get("pnl_pips"))
         out.append(t)
     return out
+
+
+def get_trade_history_count(days: int = 0) -> int:
+    """Hitung total trade CLOSED yang cocok dengan filter periode — dipakai
+    untuk pagination di /api/trade_history."""
+    conn = sqlite3.connect(DB_PATH)
+    if days > 0:
+        cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
+        row = conn.execute("""
+            SELECT COUNT(*) FROM trade_monitors
+            WHERE status = 'CLOSED'
+            AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ? OR created_at >= ?)
+        """, (cutoff, cutoff, cutoff, cutoff)).fetchone()
+    else:
+        row = conn.execute("SELECT COUNT(*) FROM trade_monitors WHERE status = 'CLOSED'").fetchone()
+    conn.close()
+    return int(row[0]) if row else 0
 
 
 # ─────────────────────────────────────────────
@@ -3649,9 +3678,14 @@ def analytics():
 @app.route("/api/trade_history")
 @login_required
 def trade_history():
-    """Endpoint: history trade dengan outcome."""
-    limit = int(request.args.get("limit", 30))
-    return jsonify({"ok": True, "data": get_trade_history(limit)})
+    """Endpoint: history trade dengan outcome. Mendukung pagination
+    (?limit, ?offset) dan filter periode (?days: 0=semua, 1/7/30 dst)."""
+    limit  = int(request.args.get("limit", 10))
+    offset = int(request.args.get("offset", 0))
+    days   = int(request.args.get("days", 0))
+    data  = get_trade_history(limit, offset, days)
+    total = get_trade_history_count(days)
+    return jsonify({"ok": True, "data": data, "total": total, "limit": limit, "offset": offset})
 
 
 @app.route("/api/active_monitors")
