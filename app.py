@@ -1049,13 +1049,20 @@ def run_monitor_check() -> list:
     """
     Cek semua active monitors vs harga live — single accounting path.
 
-    Model posisi: 3 partial sama besar (1/3 close di TP1/TP2/TP3).
-    - TP1 tercapai → 1/3 profit dibukukan, SL pindah ke breakeven (entry)
-    - TP2 tercapai → 1/3 lagi dibukukan, SL pindah ke TP1
-    - TP3 tercapai → sisa 1/3 dibukukan, posisi CLOSED
-    - SL tersentuh → sisa posisi close di SL:
-        * tp_hit == 0 → outcome SL_HIT  (loss murni)
-        * tp_hit >= 1 → outcome BE_HIT  (trailing/breakeven stop, PnL tetap positif)
+    Model posisi: 3 trade terpisah, lot sama besar, SL sama, masing-masing
+    menyasar 1 target (trade A → TP1, trade B → TP2, trade C → TP3).
+    Dibukukan sebagai 1 row (1/3 realized per level) — matematisnya identik
+    dengan 3 trade independen, tapi lebih ringkas untuk di-track.
+    - TP1 tercapai → trade A close (1/3 profit dibukukan), SL trade B & C
+      SAMA-SAMA pindah ke breakeven (entry)
+    - TP2 tercapai → trade B close (1/3 lagi dibukukan), SL trade C pindah
+      ke level TP1 (lebih baik dari breakeven)
+    - TP3 tercapai → trade C close (sisa 1/3 dibukukan), semua posisi CLOSED
+    - SL tersentuh → sisa trade yang masih terbuka close di SL:
+        * tp_hit == 0 dan belum pernah BE → outcome SL_HIT (loss murni, ketiga trade rugi)
+        * tp_hit >= 1 ATAU sudah pernah dipindah ke BE → outcome BE_HIT
+          (trade yang tersisa scratch di breakeven, bukan loss — trade yang
+          sudah closed duluan di TP tetap terhitung profit)
 
     PnL yang disimpan (pnl_pips) = PnL tertimbang seluruh posisi ($ per 1 lot-unit).
     Return: list update untuk API/toast.
@@ -1771,11 +1778,11 @@ def run_scheduled_analysis():
                 "take_profit_3":       berkah["tp3"],
                 "risk_reward_ratio":   berkah["rrr"],
                 "recommended_lot":     f"{berkah['lot_size']} lot",
-                "max_lot_warning":     "Buka maksimal 1 posisi",
+                "max_lot_warning":     "Buka 3 posisi terpisah (lot sama besar), SL sama untuk ketiganya",
                 "partial_close_guide": (
-                    "TP1 hit → close 50%, SL ke BE | "
-                    "TP2 hit → close 30% | "
-                    "TP3 hit → close sisa 20%"
+                    "1 trade target TP1, 1 trade target TP2, 1 trade target TP3 (lot sama besar) | "
+                    "TP1 tercapai → SL ketiga trade pindah ke breakeven | "
+                    "TP2 tercapai → SL trade TP3 pindah ke level TP1"
                 ),
             },
             "market_structure": {
