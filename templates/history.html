@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function() {
+    try {
+      let originalFetch = window.fetch;
+      Object.defineProperty(window, 'fetch', {
+        get: function() { return originalFetch; },
+        set: function(val) { originalFetch = val; },
+        configurable: true, enumerable: true
+      });
+    } catch (e) {}
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GOLDEX AI — Riwayat Sinyal</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-32.png">
+<link rel="shortcut icon" href="/static/icons/favicon.ico">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0d1117">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GOLDEX AI">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/dashboard-v2.css">
+<style>
+  /* Halaman khusus — full-width, tanpa panel kanan */
+  .history-page-layout {
+    display: grid;
+    grid-template-columns: 224px 1fr;
+    gap: 12px;
+    padding: 72px 20px 12px;
+    min-height: 100vh;
+    max-width: 1900px;
+    margin: 0 auto;
+  }
+  @media (max-width: 1179px) {
+    .history-page-layout { grid-template-columns: 1fr; padding: 56px 12px calc(76px + env(safe-area-inset-bottom)); }
+    .history-page-layout .panel-left { display: none !important; }
+  }
+  .history-page-main { display: flex; flex-direction: column; gap: 12px; }
+  .history-page-main .card-history { flex: none; }
+  .history-page-main .history-list { max-height: none; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo-dot"></span>
+    <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
+    <span class="live-badge" id="live-badge"><span id="ws-status-dot" style="display:inline-block;width:6px;height:6px;background:var(--red);border-radius:50%;margin-right:4px;vertical-align:middle;transition:background 0.3s"></span>LIVE</span>
+  </div>
+
+  <div class="topbar-v2-stats">
+    <div class="tb-stat-pill">
+      <div class="lbl">Win Rate</div>
+      <div class="val" id="tb-winrate">–</div>
+    </div>
+    <div class="tb-stat-pill">
+      <div class="lbl">Total PnL</div>
+      <div class="val" id="tb-pnl">–</div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <span class="clock" id="clock">--:--:--</span>
+    <span class="topbar-divider">|</span>
+    <span class="topbar-price" id="topbar-price">$-.--</span>
+    <span class="topbar-divider">|</span>
+    <div id="dash-lang-toggle" style="display:inline-block;vertical-align:middle;margin-right:6px"></div>
+    <span class="topbar-old-links">
+      {% if session.get('role') == 'superadmin' %}
+      <a href="/admin/users" class="logout-btn" title="User Management" style="color:var(--gold)" data-i18n="nav_admin">👥 Admin</a>
+      <span class="topbar-divider">|</span>
+      {% endif %}
+      <a href="/logout" class="logout-btn" title="Logout" data-i18n="nav_logout">⏻ Keluar</a>
+    </span>
+
+    <div class="topbar-v2-user" style="position:relative;cursor:pointer" onclick="gxToggleUserMenu(event)">
+      <div class="tb-avatar">{{ (username or "U")[:2] | upper }}</div>
+      <div>
+        <div class="tb-user-name">{{ username or "User" }}</div>
+        <div class="tb-user-role">{{ "Superadmin" if session.get('role') == 'superadmin' else "Member" }}</div>
+      </div>
+      <div class="tb-user-menu" id="tb-user-menu">
+        {% if session.get('role') == 'superadmin' %}
+        <a href="/admin/users" data-i18n="nav_admin">👥 Admin</a>
+        {% endif %}
+        <a href="/logout" data-i18n="nav_logout">⏻ Keluar</a>
+      </div>
+    </div>
+
+    <button class="topbar-v2-cta" onclick="location.href='/dashboard'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h7l-1 8 11-14h-7z"/></svg>
+      Ke Dashboard
+    </button>
+  </div>
+</header>
+
+<main class="history-page-layout">
+
+  <aside class="panel panel-left">
+    <nav class="side-nav-v2">
+      <a onclick="location.href='/dashboard'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v6h-6"/></svg>
+        Riwayat Sinyal
+      </a>
+      <a onclick="location.href='/performance'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+        Performa Trade
+      </a>
+      <a onclick="location.href='/dashboard?tab=calendar'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+        Kalender Ekonomi
+      </a>
+      <a onclick="location.href='/dashboard?tab=sentiment'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Skor Sentimen
+      </a>
+      <a onclick="location.href='/dashboard?open=settings'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Pengaturan
+      </a>
+    </nav>
+  </aside>
+
+  <section class="history-page-main">
+    <section class="card card-history">
+      <div class="card-label-row">
+        <span class="card-label" data-i18n="signal_history">RIWAYAT SINYAL</span>
+        <button class="btn-clear" onclick="clearHistory()" data-i18n="clear">Hapus</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <div class="history-empty" data-i18n="no_saved_signals">Belum ada sinyal tersimpan</div>
+      </div>
+    </section>
+  </section>
+
+</main>
+
+<!-- ── BOTTOM NAV (mobile & tablet, <1180px — desktop uses the sidebar) ── -->
+<nav class="bottom-nav-v2" id="bottom-nav-v2">
+  <a onclick="location.href='/dashboard'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    <span>Dashboard</span>
+  </a>
+  <a class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v6h-6"/></svg>
+    <span>Riwayat</span>
+  </a>
+  <a onclick="location.href='/performance'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+    <span>Performa</span>
+  </a>
+  <a onclick="location.href='/dashboard?tab=calendar'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+    <span>Kalender</span>
+  </a>
+  <a onclick="location.href='/dashboard?tab=sentiment'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <span>Sentimen</span>
+  </a>
+  <a onclick="location.href='/dashboard?open=settings'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Pengaturan</span>
+  </a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/i18n.js"></script>
+<script>
+initI18n({
+  id: {
+    nav_admin: "👥 Admin", nav_logout: "⏻ Keluar",
+    signal_history: "RIWAYAT SINYAL", clear: "Hapus", no_saved_signals: "Belum ada sinyal tersimpan",
+  },
+  en: {
+    nav_admin: "👥 Admin", nav_logout: "⏻ Logout",
+    signal_history: "SIGNAL HISTORY", clear: "Clear", no_saved_signals: "No saved signals yet",
+  },
+});
+renderLangToggle("dash-lang-toggle");
+</script>
+<script src="/static/js/app.js"></script>
+<script>
+  function gxToggleUserMenu(e) {
+    e.stopPropagation();
+    document.getElementById("tb-user-menu")?.classList.toggle("open");
+  }
+  document.addEventListener("click", () => {
+    document.getElementById("tb-user-menu")?.classList.remove("open");
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

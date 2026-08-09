@@ -45,6 +45,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/dashboard-v2.css">
 </head>
 <body>
 
@@ -55,17 +56,50 @@
     <span class="logo-text">GOLDEX <span class="logo-sub">AI</span></span>
     <span class="live-badge" id="live-badge"><span id="ws-status-dot" style="display:inline-block;width:6px;height:6px;background:var(--red);border-radius:50%;margin-right:4px;vertical-align:middle;transition:background 0.3s"></span>LIVE</span>
   </div>
+
+  <div class="topbar-v2-stats">
+    <div class="tb-stat-pill">
+      <div class="lbl">Win Rate</div>
+      <div class="val" id="tb-winrate">–</div>
+    </div>
+    <div class="tb-stat-pill">
+      <div class="lbl">Total PnL</div>
+      <div class="val" id="tb-pnl">–</div>
+    </div>
+  </div>
+
   <div class="topbar-right">
     <span class="clock" id="clock">--:--:--</span>
     <span class="topbar-divider">|</span>
     <span class="topbar-price" id="topbar-price">$-.--</span>
     <span class="topbar-divider">|</span>
     <div id="dash-lang-toggle" style="display:inline-block;vertical-align:middle;margin-right:6px"></div>
-    {% if session.get('role') == 'superadmin' %}
-    <a href="/admin/users" class="logout-btn" title="User Management" style="color:var(--gold)" data-i18n="nav_admin">👥 Admin</a>
-    <span class="topbar-divider">|</span>
-    {% endif %}
-    <a href="/logout" class="logout-btn" title="Logout" data-i18n="nav_logout">⏻ Keluar</a>
+    <span class="topbar-old-links">
+      {% if session.get('role') == 'superadmin' %}
+      <a href="/admin/users" class="logout-btn" title="User Management" style="color:var(--gold)" data-i18n="nav_admin">👥 Admin</a>
+      <span class="topbar-divider">|</span>
+      {% endif %}
+      <a href="/logout" class="logout-btn" title="Logout" data-i18n="nav_logout">⏻ Keluar</a>
+    </span>
+
+    <div class="topbar-v2-user" style="position:relative;cursor:pointer" onclick="gxToggleUserMenu(event)">
+      <div class="tb-avatar">{{ (username or "U")[:2] | upper }}</div>
+      <div>
+        <div class="tb-user-name">{{ username or "User" }}</div>
+        <div class="tb-user-role">{{ "Superadmin" if session.get('role') == 'superadmin' else "Member" }}</div>
+      </div>
+      <div class="tb-user-menu" id="tb-user-menu">
+        {% if session.get('role') == 'superadmin' %}
+        <a href="/admin/users" data-i18n="nav_admin">👥 Admin</a>
+        {% endif %}
+        <a href="/logout" data-i18n="nav_logout">⏻ Keluar</a>
+      </div>
+    </div>
+
+    <button class="topbar-v2-cta" onclick="triggerManualAnalysis()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h7l-1 8 11-14h-7z"/></svg>
+      Jalankan Scan
+    </button>
   </div>
 </header>
 
@@ -80,6 +114,41 @@
     <input type="hidden" id="twelve-key-input" value="">
     <div id="key-status" style="display:none"></div>
     <div id="twelve-status" style="display:none"></div>
+
+    <!-- ═══ ICON NAV (desktop only, ≥1100px) ═══ -->
+    <nav class="side-nav-v2">
+      <a class="active" onclick="gxNav('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a onclick="gxNav('history')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v6h-6"/></svg>
+        Riwayat Sinyal
+      </a>
+      <a onclick="gxNav('performance')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+        Performa Trade
+      </a>
+      <a onclick="gxNav('calendar')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+        Kalender Ekonomi
+      </a>
+      <a onclick="gxNav('sentiment')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Skor Sentimen
+      </a>
+      <a onclick="gxOpenDrawer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Pengaturan
+      </a>
+    </nav>
+
+    <div class="side-promo-v2">
+      <div class="glow"></div>
+      <div class="eyebrow">📲 PWA</div>
+      <div class="title">Pasang GOLDEX AI di layar utama HP — notifikasi sinyal instan.</div>
+      <button onclick="gxInstallPwa()">Pasang Sekarang</button>
+    </div>
 
     <!-- ═══ LIVE TERMINAL WIDGET ═══ -->
     <section class="card dash-terminal-widget">
@@ -103,329 +172,24 @@
       </div>
     </section>
 
-    <!-- Server Info Panel -->
-    <section class="card card-setup" id="setup-card">
-      <div class="card-label" data-i18n="server_scheduler">SERVER SCHEDULER</div>
-      <div class="server-info-row">
-        <span class="server-dot" id="server-dot">●</span>
-        <span class="server-label" id="server-label" data-i18n="connecting">Menghubungkan...</span>
-      </div>
-      <div class="server-tf-row">
-        <span class="ind-name" data-i18n="timeframe">Timeframe</span>
-        <span class="ind-val" id="server-tf">5M</span>
-      </div>
-      <div class="server-tf-row">
-        <span class="ind-name" data-i18n="interval">Interval</span>
-        <span class="ind-val" id="server-interval" data-i18n="minutes_5">5 menit</span>
-      </div>
-    </section>
-
-    <!-- Auto-Refresh Panel (hidden) -->
-    <section class="card card-auto" style="display:none">
-      <div class="card-label">AUTO ANALYSIS</div>
-      <div class="auto-row">
-        <div class="auto-toggle-wrap">
-          <span class="auto-label">Auto Mode</span>
-          <label class="toggle">
-            <input type="checkbox" id="auto-toggle" onchange="toggleAuto()">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <select id="auto-interval" class="input-field select-field" style="width:auto;font-size:11px">
-          <option value="5" selected>5 minutes ✦</option>
-          <option value="15">15 minutes</option>
-          <option value="30">30 minutes</option>
-          <option value="60">1 hour</option>
-        </select>
-      </div>
-      <div class="auto-status" id="auto-status">
-        <span class="auto-idle">● Idle — Auto mode off</span>
-      </div>
-      <div class="countdown-wrap" id="countdown-wrap" style="display:none">
-        <div class="countdown-label">Next analysis</div>
-        <div class="countdown-val" id="countdown-val">--:--</div>
-        <div class="countdown-bar-bg"><div class="countdown-bar" id="countdown-bar"></div></div>
-      </div>
-      <div class="smart-pause-info" id="smart-pause-info" style="display:none">
-        ⏸ Smart pause active — Repeated WAIT, 30 min pause
-      </div>
-    </section>
-
-    <!-- Telegram & Signal Dispatch Control Panel -->
-    <section class="card card-telegram" style="display:block">
-      <div class="card-label" data-i18n="tg_control_title">📡 KONTROL TELEGRAM & SINYAL MANUAL</div>
-
-      <!-- Quick Action Buttons -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-        <button class="btn-save-key" style="background:var(--gold,#f1c40f); color:#000; font-weight:700; border:none; padding:8px;" onclick="triggerManualAnalysis()" data-i18n="btn_run_scan">⚡ Jalankan Scan & Kirim</button>
-        <button class="btn-save-key" style="background:#2ecc71; color:#000; font-weight:700; border:none; padding:8px;" onclick="broadcastLatestSignal()" data-i18n="btn_send_tg">📢 Kirim Sinyal ke TG</button>
-      </div>
-      <div style="margin-bottom:12px;">
-        <button class="btn-save-key" style="width:100%; background:#3498db; color:#fff; font-weight:700; border:none; padding:8px;" onclick="dispatchManualSignal()" data-i18n="btn_manual_signal">✏️ Buat & Kirim Sinyal Manual</button>
-      </div>
-
-      <div class="input-group">
-        <label class="input-label" data-i18n="bot_token">Bot Token</label>
-        <input type="password" id="tg-token" class="input-field"
-               placeholder="7123456789:AAFxxx..." autocomplete="off">
-      </div>
-      <div class="input-group">
-        <label class="input-label" data-i18n="chat_id">Chat ID</label>
-        <input type="text" id="tg-chat" class="input-field"
-               placeholder="123456789">
-      </div>
-      <div class="tg-controls" style="display:flex; gap:8px;">
-        <button class="btn-save-key" style="flex:1;" onclick="saveTelegram()" data-i18n="btn_save_cred">Simpan Kredensial</button>
-        <button class="btn-save-key" style="flex:1; background:rgba(255,255,255,0.1);" onclick="testTelegram()" data-i18n="btn_test_tg">Tes Kirim TG</button>
-      </div>
-      <div class="key-status" id="tg-status"></div>
-      <div class="tg-notify-row" style="margin-top:10px;">
-        <label class="input-label" data-i18n="auto_notify">Auto-notifikasi Telegram untuk:</label>
-        <div class="tg-checks">
-          <label class="tg-check"><input type="checkbox" id="tg-buy" checked> BUY</label>
-          <label class="tg-check"><input type="checkbox" id="tg-sell" checked> SELL</label>
-          <label class="tg-check"><input type="checkbox" id="tg-wait"> WAIT</label>
-        </div>
-      </div>
-    </section>
-
-    <!-- Stats Bar -->
-    <section class="card card-stats">
-      <div class="card-label" data-i18n="signal_stats">STATISTIK SINYAL</div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-val" id="stat-total">0</div>
-          <div class="stat-lbl" data-i18n="total">Total</div>
-        </div>
-        <div class="stat-item buy">
-          <div class="stat-val" id="stat-buy">0</div>
-          <div class="stat-lbl">BUY</div>
-        </div>
-        <div class="stat-item sell">
-          <div class="stat-val" id="stat-sell">0</div>
-          <div class="stat-lbl">SELL</div>
-        </div>
-        <div class="stat-item wait">
-          <div class="stat-val" id="stat-wait">0</div>
-          <div class="stat-lbl">WAIT</div>
-        </div>
-      </div>
-      <div class="avg-conf">
-        <span class="avg-conf-label" data-i18n="avg_confidence">Rata-rata Confidence</span>
-        <span class="avg-conf-val" id="stat-conf">0%</span>
-      </div>
-    </section>
-
-    {% if session.get('role') == 'superadmin' %}
-    <!-- ═══ SESSION SCHEDULE (superadmin only) ═══ -->
-    <section class="card card-session-sched" id="session-sched-panel">
+    <!-- Trade History -->
+    <section class="card card-trade-history">
       <div class="card-label-row">
-        <div class="card-label" data-i18n="session_schedule">⏱ JADWAL SESI</div>
-        <span class="sched-curr-badge" id="sched-curr-badge">--</span>
+        <span class="card-label" data-i18n="trade_outcomes">📋 HASIL TRADE</span>
+        <button class="btn-clear" onclick="loadTradeHistory()" data-i18n="refresh">Refresh</button>
       </div>
-      <div class="sched-list">
-
-        <div class="sched-item" data-sess="london">
-          <div class="sched-info">
-            <span class="sched-flag">🇬🇧</span>
-            <div>
-              <div class="sched-name" data-i18n="sess_london">London</div>
-              <div class="sched-time">14:00 – 21:59 WIB</div>
-            </div>
-          </div>
-          <button class="sched-toggle" id="sched-toggle-london" onclick="toggleSession('london')">
-            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
-          </button>
-        </div>
-
-        <div class="sched-item" data-sess="new_york">
-          <div class="sched-info">
-            <span class="sched-flag">🇺🇸</span>
-            <div>
-              <div class="sched-name">New York</div>
-              <div class="sched-time">19:00 – 02:59 WIB</div>
-            </div>
-          </div>
-          <button class="sched-toggle" id="sched-toggle-new_york" onclick="toggleSession('new_york')">
-            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
-          </button>
-        </div>
-
-        <div class="sched-item" data-sess="tokyo">
-          <div class="sched-info">
-            <span class="sched-flag">🇯🇵</span>
-            <div>
-              <div class="sched-name">Tokyo</div>
-              <div class="sched-time">06:00 – 13:59 WIB</div>
-            </div>
-          </div>
-          <button class="sched-toggle" id="sched-toggle-tokyo" onclick="toggleSession('tokyo')">
-            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
-          </button>
-        </div>
-
-        <div class="sched-item" data-sess="sydney">
-          <div class="sched-info">
-            <span class="sched-flag">🇦🇺</span>
-            <div>
-              <div class="sched-name">Sydney</div>
-              <div class="sched-time">04:00 – 09:59 WIB</div>
-            </div>
-          </div>
-          <button class="sched-toggle" id="sched-toggle-sydney" onclick="toggleSession('sydney')">
-            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
-          </button>
-        </div>
-
-      </div>
-      <div class="sched-status" id="sched-status"><span data-i18n="loading_schedule">Memuat jadwal...</span></div>
-    </section>
-    {% else %}
-    <!-- ═══ SESSION STATUS (user read-only) ═══ -->
-    <section class="card card-session-sched" id="session-status-panel">
-      <div class="card-label-row">
-        <div class="card-label" data-i18n="session_status">⏱ STATUS SESI</div>
-        <span class="sched-curr-badge" id="user-sess-badge">--</span>
-      </div>
-      <div class="sched-list" id="user-sess-list">
-        <div class="sched-item" data-sess="london">
-          <div class="sched-info">
-            <span class="sched-flag">🇬🇧</span>
-            <div>
-              <div class="sched-name" data-i18n="sess_london">London</div>
-              <div class="sched-time">14:00 – 21:59 WIB</div>
-            </div>
-          </div>
-          <span class="sess-status-dot" id="user-dot-london">○</span>
-        </div>
-        <div class="sched-item" data-sess="new_york">
-          <div class="sched-info">
-            <span class="sched-flag">🇺🇸</span>
-            <div>
-              <div class="sched-name">New York</div>
-              <div class="sched-time">19:00 – 02:59 WIB</div>
-            </div>
-          </div>
-          <span class="sess-status-dot" id="user-dot-new_york">○</span>
-        </div>
-        <div class="sched-item" data-sess="tokyo">
-          <div class="sched-info">
-            <span class="sched-flag">🇯🇵</span>
-            <div>
-              <div class="sched-name">Tokyo</div>
-              <div class="sched-time">06:00 – 13:59 WIB</div>
-            </div>
-          </div>
-          <span class="sess-status-dot" id="user-dot-tokyo">○</span>
-        </div>
-        <div class="sched-item" data-sess="sydney">
-          <div class="sched-info">
-            <span class="sched-flag">🇦🇺</span>
-            <div>
-              <div class="sched-name">Sydney</div>
-              <div class="sched-time">04:00 – 09:59 WIB</div>
-            </div>
-          </div>
-          <span class="sess-status-dot" id="user-dot-sydney">○</span>
-        </div>
-      </div>
-      <div class="sched-status" id="user-sess-status"><span data-i18n="loading_session_status">Memuat status sesi...</span></div>
-    </section>
-    {% endif %}
-
-    <!-- Indicators Panel -->
-    <section class="card card-indicators" id="indicators-card" style="display:none">
-      <div class="card-label" data-i18n="tech_indicators">INDIKATOR TEKNIKAL</div>
-      <div class="ind-row">
-        <span class="ind-name">EMA 21</span>
-        <span class="ind-val" id="ind-ema21">-</span>
-        <span class="ind-badge" id="ind-ema21-badge"></span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">EMA 50</span>
-        <span class="ind-val" id="ind-ema50">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">EMA 55</span>
-        <span class="ind-val" id="ind-ema55">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">EMA 200</span>
-        <span class="ind-val" id="ind-ema200">-</span>
-      </div>
-      <div class="ind-divider"></div>
-      <div class="ind-row">
-        <span class="ind-name">RSI (14)</span>
-        <span class="ind-val" id="ind-rsi">-</span>
-        <span class="ind-badge" id="ind-rsi-badge"></span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">MACD</span>
-        <span class="ind-val" id="ind-macd">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">Signal</span>
-        <span class="ind-val" id="ind-macd-sig">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">ATR (14)</span>
-        <span class="ind-val" id="ind-atr">-</span>
-      </div>
-      <div class="ind-divider"></div>
-      <div class="ind-row">
-        <span class="ind-name">Heiken Ashi</span>
-        <span class="ind-val" id="ind-ha-bias">-</span>
-        <span class="ind-badge" id="ind-ha-badge"></span>
-      </div>
-      <div class="ind-divider"></div>
-      <div class="card-label" style="margin-top:4px;color:#e05252" data-i18n="sl_guide">⚠ PANDUAN SL (berbasis ATR)</div>
-      <div class="ind-row">
-        <span class="ind-name" data-i18n="sl_min">SL Min (1.5x)</span>
-        <span class="ind-val red" id="atr-sl-min">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name" data-i18n="sl_optimal">SL Optimal (2x)</span>
-        <span class="ind-val" style="color:var(--gold)" id="atr-sl-opt">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name" data-i18n="min_rr">Min RR</span>
-        <span class="ind-val green" id="atr-rr">1.5:1</span>
-      </div>
-      <div class="atr-warn" id="atr-warn" style="display:none" data-i18n="sl_too_narrow">
-        ⚠ SL terlalu sempit!
+      <div class="history-list" id="trade-history-list">
+        <div class="history-empty" data-i18n="no_completed_trades">Belum ada trade selesai</div>
       </div>
     </section>
 
-    <!-- SMC Structure -->
-    <section class="card card-smc" id="smc-card" style="display:none">
-      <div class="card-label" data-i18n="smc_structure">STRUKTUR SMC</div>
-      <div class="smc-trend" id="smc-trend">-</div>
-      <div class="ind-row">
-        <span class="ind-name" data-i18n="swing_high">Swing High</span>
-        <span class="ind-val" id="smc-sh">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name" data-i18n="swing_low">Swing Low</span>
-        <span class="ind-val" id="smc-sl">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">BOS</span>
-        <span class="ind-val smc-event" id="smc-bos">-</span>
-      </div>
-      <div class="ind-row">
-        <span class="ind-name">CHoCH</span>
-        <span class="ind-val smc-event" id="smc-choch">-</span>
-      </div>
-      <div class="ind-divider"></div>
-      <div class="zone-list" id="fvg-list"></div>
-    </section>
 
   </aside>
 
   <!-- ════ CENTER PANEL ════ -->
   <section class="panel panel-center">
 
-    <!-- Tab Navigation -->
+    <!-- Tab Navigation (mobile/tablet only — di desktop navigasi lewat sidebar) -->
     <div class="tab-nav">
       <button class="tab-btn active" id="tab-signal-btn" onclick="switchTab('signal')">
         <span class="tab-label-full" data-i18n="tab_signal_full">📊 Sinyal & Analisis</span>
@@ -473,6 +237,28 @@
         <div class="mcb-sub" id="mcb-reason" data-i18n="reopens_monday">Buka kembali Senin 06:00 WIB</div>
       </div>
     </div>
+
+    <!-- Live Terminal Widget (mobile — desktop punya versinya sendiri di sidebar kiri) -->
+    <section class="card mobile-card dash-terminal-widget">
+      <div class="dt-header">
+        <div class="dt-pair">XAU/USD <span class="dt-tf" data-i18n="gold_spot">M1 · Gold Spot</span></div>
+        <div class="dt-live"><span class="dt-live-dot"></span> <span data-i18n="live_scanning">MEMINDAI LIVE</span></div>
+      </div>
+      <div class="dt-price-row">
+        <div class="dt-price" id="m-dt-price">-.--</div>
+        <div class="dt-chg" id="m-dt-chg">+$0.00 (0.00%)</div>
+      </div>
+      <div class="dt-source" id="m-dt-source" data-i18n="loading_price">● Memuat harga live...</div>
+      <div class="dt-candles" id="m-dt-candles"></div>
+      <div class="dt-signal-bar">
+        <div class="dt-signal-label">GOLDEX SIGNAL ENGINE</div>
+        <div class="dt-status" id="m-dt-status">● SCANNING · --</div>
+      </div>
+      <div class="dt-signal-bar mart-bar" id="m-mart-bar">
+        <div class="dt-signal-label" data-i18n="risk_mode">RISK MODE</div>
+        <div class="dt-status" id="m-mart-status">🛡 Normal Risk 1x</div>
+      </div>
+    </section>
 
     <!-- Signal Card (main hero) -->
     <div class="signal-hero" id="signal-hero">
@@ -683,24 +469,189 @@
         <div class="headlines-list" id="headlines-list"></div>
       </div>
 
-      <!-- Economic Calendar -->
-      <div class="card card-calendar">
-        <div class="card-label-row">
-          <span class="card-label" data-i18n="econ_calendar_week">📅 KALENDER EKONOMI (Minggu Ini)</span>
-          <button class="btn-clear" onclick="loadCalendar(true)" data-i18n="refresh">↻ Refresh</button>
-        </div>
-        <div id="calendar-loading" style="text-align:center;padding:16px;color:var(--text-dim)" data-i18n="loading_calendar">
-          Memuat kalender...
-        </div>
-        <div class="calendar-list" id="calendar-list" style="display:none"></div>
-      </div>
-
     </div><!-- end tab-sentimen -->
 
   </section>
 
   <!-- ════ RIGHT PANEL ════ -->
   <aside class="panel panel-right">
+
+    <!-- ═══ LOT & RISK CALCULATOR (desktop only) ═══ -->
+    <section class="card card-calc-v2">
+      <div class="card-label-row">
+        <span class="card-label">🧮 KALKULATOR LOT &amp; RISIKO</span>
+        <button class="btn-clear" onclick="gxUseActiveSignal()" title="Isi dari sinyal aktif">↻ Sinyal Aktif</button>
+      </div>
+      <div class="calc-grid-v2">
+        <div class="calc-field-v2">
+          <label>Modal Akun ($)</label>
+          <input type="number" id="calc-capital" class="input-field" value="2000" step="100">
+        </div>
+        <div class="calc-field-v2">
+          <label>Risiko (%)</label>
+          <input type="number" id="calc-risk" class="input-field" value="1.5" step="0.1">
+        </div>
+        <div class="calc-field-v2">
+          <label>Harga Entry</label>
+          <input type="number" id="calc-entry" class="input-field" value="" step="0.01" placeholder="0.00">
+        </div>
+        <div class="calc-field-v2">
+          <label>Stop Loss</label>
+          <input type="number" id="calc-sl" class="input-field" value="" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <button class="calc-btn-v2" onclick="gxCalcLot()">Hitung Lot</button>
+      <div class="calc-results-v2">
+        <div class="calc-result-box-v2">
+          <div class="l">Lot Size</div>
+          <div class="v" id="calc-lot-result">–</div>
+        </div>
+        <div class="calc-result-box-v2">
+          <div class="l">Risiko $</div>
+          <div class="v" id="calc-risk-result">–</div>
+        </div>
+      </div>
+      <div class="calc-note-v2">Formula sama dengan yang dipakai signal engine: Lot = (Modal × Risiko%) ÷ (Jarak SL × $10/poin)</div>
+    </section>
+
+    {% if session.get('role') == 'superadmin' %}
+    <!-- ═══ SESSION SCHEDULE (superadmin only) ═══ -->
+    <section class="card card-session-sched" id="session-sched-panel">
+      <div class="card-label-row">
+        <div class="card-label" data-i18n="session_schedule">⏱ JADWAL SESI</div>
+        <span class="sched-curr-badge" id="sched-curr-badge">--</span>
+      </div>
+      <div class="sched-map-v2">
+        <div class="sched-map-dots"></div>
+        <div class="gx-pin idle" data-sess="new_york" style="top:38%;left:16%"></div>
+        <div class="gx-pin-lbl" style="top:38%;left:16%">NY</div>
+        <div class="gx-pin idle" data-sess="london" style="top:26%;left:48%"></div>
+        <div class="gx-pin-lbl" style="top:26%;left:48%">LDN</div>
+        <div class="gx-pin idle" data-sess="tokyo" style="top:42%;left:82%"></div>
+        <div class="gx-pin-lbl" style="top:42%;left:82%">TYO</div>
+        <div class="gx-pin idle" data-sess="sydney" style="top:66%;left:90%"></div>
+        <div class="gx-pin-lbl" style="top:66%;left:90%">SYD</div>
+      </div>
+      <div class="sched-list">
+
+        <div class="sched-item" data-sess="london">
+          <div class="sched-info">
+            <span class="sched-flag">🇬🇧</span>
+            <div>
+              <div class="sched-name" data-i18n="sess_london">London</div>
+              <div class="sched-time">14:00 – 21:59 WIB</div>
+            </div>
+          </div>
+          <button class="sched-toggle" id="sched-toggle-london" onclick="toggleSession('london')">
+            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
+          </button>
+        </div>
+
+        <div class="sched-item" data-sess="new_york">
+          <div class="sched-info">
+            <span class="sched-flag">🇺🇸</span>
+            <div>
+              <div class="sched-name">New York</div>
+              <div class="sched-time">19:00 – 02:59 WIB</div>
+            </div>
+          </div>
+          <button class="sched-toggle" id="sched-toggle-new_york" onclick="toggleSession('new_york')">
+            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
+          </button>
+        </div>
+
+        <div class="sched-item" data-sess="tokyo">
+          <div class="sched-info">
+            <span class="sched-flag">🇯🇵</span>
+            <div>
+              <div class="sched-name">Tokyo</div>
+              <div class="sched-time">06:00 – 13:59 WIB</div>
+            </div>
+          </div>
+          <button class="sched-toggle" id="sched-toggle-tokyo" onclick="toggleSession('tokyo')">
+            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
+          </button>
+        </div>
+
+        <div class="sched-item" data-sess="sydney">
+          <div class="sched-info">
+            <span class="sched-flag">🇦🇺</span>
+            <div>
+              <div class="sched-name">Sydney</div>
+              <div class="sched-time">04:00 – 09:59 WIB</div>
+            </div>
+          </div>
+          <button class="sched-toggle" id="sched-toggle-sydney" onclick="toggleSession('sydney')">
+            <span class="sched-toggle-track"><span class="sched-toggle-thumb"></span></span>
+          </button>
+        </div>
+
+      </div>
+      <div class="sched-status" id="sched-status"><span data-i18n="loading_schedule">Memuat jadwal...</span></div>
+    </section>
+    {% else %}
+    <!-- ═══ SESSION STATUS (user read-only) ═══ -->
+    <section class="card card-session-sched" id="session-status-panel">
+      <div class="card-label-row">
+        <div class="card-label" data-i18n="session_status">⏱ STATUS SESI</div>
+        <span class="sched-curr-badge" id="user-sess-badge">--</span>
+      </div>
+      <div class="sched-map-v2">
+        <div class="sched-map-dots"></div>
+        <div class="gx-pin idle" data-sess="new_york" style="top:38%;left:16%"></div>
+        <div class="gx-pin-lbl" style="top:38%;left:16%">NY</div>
+        <div class="gx-pin idle" data-sess="london" style="top:26%;left:48%"></div>
+        <div class="gx-pin-lbl" style="top:26%;left:48%">LDN</div>
+        <div class="gx-pin idle" data-sess="tokyo" style="top:42%;left:82%"></div>
+        <div class="gx-pin-lbl" style="top:42%;left:82%">TYO</div>
+        <div class="gx-pin idle" data-sess="sydney" style="top:66%;left:90%"></div>
+        <div class="gx-pin-lbl" style="top:66%;left:90%">SYD</div>
+      </div>
+      <div class="sched-list" id="user-sess-list">
+        <div class="sched-item" data-sess="london">
+          <div class="sched-info">
+            <span class="sched-flag">🇬🇧</span>
+            <div>
+              <div class="sched-name" data-i18n="sess_london">London</div>
+              <div class="sched-time">14:00 – 21:59 WIB</div>
+            </div>
+          </div>
+          <span class="sess-status-dot" id="user-dot-london">○</span>
+        </div>
+        <div class="sched-item" data-sess="new_york">
+          <div class="sched-info">
+            <span class="sched-flag">🇺🇸</span>
+            <div>
+              <div class="sched-name">New York</div>
+              <div class="sched-time">19:00 – 02:59 WIB</div>
+            </div>
+          </div>
+          <span class="sess-status-dot" id="user-dot-new_york">○</span>
+        </div>
+        <div class="sched-item" data-sess="tokyo">
+          <div class="sched-info">
+            <span class="sched-flag">🇯🇵</span>
+            <div>
+              <div class="sched-name">Tokyo</div>
+              <div class="sched-time">06:00 – 13:59 WIB</div>
+            </div>
+          </div>
+          <span class="sess-status-dot" id="user-dot-tokyo">○</span>
+        </div>
+        <div class="sched-item" data-sess="sydney">
+          <div class="sched-info">
+            <span class="sched-flag">🇦🇺</span>
+            <div>
+              <div class="sched-name">Sydney</div>
+              <div class="sched-time">04:00 – 09:59 WIB</div>
+            </div>
+          </div>
+          <span class="sess-status-dot" id="user-dot-sydney">○</span>
+        </div>
+      </div>
+      <div class="sched-status" id="user-sess-status"><span data-i18n="loading_session_status">Memuat status sesi...</span></div>
+    </section>
+    {% endif %}
 
     <!-- Performance Stats -->
     <section class="card card-perf" id="perf-card">
@@ -786,19 +737,10 @@
       </div>
     </section>
 
-    <!-- Trade History -->
-    <section class="card card-trade-history">
-      <div class="card-label-row">
-        <span class="card-label" data-i18n="trade_outcomes">📋 HASIL TRADE</span>
-        <button class="btn-clear" onclick="loadTradeHistory()" data-i18n="refresh">Refresh</button>
-      </div>
-      <div class="history-list" id="trade-history-list">
-        <div class="history-empty" data-i18n="no_completed_trades">Belum ada trade selesai</div>
-      </div>
-    </section>
-
-    <!-- History Log -->
-    <section class="card card-history">
+    <!-- Riwayat Sinyal sekarang di halaman /history sendiri. Elemen ini tetap
+         ada (disembunyikan lewat CSS di dashboard-v2.css) karena masih jadi
+         sumber data untuk syncHistoryToMobile() dan renderConfChart(). -->
+    <section class="card card-history" id="history-card-hidden-source">
       <div class="card-label-row">
         <span class="card-label" data-i18n="signal_history">RIWAYAT SINYAL</span>
         <button class="btn-clear" onclick="clearHistory()" data-i18n="clear">Hapus</button>
@@ -812,28 +754,6 @@
 
   <!-- ════ MOBILE SECTIONS ════ -->
   <div class="mobile-sections" id="mobile-sections">
-
-    <!-- Live Terminal Widget (mobile) -->
-    <section class="card mobile-card dash-terminal-widget">
-      <div class="dt-header">
-        <div class="dt-pair">XAU/USD <span class="dt-tf" data-i18n="gold_spot">M1 · Gold Spot</span></div>
-        <div class="dt-live"><span class="dt-live-dot"></span> <span data-i18n="live_scanning">MEMINDAI LIVE</span></div>
-      </div>
-      <div class="dt-price-row">
-        <div class="dt-price" id="m-dt-price">-.--</div>
-        <div class="dt-chg" id="m-dt-chg">+$0.00 (0.00%)</div>
-      </div>
-      <div class="dt-source" id="m-dt-source" data-i18n="loading_price">● Memuat harga live...</div>
-      <div class="dt-candles" id="m-dt-candles"></div>
-      <div class="dt-signal-bar">
-        <div class="dt-signal-label">GOLDEX SIGNAL ENGINE</div>
-        <div class="dt-status" id="m-dt-status">● SCANNING · --</div>
-      </div>
-      <div class="dt-signal-bar mart-bar" id="m-mart-bar">
-        <div class="dt-signal-label" data-i18n="risk_mode">RISK MODE</div>
-        <div class="dt-status" id="m-mart-status">🛡 Normal Risk 1x</div>
-      </div>
-    </section>
 
     <!-- Signal Stats -->
     <section class="card mobile-card">
@@ -956,20 +876,248 @@
       </div>
     </section>
 
-    <!-- Signal History -->
-    <section class="card mobile-card">
-      <div class="card-label-row">
-        <span class="card-label" data-i18n="signal_history">RIWAYAT SINYAL</span>
-        <button class="btn-clear" onclick="clearHistory()" data-i18n="clear">Hapus</button>
-      </div>
-      <div class="history-list" id="m-history-list">
-        <div class="history-empty" data-i18n="no_saved_signals">Belum ada sinyal tersimpan</div>
-      </div>
-    </section>
-
   </div><!-- end .mobile-sections -->
 
 </main>
+
+    <!-- Server Info Panel -->
+    <div class="settings-drawer-backdrop" id="settings-drawer-backdrop" onclick="gxCloseDrawer()"></div>
+    <div class="settings-drawer" id="settings-drawer">
+      <div class="settings-drawer-head">
+        <h3>⚙️ Pengaturan &amp; Detail Teknikal</h3>
+        <button class="settings-drawer-close" onclick="gxCloseDrawer()">✕</button>
+      </div>
+      <div class="settings-drawer-body">
+
+    <section class="card card-setup" id="setup-card">
+      <div class="card-label" data-i18n="server_scheduler">SERVER SCHEDULER</div>
+      <div class="server-info-row">
+        <span class="server-dot" id="server-dot">●</span>
+        <span class="server-label" id="server-label" data-i18n="connecting">Menghubungkan...</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name" data-i18n="timeframe">Timeframe</span>
+        <span class="ind-val" id="server-tf">5M</span>
+      </div>
+      <div class="server-tf-row">
+        <span class="ind-name" data-i18n="interval">Interval</span>
+        <span class="ind-val" id="server-interval" data-i18n="minutes_5">5 menit</span>
+      </div>
+    </section>
+
+    <!-- Auto-Refresh Panel (hidden) -->
+    <section class="card card-auto" style="display:none">
+      <div class="card-label">AUTO ANALYSIS</div>
+      <div class="auto-row">
+        <div class="auto-toggle-wrap">
+          <span class="auto-label">Auto Mode</span>
+          <label class="toggle">
+            <input type="checkbox" id="auto-toggle" onchange="toggleAuto()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <select id="auto-interval" class="input-field select-field" style="width:auto;font-size:11px">
+          <option value="5" selected>5 minutes ✦</option>
+          <option value="15">15 minutes</option>
+          <option value="30">30 minutes</option>
+          <option value="60">1 hour</option>
+        </select>
+      </div>
+      <div class="auto-status" id="auto-status">
+        <span class="auto-idle">● Idle — Auto mode off</span>
+      </div>
+      <div class="countdown-wrap" id="countdown-wrap" style="display:none">
+        <div class="countdown-label">Next analysis</div>
+        <div class="countdown-val" id="countdown-val">--:--</div>
+        <div class="countdown-bar-bg"><div class="countdown-bar" id="countdown-bar"></div></div>
+      </div>
+      <div class="smart-pause-info" id="smart-pause-info" style="display:none">
+        ⏸ Smart pause active — Repeated WAIT, 30 min pause
+      </div>
+    </section>
+
+    <!-- Telegram & Signal Dispatch Control Panel -->
+    <section class="card card-telegram" style="display:block">
+      <div class="card-label" data-i18n="tg_control_title">📡 KONTROL TELEGRAM & SINYAL MANUAL</div>
+
+      <!-- Quick Action Buttons -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <button class="btn-save-key" style="background:var(--gold,#f1c40f); color:#000; font-weight:700; border:none; padding:8px;" onclick="triggerManualAnalysis()" data-i18n="btn_run_scan">⚡ Jalankan Scan & Kirim</button>
+        <button class="btn-save-key" style="background:#2ecc71; color:#000; font-weight:700; border:none; padding:8px;" onclick="broadcastLatestSignal()" data-i18n="btn_send_tg">📢 Kirim Sinyal ke TG</button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <button class="btn-save-key" style="width:100%; background:#3498db; color:#fff; font-weight:700; border:none; padding:8px;" onclick="dispatchManualSignal()" data-i18n="btn_manual_signal">✏️ Buat & Kirim Sinyal Manual</button>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" data-i18n="bot_token">Bot Token</label>
+        <input type="password" id="tg-token" class="input-field"
+               placeholder="7123456789:AAFxxx..." autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="chat_id">Chat ID</label>
+        <input type="text" id="tg-chat" class="input-field"
+               placeholder="123456789">
+      </div>
+      <div class="tg-controls" style="display:flex; gap:8px;">
+        <button class="btn-save-key" style="flex:1;" onclick="saveTelegram()" data-i18n="btn_save_cred">Simpan Kredensial</button>
+        <button class="btn-save-key" style="flex:1; background:rgba(255,255,255,0.1);" onclick="testTelegram()" data-i18n="btn_test_tg">Tes Kirim TG</button>
+      </div>
+      <div class="key-status" id="tg-status"></div>
+      <div class="tg-notify-row" style="margin-top:10px;">
+        <label class="input-label" data-i18n="auto_notify">Auto-notifikasi Telegram untuk:</label>
+        <div class="tg-checks">
+          <label class="tg-check"><input type="checkbox" id="tg-buy" checked> BUY</label>
+          <label class="tg-check"><input type="checkbox" id="tg-sell" checked> SELL</label>
+          <label class="tg-check"><input type="checkbox" id="tg-wait"> WAIT</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="card card-stats">
+      <div class="card-label" data-i18n="signal_stats">STATISTIK SINYAL</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-val" id="stat-total">0</div>
+          <div class="stat-lbl" data-i18n="total">Total</div>
+        </div>
+        <div class="stat-item buy">
+          <div class="stat-val" id="stat-buy">0</div>
+          <div class="stat-lbl">BUY</div>
+        </div>
+        <div class="stat-item sell">
+          <div class="stat-val" id="stat-sell">0</div>
+          <div class="stat-lbl">SELL</div>
+        </div>
+        <div class="stat-item wait">
+          <div class="stat-val" id="stat-wait">0</div>
+          <div class="stat-lbl">WAIT</div>
+        </div>
+      </div>
+      <div class="avg-conf">
+        <span class="avg-conf-label" data-i18n="avg_confidence">Rata-rata Confidence</span>
+        <span class="avg-conf-val" id="stat-conf">0%</span>
+      </div>
+    </section>
+
+    <!-- Indicators Panel -->
+    <section class="card card-indicators" id="indicators-card" style="display:none">
+      <div class="card-label" data-i18n="tech_indicators">INDIKATOR TEKNIKAL</div>
+      <div class="ind-row">
+        <span class="ind-name">EMA 21</span>
+        <span class="ind-val" id="ind-ema21">-</span>
+        <span class="ind-badge" id="ind-ema21-badge"></span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">EMA 50</span>
+        <span class="ind-val" id="ind-ema50">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">EMA 55</span>
+        <span class="ind-val" id="ind-ema55">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">EMA 200</span>
+        <span class="ind-val" id="ind-ema200">-</span>
+      </div>
+      <div class="ind-divider"></div>
+      <div class="ind-row">
+        <span class="ind-name">RSI (14)</span>
+        <span class="ind-val" id="ind-rsi">-</span>
+        <span class="ind-badge" id="ind-rsi-badge"></span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">MACD</span>
+        <span class="ind-val" id="ind-macd">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">Signal</span>
+        <span class="ind-val" id="ind-macd-sig">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">ATR (14)</span>
+        <span class="ind-val" id="ind-atr">-</span>
+      </div>
+      <div class="ind-divider"></div>
+      <div class="ind-row">
+        <span class="ind-name">Heiken Ashi</span>
+        <span class="ind-val" id="ind-ha-bias">-</span>
+        <span class="ind-badge" id="ind-ha-badge"></span>
+      </div>
+      <div class="ind-divider"></div>
+      <div class="card-label" style="margin-top:4px;color:#e05252" data-i18n="sl_guide">⚠ PANDUAN SL (berbasis ATR)</div>
+      <div class="ind-row">
+        <span class="ind-name" data-i18n="sl_min">SL Min (1.5x)</span>
+        <span class="ind-val red" id="atr-sl-min">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name" data-i18n="sl_optimal">SL Optimal (2x)</span>
+        <span class="ind-val" style="color:var(--gold)" id="atr-sl-opt">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name" data-i18n="min_rr">Min RR</span>
+        <span class="ind-val green" id="atr-rr">1.5:1</span>
+      </div>
+      <div class="atr-warn" id="atr-warn" style="display:none" data-i18n="sl_too_narrow">
+        ⚠ SL terlalu sempit!
+      </div>
+    </section>
+
+    <!-- SMC Structure -->
+    <section class="card card-smc" id="smc-card" style="display:none">
+      <div class="card-label" data-i18n="smc_structure">STRUKTUR SMC</div>
+      <div class="smc-trend" id="smc-trend">-</div>
+      <div class="ind-row">
+        <span class="ind-name" data-i18n="swing_high">Swing High</span>
+        <span class="ind-val" id="smc-sh">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name" data-i18n="swing_low">Swing Low</span>
+        <span class="ind-val" id="smc-sl">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">BOS</span>
+        <span class="ind-val smc-event" id="smc-bos">-</span>
+      </div>
+      <div class="ind-row">
+        <span class="ind-name">CHoCH</span>
+        <span class="ind-val smc-event" id="smc-choch">-</span>
+      </div>
+      <div class="ind-divider"></div>
+      <div class="zone-list" id="fvg-list"></div>
+    </section>
+
+      </div><!-- .settings-drawer-body -->
+    </div><!-- .settings-drawer -->
+
+<!-- ── BOTTOM NAV (mobile & tablet, <1180px — desktop uses the sidebar) ── -->
+<nav class="bottom-nav-v2" id="bottom-nav-v2">
+  <a class="active" onclick="gxNav('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    <span>Dashboard</span>
+  </a>
+  <a onclick="gxNav('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v6h-6"/></svg>
+    <span>Riwayat</span>
+  </a>
+  <a onclick="gxNav('performance')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+    <span>Performa</span>
+  </a>
+  <a onclick="gxNav('calendar')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+    <span>Kalender</span>
+  </a>
+  <a onclick="gxNav('sentiment')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <span>Sentimen</span>
+  </a>
+  <a onclick="gxOpenDrawer()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Pengaturan</span>
+  </a>
+</nav>
 
 <!-- ── TOAST ── -->
 <div class="toast" id="toast"></div>
@@ -1027,6 +1175,7 @@ initI18n({
     loading_sentiment: "Memuat analisis sentimen...", sentiment_score: "SKOR SENTIMEN",
     key_factors: "⚡ FAKTOR KUNCI", latest_headlines: "📰 HEADLINE TERBARU (48 Jam)",
     econ_calendar_week: "📅 KALENDER EKONOMI (Minggu Ini)", loading_calendar: "Memuat kalender...",
+    recent_signals: "📡 SINYAL TERBARU",
     trade_performance: "📊 PERFORMA TRADE", days_7: "7 HARI", reset: "↺ Reset",
     win: "Win", loss: "Loss", neutral: "Netral", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
     best: "Best", worst: "Worst", profit_factor: "Profit Factor",
@@ -1074,6 +1223,7 @@ initI18n({
     loading_sentiment: "Loading sentiment analysis...", sentiment_score: "SENTIMENT SCORE",
     key_factors: "⚡ KEY FACTORS", latest_headlines: "📰 LATEST HEADLINES (48 Hours)",
     econ_calendar_week: "📅 ECONOMIC CALENDAR (This Week)", loading_calendar: "Loading calendar...",
+    recent_signals: "📡 RECENT SIGNALS",
     trade_performance: "📊 TRADE PERFORMANCE", days_7: "7 DAYS", reset: "↺ Reset",
     win: "Win", loss: "Loss", neutral: "Neutral", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
     best: "Best", worst: "Worst", profit_factor: "Profit Factor",
@@ -1088,6 +1238,109 @@ initI18n({
 renderLangToggle("dash-lang-toggle");
 </script>
 <script src="/static/js/app.js"></script>
+<script>
+  // ── Dashboard V2 shell: nav, settings drawer, user menu, PWA install ──
+  function gxNav(section) {
+    document.querySelectorAll(".side-nav-v2 a, .bottom-nav-v2 a").forEach(a => a.classList.remove("active"));
+    const idx = { dashboard: 0, history: 1, performance: 2, calendar: 3, sentiment: 4 }[section] ?? 0;
+    const sideLink   = document.querySelectorAll(".side-nav-v2 a")[idx];
+    const bottomLink = document.querySelectorAll(".bottom-nav-v2 a")[idx];
+    if (sideLink)   sideLink.classList.add("active");
+    if (bottomLink) bottomLink.classList.add("active");
+
+    if (section === "history") {
+      window.location.href = "/history";
+    } else if (section === "performance") {
+      window.location.href = "/performance";
+    } else if (section === "calendar") {
+      switchTab("news");
+      const calBtn = document.querySelector(".mfx-tab");
+      if (calBtn) switchMfxTab("calendar", calBtn);
+      document.querySelector(".panel-center")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (section === "sentiment") {
+      switchTab("sentimen");
+      document.querySelector(".panel-center")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      switchTab("signal");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function gxOpenDrawer() {
+    document.getElementById("settings-drawer")?.classList.add("open");
+    document.getElementById("settings-drawer-backdrop")?.classList.add("open");
+  }
+  function gxCloseDrawer() {
+    document.getElementById("settings-drawer")?.classList.remove("open");
+    document.getElementById("settings-drawer-backdrop")?.classList.remove("open");
+  }
+
+  function gxToggleUserMenu(e) {
+    e.stopPropagation();
+    document.getElementById("tb-user-menu")?.classList.toggle("open");
+  }
+  document.addEventListener("click", () => {
+    document.getElementById("tb-user-menu")?.classList.remove("open");
+  });
+
+  function gxUpdateMapPins(currentSess) {
+    document.querySelectorAll(".gx-pin").forEach(p => {
+      const active = p.dataset.sess === currentSess;
+      p.classList.toggle("active", active);
+      p.classList.toggle("idle", !active);
+    });
+  }
+
+  function gxCalcLot() {
+    const capital = parseFloat(document.getElementById("calc-capital")?.value) || 0;
+    const riskPct = parseFloat(document.getElementById("calc-risk")?.value) || 0;
+    const entry   = parseFloat(document.getElementById("calc-entry")?.value) || 0;
+    const sl      = parseFloat(document.getElementById("calc-sl")?.value) || 0;
+    const slDist  = Math.abs(entry - sl);
+    const riskAmount = capital * riskPct / 100;
+    const lot = slDist > 0 ? riskAmount / (slDist * 10.0) : 0;
+    const lotEl  = document.getElementById("calc-lot-result");
+    const riskEl = document.getElementById("calc-risk-result");
+    if (lotEl)  lotEl.textContent  = lot > 0 ? lot.toFixed(2) : "–";
+    if (riskEl) riskEl.textContent = riskAmount > 0 ? "$" + riskAmount.toFixed(2) : "–";
+  }
+
+  function gxUseActiveSignal() {
+    const a = window._lastSignalData;
+    if (!a || !a.entry || !a.risk_management) {
+      if (typeof showToast === "function") showToast("Belum ada sinyal aktif", "error");
+      return;
+    }
+    const entry = a.entry.ideal_price;
+    const sl    = a.risk_management.stop_loss;
+    if (entry) document.getElementById("calc-entry").value = Number(entry).toFixed(2);
+    if (sl)    document.getElementById("calc-sl").value = Number(sl).toFixed(2);
+    gxCalcLot();
+  }
+
+  let gxDeferredInstallPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    gxDeferredInstallPrompt = e;
+  });
+  function gxInstallPwa() {
+    if (gxDeferredInstallPrompt) {
+      gxDeferredInstallPrompt.prompt();
+      gxDeferredInstallPrompt = null;
+    } else if (typeof showToast === "function") {
+      showToast("Buka menu browser → \"Tambahkan ke Layar Utama\" untuk memasang", "");
+    }
+  }
+
+  // Deep-link dari halaman lain (mis. bottom nav di /history atau /performance)
+  // ke tab/drawer tertentu di dashboard: /dashboard?tab=calendar|sentiment atau ?open=settings
+  window.addEventListener("load", () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab === "calendar" || tab === "sentiment") gxNav(tab);
+    if (params.get("open") === "settings") gxOpenDrawer();
+  });
+</script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

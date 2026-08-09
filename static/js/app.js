@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   loadPerformance();
   loadTradeHistory();
   initPerfFilter();
+  loadCalendar(false);
 
   // Mode baru: semua analisis dari server scheduler
   // Browser hanya polling hasil terbaru
@@ -666,12 +667,14 @@ function renderMartingaleBadge(mult) {
 }
 
 async function loadStats() {
+  const statTotalEl = document.getElementById("stat-total");
+  if (!statTotalEl) return; // Stats card only exists on the dashboard page
   try {
     const res  = await fetch("/api/stats");
     const data = await res.json();
     if (!data.ok) return;
     const s = data.data;
-    document.getElementById("stat-total").textContent = s.total;
+    statTotalEl.textContent = s.total;
     document.getElementById("stat-buy").textContent   = s.buy;
     document.getElementById("stat-sell").textContent  = s.sell;
     document.getElementById("stat-wait").textContent  = s.wait;
@@ -1541,6 +1544,16 @@ async function loadPerformance() {
     set("perf-tp2",     p.tp2_hits);
     set("perf-tp3",     p.tp3_hits);
 
+    // Topbar KPI pills (desktop shell)
+    const tbWinrate = document.getElementById("tb-winrate");
+    if (tbWinrate) tbWinrate.textContent = (p.win_rate || 0) + "%";
+    const tbPnl = document.getElementById("tb-pnl");
+    if (tbPnl) {
+      const tpnl = p.total_pnl ?? p.total_pips ?? 0;
+      tbPnl.textContent = (tpnl >= 0 ? "+" : "-") + "$" + Math.abs(tpnl).toFixed(0);
+      tbPnl.className = "val " + (tpnl >= 0 ? "pos" : "neg");
+    }
+
     // Update period label (analytics card mirrors the same filter)
     const periodLbl = PERF_DAYS === 1 ? "24H" : PERF_DAYS === 7 ? "7D" : PERF_DAYS === 30 ? "30D" : PERF_DAYS + "D";
     const analyticsPeriodEl = document.getElementById("analytics-period");
@@ -1861,6 +1874,12 @@ function connectWebSocket() {
 }
 
 function startServerPolling() {
+  // Live signal polling/WS only matters where the signal card actually
+  // renders (the dashboard). On pages like /history or /performance that
+  // just reuse this shared script, this used to still connect a WebSocket
+  // and poll every 5s, throwing on the dashboard-only DOM it tried to update.
+  if (!document.getElementById("signal-hero")) return;
+
   // Connect WebSocket first for real-time instant data stream
   connectWebSocket();
 
@@ -1952,6 +1971,11 @@ async function processReceivedSignal(data) {
 
 // ─── SYNC COUNTDOWN KE SERVER SCHEDULER ─────
 async function syncSchedulerCountdown() {
+  // Server-info panel + mobile info bar are dashboard-only — every DOM
+  // target here is null-safe, but without this it still opened a repeating
+  // 1s interval and re-fetched /api/scheduler_status forever on pages that
+  // have nothing to show it in.
+  if (!document.getElementById("signal-hero")) return;
   try {
     const res  = await fetch("/api/scheduler_status");
     const data = await res.json();
@@ -2043,6 +2067,12 @@ function switchTab(tab) {
   const tabEl  = document.getElementById(`tab-${tab}`);
   if (btnEl) btnEl.classList.add("active");
   if (tabEl) tabEl.classList.add("active");
+
+  // Mobile/tablet: saat tab News (kalender) atau Sentimen aktif, sembunyikan
+  // .mobile-sections di bawahnya (XAU/USD widget, Performa, dst) supaya fokus
+  // ke konten tab yang dipilih — hanya tab Sinyal yang menampilkannya.
+  const mobileSections = document.getElementById("mobile-sections");
+  if (mobileSections) mobileSections.classList.toggle("gx-focus-hide", tab !== "signal");
 
   // Load data saat pertama kali buka tab sentimen
   if (tab === "sentimen") {
@@ -2179,6 +2209,7 @@ function renderSentiment(data) {
 async function loadCalendar(force = false) {
   const loadEl = document.getElementById("calendar-loading");
   const listEl = document.getElementById("calendar-list");
+  if (!loadEl && !listEl) return; // below-hero mini calendar removed from the dashboard
 
   if (loadEl) { loadEl.style.display = "block"; loadEl.textContent = "Memuat jadwal ekonomi..."; }
   if (listEl) listEl.style.display = "none";
@@ -2708,6 +2739,7 @@ async function loadSessionSchedule() {
 }
 
 function renderSessionSchedule(schedule, currentSess, sessActive) {
+  if (typeof gxUpdateMapPins === "function") gxUpdateMapPins(currentSess);
   // Badge sesi sekarang — desktop & mobile
   const label = SESSION_LABELS[currentSess] || currentSess;
   const badgeClass = 'sched-curr-badge ' +
@@ -2806,6 +2838,7 @@ async function loadUserSessionStatus() {
     if (!data.ok) return;
 
     const { current_session: curr, session_active: active, schedule } = data;
+    if (typeof gxUpdateMapPins === "function") gxUpdateMapPins(curr);
 
     const labels = { london:'🇬🇧 London', new_york:'🇺🇸 New York', tokyo:'🇯🇵 Tokyo', sydney:'🇦🇺 Sydney', off:'Off-Hours' };
     const badgeClass = 'sched-curr-badge ' +

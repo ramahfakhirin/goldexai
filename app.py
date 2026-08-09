@@ -2504,6 +2504,18 @@ def index():
     return render_template("index.html", username=session.get("username", "admin"))
 
 
+@app.route("/history")
+@login_required
+def history_page():
+    return render_template("history.html", username=session.get("username", "admin"))
+
+
+@app.route("/performance")
+@login_required
+def performance_page():
+    return render_template("performance.html", username=session.get("username", "admin"))
+
+
 @app.route("/api/vision_confirm", methods=["POST"])
 @login_required
 def vision_confirm():
