@@ -1,0 +1,7 @@
+.site-footer { background: var(--bg1); border-top: 1px solid var(--border); padding: 44px 24px; text-align: center; }
+.footer-logo { font-family: var(--disp); font-weight: 700; font-size: 20px; color: var(--gold); margin-bottom: 8px; }
+.footer-tagline { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.footer-links { display: flex; gap: 20px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+.footer-links a { font-size: 12px; color: var(--text2); text-decoration: none; }
+.footer-links a:hover { color: var(--gold); }
+.footer-disclaimer { font-size: 11px; color: var(--text3); max-width: 600px; margin: 18px auto 0; line-height: 1.65; }

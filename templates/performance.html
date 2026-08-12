@@ -222,6 +222,7 @@
       <div class="pp-title">📊 Performa <span>Trade</span></div>
       <div class="pp-controls">
         <div class="perf-filter" id="pp-filter">
+          <button class="perf-filter-btn" data-days="-1">Hari Ini</button>
           <button class="perf-filter-btn" data-days="1">24H</button>
           <button class="perf-filter-btn active" data-days="7">7D</button>
           <button class="perf-filter-btn" data-days="30">30D</button>
@@ -400,7 +401,8 @@ renderLangToggle("dash-lang-toggle");
     document.getElementById("pp-pnl-sub").textContent = `Avg/trade: ${money(p.avg_pnl ?? p.avg_pips ?? 0)}`;
 
     document.getElementById("pp-total").textContent = p.total || 0;
-    document.getElementById("pp-total-sub").textContent = `Periode: ${p.period_days > 0 ? p.period_days + " hari" : "semua"}`;
+    const periodeLbl = p.period_days === -1 ? "hari ini" : p.period_days > 0 ? p.period_days + " hari" : "semua";
+    document.getElementById("pp-total-sub").textContent = `Periode: ${periodeLbl}`;
 
     const pf = Number(p.profit_factor || 0);
     document.getElementById("pp-pf").textContent = pf > 0 ? pf.toFixed(2) : "—";

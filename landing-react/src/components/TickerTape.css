@@ -1,0 +1,25 @@
+.tick-tape {
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  padding: 7px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-top: 60px;
+}
+.tick-inner {
+  display: inline-flex; gap: 36px;
+  animation: tick-scroll 30s linear infinite;
+}
+.tick-tape:hover .tick-inner { animation-play-state: paused; }
+
+.tick-item { font-family: var(--mono); font-size: 11px; display: inline-flex; gap: 8px; align-items: center; }
+.tick-sym { color: var(--gold); font-weight: 600; }
+.tick-price { color: var(--text); }
+.tick-chg--up { color: var(--green); }
+.tick-chg--dn { color: var(--red); }
+.tick-chg--flat { color: var(--text2); }
+
+@keyframes tick-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-33.333%); }
+}

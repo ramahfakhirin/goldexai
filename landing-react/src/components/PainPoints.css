@@ -1,0 +1,29 @@
+.pain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.pain-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 26px; position: relative; overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+.pain-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.pain-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--red), transparent);
+}
+.pain-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: rgba(224,82,82,0.08); color: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.pain-card h3 { font-family: var(--disp); font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.pain-card p { font-size: 13.5px; color: var(--text2); line-height: 1.65; }
+
+.pain-cta {
+  margin-top: 52px; text-align: center; font-size: 19px;
+  font-family: var(--disp); font-weight: 600; line-height: 1.5;
+}
+.pain-cta em { font-style: normal; color: var(--gold); }

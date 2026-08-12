@@ -1,0 +1,44 @@
+.pipeline {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px; margin-top: 12px; position: relative;
+}
+.pipeline-line {
+  position: absolute; top: 42px; left: 12%; right: 12%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), var(--gold), var(--gold-dim), transparent);
+  z-index: 0;
+}
+@media (max-width: 860px) { .pipeline-line { display: none; } }
+
+.pipe-step { text-align: center; padding: 24px 16px; position: relative; z-index: 1; }
+.pipe-num { font-family: var(--mono); font-size: 11px; color: var(--gold-dim); letter-spacing: 0.1em; margin-bottom: 14px; }
+.pipe-icon {
+  width: 68px; height: 68px; background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  color: var(--gold); margin: 0 auto 18px;
+}
+.pipe-icon svg { width: 26px; height: 26px; }
+.pipe-step h3 { font-family: var(--disp); font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.pipe-step p { font-size: 13px; color: var(--text2); line-height: 1.55; }
+.pipe-badge {
+  display: inline-block; background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.22);
+  border-radius: 5px; font-family: var(--mono); font-size: 10px; color: var(--gold);
+  padding: 3px 9px; margin-top: 10px;
+}
+
+.signal-example {
+  margin-top: 56px; background: var(--bg1); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 30px; max-width: 540px; margin-left: auto; margin-right: auto;
+}
+.signal-example-label { font-family: var(--mono); font-size: 10px; color: var(--text2); letter-spacing: 0.08em; margin-bottom: 16px; }
+.signal-example-header { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--green); margin-bottom: 10px; }
+.signal-example-rows { font-family: var(--mono); font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+.signal-row { display: flex; gap: 8px; }
+.signal-row-k { color: var(--text2); min-width: 96px; }
+.signal-row-v--gold { color: var(--gold); }
+.signal-row-v--red { color: var(--red); }
+.signal-row-v--green { color: var(--green); }
+.signal-narrative {
+  margin-top: 12px; padding: 12px; background: rgba(212,168,67,0.06);
+  border-radius: 7px; border-left: 2px solid var(--gold);
+  font-size: 12.5px; color: var(--text2); line-height: 1.65;
+}

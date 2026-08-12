@@ -594,17 +594,27 @@ def update_monitor_outcome(monitor_id: int, outcome: str,
     print(f"[Monitor] ✅ Closed #{monitor_id}: {outcome} @ ${outcome_price:.2f} | PnL=${pnl_pips:+.2f} | TP hit={tp_hit}")
 
 
+def _period_cutoff(days: int):
+    """ISO cutoff timestamp untuk filter periode trade.
+    days=0 -> None (semua data), days=-1 -> sejak 00:00 WIB hari ini (Hari Ini),
+    days=N>0 -> N hari terakhir (rolling window)."""
+    if days == -1:
+        return datetime.now(WIB).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    if days > 0:
+        return (datetime.now(WIB) - timedelta(days=days)).isoformat()
+    return None
+
+
 def get_performance_stats(days: int = 7) -> dict:
     """
     Hitung statistik performa trade dari monitor.
-    Default: 7 hari terakhir. days=0 berarti semua data.
+    Default: 7 hari terakhir. days=0 berarti semua data, days=-1 berarti hari ini.
     """
     conn = get_db()
     conn.row_factory = sqlite3.Row
 
-    if days > 0:
-        # Filter N hari terakhir berdasarkan ISO timestamp
-        cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
+    cutoff = _period_cutoff(days)
+    if cutoff:
         rows = conn.execute("""
             SELECT * FROM trade_monitors
             WHERE status = 'CLOSED'
@@ -696,11 +706,11 @@ def get_performance_stats(days: int = 7) -> dict:
 
 def get_trade_history(limit: int = 30, offset: int = 0, days: int = 0) -> list:
     """Ambil history trade yang sudah closed, mendukung pagination (offset)
-    dan filter periode (days: 0 = semua, N = N hari terakhir)."""
+    dan filter periode (days: 0 = semua, -1 = hari ini, N = N hari terakhir)."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    if days > 0:
-        cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
+    cutoff = _period_cutoff(days)
+    if cutoff:
         rows = conn.execute("""
             SELECT tm.*, s.confidence, s.narrative
             FROM trade_monitors tm
@@ -730,8 +740,8 @@ def get_trade_history_count(days: int = 0) -> int:
     """Hitung total trade CLOSED yang cocok dengan filter periode — dipakai
     untuk pagination di /api/trade_history."""
     conn = sqlite3.connect(DB_PATH)
-    if days > 0:
-        cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
+    cutoff = _period_cutoff(days)
+    if cutoff:
         row = conn.execute("""
             SELECT COUNT(*) FROM trade_monitors
             WHERE status = 'CLOSED'
@@ -3660,8 +3670,8 @@ def analytics():
             WHERE tm.status = 'CLOSED'
         """
         params = []
-        if days > 0:
-            cutoff = (datetime.now(WIB) - timedelta(days=days)).isoformat()
+        cutoff = _period_cutoff(days)
+        if cutoff:
             q += " AND COALESCE(tm.closed_at, tm.created_at) >= ?"
             params.append(cutoff)
         rows = [dict(r) for r in conn.execute(q, params).fetchall()]

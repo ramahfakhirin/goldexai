@@ -1,0 +1,22 @@
+.feat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+.feat-card {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: 12px;
+  padding: 28px; transition: border-color .2s;
+}
+.feat-card:hover { border-color: var(--gold-dim); }
+.feat-card--featured { border-color: rgba(212,168,67,0.4); background: rgba(212,168,67,0.04); }
+.feat-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: rgba(212,168,67,0.1); color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.feat-card h3 { font-family: var(--disp); font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.feat-card p { font-size: 13.5px; color: var(--text2); line-height: 1.65; }
+.feat-tag {
+  display: inline-block; background: rgba(212,168,67,0.1); color: var(--gold);
+  font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 5px; margin-bottom: 12px;
+}

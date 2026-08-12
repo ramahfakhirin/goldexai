@@ -1,0 +1,15 @@
+.comp-wrap { overflow-x: auto; }
+.comp-table { width: 100%; border-collapse: collapse; min-width: 620px; }
+.comp-table th {
+  padding: 14px 20px; text-align: center; font-family: var(--disp); font-size: 14px;
+  font-weight: 600; background: var(--bg2); border: 1px solid var(--border);
+}
+.comp-table th:first-child { text-align: left; }
+.comp-table th.comp-highlight { background: rgba(212,168,67,0.1); color: var(--gold); border-color: rgba(212,168,67,0.3); }
+.comp-table td { padding: 13px 20px; border: 1px solid var(--border); font-size: 13px; text-align: center; }
+.comp-crit { text-align: left; color: var(--text2); font-family: var(--mono); font-size: 12px; }
+.comp-table td.comp-highlight { background: rgba(212,168,67,0.04); border-color: rgba(212,168,67,0.2); font-weight: 600; }
+.comp-yes { color: var(--green); }
+.comp-no { color: var(--red); }
+.comp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.comp-table tr:hover td.comp-highlight { background: rgba(212,168,67,0.06); }
