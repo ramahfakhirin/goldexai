@@ -334,6 +334,15 @@ DISPLAY_LOT_SIZE    = float(os.getenv("DISPLAY_LOT_SIZE", "0.10"))
 POINT_VALUE_PER_LOT = 100.0
 PNL_MULT            = DISPLAY_LOT_SIZE * POINT_VALUE_PER_LOT
 
+# ── EARLY_BE_MOVE trigger — kunci SL ke entry begitu harga mendekati TP1 ──
+# Dulu fixed 70% dari jarak TP1 tanpa buffer poin minimum: pada setup SL/TP1
+# ketat (~4-5 poin), 70% cuma ~3 poin — kena noise normal candle M1 gold,
+# SL langsung terkunci ke entry lalu kena retrace balik ke breakeven, padahal
+# tren masih intact. Dinaikkan ke 85% + syarat buffer poin minimum supaya
+# tidak "gampang kaget" oleh pullback wajar dalam tren yang masih berjalan.
+EARLY_BE_TRIGGER_RATIO = float(os.getenv("EARLY_BE_TRIGGER_RATIO", "0.85"))
+EARLY_BE_MIN_POINTS    = float(os.getenv("EARLY_BE_MIN_POINTS", "2.5"))
+
 
 def _money(points, mult: float = 1.0) -> float:
     """Konversi jarak poin → USD pada basis DISPLAY_LOT_SIZE.
@@ -1119,13 +1128,11 @@ def run_monitor_check() -> list:
             # pernah diam-diam menganggap low/high dari berjam-jam lalu
             # sebagai "baru saja terjadi".
             RECENT_CANDLES = 5
-            recent_low, recent_high = price, price
+            df_recent = None
             try:
                 df_recent, _src_recent = fetch_ohlcv_primary(timeframe="1m", count=RECENT_CANDLES)
                 if df_recent is not None and not df_recent.empty:
-                    df_recent   = df_recent.tail(RECENT_CANDLES)
-                    recent_low  = min(price, float(df_recent["low"].min()))
-                    recent_high = max(price, float(df_recent["high"].max()))
+                    df_recent = df_recent.tail(RECENT_CANDLES)
             except Exception as e:
                 print(f"[Monitor] Gagal ambil range candle M1, fallback ke harga snapshot: {e}")
 
@@ -1147,6 +1154,29 @@ def run_monitor_check() -> list:
                 def _gain(px: float) -> float:
                     """Profit per unit posisi penuh pada harga px."""
                     return (px - entry) if direction == "BUY" else (entry - px)
+
+                # Window candle di-anchor ke umur trade INI, bukan cuma "5
+                # candle terakhir saat ini". Kalau trade baru dibuka X menit
+                # lalu, momentum SEBELUM entry (yang justru memicu sinyal ini
+                # terbit) tidak boleh dianggap seolah terjadi setelah entry —
+                # itu bisa memicu TP1/EARLY_BE "hit" palsu di menit yang sama
+                # trade dibuka, padahal harga real belum pernah menyentuhnya
+                # sejak posisi ini ada.
+                recent_low, recent_high = price, price
+                if df_recent is not None and not df_recent.empty:
+                    n_candles = RECENT_CANDLES
+                    entry_ts = m.get("created_at") or m.get("timestamp")
+                    if entry_ts:
+                        try:
+                            entry_dt = datetime.fromisoformat(entry_ts)
+                            elapsed_min = (datetime.now(WIB) - entry_dt).total_seconds() / 60.0
+                            n_candles = max(1, min(RECENT_CANDLES, int(elapsed_min) + 1))
+                        except Exception:
+                            pass  # parse gagal — fallback ke window penuh (perilaku lama, aman)
+                    df_m = df_recent.tail(n_candles)
+                    if not df_m.empty:
+                        recent_low  = min(price, float(df_m["low"].min()))
+                        recent_high = max(price, float(df_m["high"].max()))
 
                 # SL/TP dicek terhadap low/high candle sejak polling terakhir
                 # (bukan cuma titik harga sekarang) — spike sesaat yang recover
@@ -1214,7 +1244,7 @@ def run_monitor_check() -> list:
                     tp1_dist = abs(tp1 - entry)
                     if tp1_dist > 0:
                         ratio = best_gain / tp1_dist
-                        if ratio >= 0.7:  # 70% progress towards TP1
+                        if ratio >= EARLY_BE_TRIGGER_RATIO and best_gain >= EARLY_BE_MIN_POINTS:
                             new_sl = entry
                             be_moved = 1
                             outcome = "EARLY_BE_MOVE"
