@@ -845,11 +845,18 @@ _TWELVE_TF_MAP = {"1m": "1min", "5m": "5min", "15m": "15min", "1h": "1h", "4h": 
 
 # ── Cache MT5 Bridge ──
 _bridge_price_cache = {"price": 0.0, "fetched_at": 0}
-_bridge_ohlcv_cache = {"data": None, "timeframe": None, "fetched_at": 0}
+# NOTE: cache key was timeframe-only until this was found to cause a serious
+# bug — a caller asking for a small `count` (e.g. 5) could receive back a much
+# larger cached DataFrame fetched moments earlier by a different caller with
+# the same timeframe but a bigger count (e.g. 500), because the old key never
+# checked count at all. Downstream code assuming "this is roughly the last
+# `count` candles" then silently operated on hours of unrelated history.
+# `count` is now part of the cache key so distinct requests never collide.
+_bridge_ohlcv_cache = {"data": None, "timeframe": None, "count": None, "fetched_at": 0}
 
 # ── Cache Twelve Data (fallback) ──
 _twelve_price_cache = {"price": 0.0, "fetched_at": 0}
-_twelve_ohlcv_cache = {"data": None, "timeframe": None, "fetched_at": 0}
+_twelve_ohlcv_cache = {"data": None, "timeframe": None, "count": None, "fetched_at": 0}
 
 
 def fetch_price_from_bridge() -> float:
@@ -896,6 +903,7 @@ def fetch_ohlcv_from_bridge(timeframe: str = "5m", count: int = 200):
 
     if (_bridge_ohlcv_cache["data"] is not None
             and _bridge_ohlcv_cache["timeframe"] == timeframe
+            and _bridge_ohlcv_cache["count"] == count
             and now - _bridge_ohlcv_cache["fetched_at"] < 10):
         return _bridge_ohlcv_cache["data"]
 
@@ -923,7 +931,7 @@ def fetch_ohlcv_from_bridge(timeframe: str = "5m", count: int = 200):
         df = df[["open", "high", "low", "close", "volume"]].astype(float)
         df = df.sort_index()
 
-        _bridge_ohlcv_cache.update({"data": df, "timeframe": timeframe, "fetched_at": now})
+        _bridge_ohlcv_cache.update({"data": df, "timeframe": timeframe, "count": count, "fetched_at": now})
         print(f"[Bridge] ✅ OHLCV: {len(df)} candles [{timeframe}] (broker live)")
         return df
 
@@ -976,6 +984,7 @@ def fetch_ohlcv_from_twelvedata(timeframe: str = "5m", count: int = 200):
 
     if (_twelve_ohlcv_cache["data"] is not None
             and _twelve_ohlcv_cache["timeframe"] == timeframe
+            and _twelve_ohlcv_cache["count"] == count
             and now - _twelve_ohlcv_cache["fetched_at"] < 60):
         return _twelve_ohlcv_cache["data"]
 
@@ -1008,7 +1017,7 @@ def fetch_ohlcv_from_twelvedata(timeframe: str = "5m", count: int = 200):
         df = df[["open", "high", "low", "close", "volume"]].astype(float)
         df = df.sort_index()
 
-        _twelve_ohlcv_cache.update({"data": df, "timeframe": timeframe, "fetched_at": now})
+        _twelve_ohlcv_cache.update({"data": df, "timeframe": timeframe, "count": count, "fetched_at": now})
         print(f"[TwelveData] ✅ OHLCV fallback: {len(df)} candles [{timeframe}]")
         return df
 
@@ -1094,6 +1103,32 @@ def run_monitor_check() -> list:
             if not price:
                 return updates
 
+            # Snapshot harga saja tidak cukup: kalau volatilitas tinggi membuat
+            # harga menusuk SL/TP lalu recover di antara dua polling (loop ini
+            # jalan tiap 60 detik), snapshot terakhir bisa saja sudah balik ke
+            # atas SL padahal candle sempat menembusnya — SL/TP dianggap tidak
+            # pernah kena. Ambil juga low/high beberapa candle M1 terakhir
+            # supaya sentuhan sesaat itu tetap terdeteksi.
+            #
+            # PENTING: fetch_ohlcv_primary() lewat cache bersama yang dipakai
+            # juga oleh scheduler analisis (fetch "1m", 500). Cache itu sudah
+            # diperbaiki untuk membedakan berdasarkan (timeframe, count), tapi
+            # sebagai lapis pengaman kedua kita tetap potong hasilnya sendiri
+            # ke N candle TERAKHIR (.tail) — supaya walau suatu saat cache
+            # balikin window yang lebih besar dari diminta, kode ini tidak
+            # pernah diam-diam menganggap low/high dari berjam-jam lalu
+            # sebagai "baru saja terjadi".
+            RECENT_CANDLES = 5
+            recent_low, recent_high = price, price
+            try:
+                df_recent, _src_recent = fetch_ohlcv_primary(timeframe="1m", count=RECENT_CANDLES)
+                if df_recent is not None and not df_recent.empty:
+                    df_recent   = df_recent.tail(RECENT_CANDLES)
+                    recent_low  = min(price, float(df_recent["low"].min()))
+                    recent_high = max(price, float(df_recent["high"].max()))
+            except Exception as e:
+                print(f"[Monitor] Gagal ambil range candle M1, fallback ke harga snapshot: {e}")
+
             bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
             chat_id   = os.getenv("TELEGRAM_CHAT_ID",   "")
 
@@ -1113,30 +1148,37 @@ def run_monitor_check() -> list:
                     """Profit per unit posisi penuh pada harga px."""
                     return (px - entry) if direction == "BUY" else (entry - px)
 
+                # SL/TP dicek terhadap low/high candle sejak polling terakhir
+                # (bukan cuma titik harga sekarang) — spike sesaat yang recover
+                # sebelum polling berikutnya tetap tertangkap.
                 if direction == "BUY":
-                    hit_sl  = price <= sl
-                    hit_tp1 = bool(tp1) and price >= tp1
-                    hit_tp2 = bool(tp2) and price >= tp2
-                    hit_tp3 = bool(tp3) and price >= tp3
+                    hit_sl  = recent_low <= sl
+                    hit_tp1 = bool(tp1) and recent_high >= tp1
+                    hit_tp2 = bool(tp2) and recent_high >= tp2
+                    hit_tp3 = bool(tp3) and recent_high >= tp3
+                    best_gain  = _gain(recent_high)  # MFE: titik terbaik searah posisi
+                    worst_gain = _gain(recent_low)   # MAE: titik terburuk melawan posisi
                 else:
-                    hit_sl  = price >= sl
-                    hit_tp1 = bool(tp1) and price <= tp1
-                    hit_tp2 = bool(tp2) and price <= tp2
-                    hit_tp3 = bool(tp3) and price <= tp3
+                    hit_sl  = recent_high >= sl
+                    hit_tp1 = bool(tp1) and recent_low <= tp1
+                    hit_tp2 = bool(tp2) and recent_low <= tp2
+                    hit_tp3 = bool(tp3) and recent_low <= tp3
+                    best_gain  = _gain(recent_low)
+                    worst_gain = _gain(recent_high)
 
                 outcome      = None
                 pnl          = 0.0
+                hit_price    = price  # harga yang dicatat sbg outcome_price — override di tiap cabang
                 new_tp_hit   = tp_hit
                 new_sl       = sl
                 be_moved     = int(m.get("be_moved") or 0)
                 should_close = False
 
-                # ── MFE / MAE tracking (per tick, data diagnosis) ──
+                # ── MFE / MAE tracking (data diagnosis) ──
                 # MFE: pergerakan maksimum SEARAH posisi ($/unit)
                 # MAE: pergerakan maksimum MELAWAN posisi ($/unit, negatif)
-                tick_gain = _gain(price)
-                new_mfe   = max(float(m.get("mfe") or 0), tick_gain)
-                new_mae   = min(float(m.get("mae") or 0), tick_gain)
+                new_mfe = max(float(m.get("mfe") or 0), best_gain)
+                new_mae = min(float(m.get("mae") or 0), worst_gain)
 
                 if hit_sl:
                     remaining = max(0.0, (3 - tp_hit) / 3.0)
@@ -1145,6 +1187,7 @@ def run_monitor_check() -> list:
                     # EARLY_BE_MOVE) → ini bukan loss murni, walau tp_hit==0.
                     outcome   = "SL_HIT" if (tp_hit == 0 and not be_moved) else "BE_HIT"
                     should_close = True
+                    hit_price = sl
 
                 elif hit_tp1 or hit_tp2 or hit_tp3:
                     # Bukukan tiap level TP baru yang tercapai (limit order 1/3)
@@ -1165,12 +1208,12 @@ def run_monitor_check() -> list:
                     if new_tp_hit > tp_hit:
                         outcome = f"TP{new_tp_hit}_HIT"
                         pnl     = round(realized, 2)
+                        hit_price = {1: tp1, 2: tp2, 3: tp3}[new_tp_hit]
 
                 elif be_moved == 0 and tp1 > 0:
                     tp1_dist = abs(tp1 - entry)
                     if tp1_dist > 0:
-                        traveled = _gain(price)
-                        ratio = traveled / tp1_dist
+                        ratio = best_gain / tp1_dist
                         if ratio >= 0.7:  # 70% progress towards TP1
                             new_sl = entry
                             be_moved = 1
@@ -1189,7 +1232,7 @@ def run_monitor_check() -> list:
                             pnl_pips=?, realized_pnl=?, tp_hit=?,
                             stop_loss=?, be_moved=?, mfe=?, mae=?, status=?
                         WHERE id=? AND status='ACTIVE' AND COALESCE(tp_hit,0)=?
-                    """, (outcome, price, datetime.now(WIB).isoformat(),
+                    """, (outcome, hit_price, datetime.now(WIB).isoformat(),
                           status, datetime.now(WIB).isoformat(),
                           round(pnl, 2), round(realized, 2), new_tp_hit,
                           new_sl, be_moved, round(new_mfe, 2), round(new_mae, 2),
@@ -1201,8 +1244,9 @@ def run_monitor_check() -> list:
                     if not changed:
                         continue  # sudah diproses proses lain — skip notifikasi
 
-                    print(f"[Monitor] #{mid} {direction} -> {outcome} @ {price:.2f} "
-                          f"(PnL: {pnl:+.2f} | realized: {realized:+.2f} | SL: {new_sl:.2f})")
+                    print(f"[Monitor] #{mid} {direction} -> {outcome} @ {hit_price:.2f} "
+                          f"(live: {price:.2f} | range: {recent_low:.2f}-{recent_high:.2f} | "
+                          f"PnL: {pnl:+.2f} | realized: {realized:+.2f} | SL: {new_sl:.2f})")
 
                     trade_mult = m.get("martingale_mult") or 1
 
@@ -1210,7 +1254,7 @@ def run_monitor_check() -> list:
                         "monitor_id": mid,
                         "direction":  direction,
                         "outcome":    outcome,
-                        "price":      price,
+                        "price":      hit_price,
                         "pnl_pips":   pnl,
                         "pnl_usd":    _money(pnl, trade_mult),
                     })
@@ -1240,7 +1284,7 @@ def run_monitor_check() -> list:
                             "━━━━━━━━━━━━━━━━━━",
                             dir_emoji + " " + direction + " XAU/USD",
                             "📊 Hasil   : <b>" + label_map.get(outcome, outcome.replace("_", " ")) + "</b>",
-                            "💰 Harga   : $" + f"{price:,.2f}",
+                            "💰 Harga   : $" + f"{hit_price:,.2f}",
                             "📈 PnL     : <b>" + pnl_str + "</b>",
                         ]
                         if outcome in ("TP1_HIT", "TP2_HIT", "EARLY_BE_MOVE"):
