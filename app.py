@@ -343,6 +343,14 @@ PNL_MULT            = DISPLAY_LOT_SIZE * POINT_VALUE_PER_LOT
 EARLY_BE_TRIGGER_RATIO = float(os.getenv("EARLY_BE_TRIGGER_RATIO", "0.85"))
 EARLY_BE_MIN_POINTS    = float(os.getenv("EARLY_BE_MIN_POINTS", "2.5"))
 
+# ── Sanity guard candle M1 di run_monitor_check() ──────────────
+# Insiden #163 (13/08/2026): window candle mencatat rentang 20+ poin dalam
+# <2 menit — mustahil buat gold, indikasi data OHLCV korup/outlier dari
+# Bridge/TwelveData. Batas ini adalah "poin per candle M1" yang masih masuk
+# akal (generous supaya tidak menahan lonjakan asli saat berita besar);
+# kalau rentang window melebihi ini, window itu tidak dipercaya.
+MAX_POINTS_PER_CANDLE = float(os.getenv("MAX_POINTS_PER_CANDLE", "8.0"))
+
 
 def _money(points, mult: float = 1.0) -> float:
     """Konversi jarak poin → USD pada basis DISPLAY_LOT_SIZE.
@@ -1175,8 +1183,25 @@ def run_monitor_check() -> list:
                             pass  # parse gagal — fallback ke window penuh (perilaku lama, aman)
                     df_m = df_recent.tail(n_candles)
                     if not df_m.empty:
-                        recent_low  = min(price, float(df_m["low"].min()))
-                        recent_high = max(price, float(df_m["high"].max()))
+                        w_low  = float(df_m["low"].min())
+                        w_high = float(df_m["high"].max())
+
+                        # Sanity guard: data OHLCV dari Bridge/TwelveData sesekali bisa
+                        # balikin candle dengan high/low yang korup/outlier (insiden #163:
+                        # range 20+ poin dalam <2 menit — mustahil buat gold). Kalau rentang
+                        # window jauh melebihi yang wajar untuk sejumlah candle M1 ini, jangan
+                        # dipakai buat trigger SL/TP/EARLY_BE — fallback ke snapshot harga saja
+                        # (aman: polling berikutnya coba lagi dengan data baru).
+                        max_plausible = MAX_POINTS_PER_CANDLE * len(df_m)
+                        if (w_high - w_low) > max_plausible:
+                            print(f"[Monitor] #{mid} ⚠️ Range candle {w_low:.2f}-{w_high:.2f} "
+                                  f"({w_high - w_low:.2f} poin dalam {len(df_m)} candle M1) "
+                                  f"melebihi batas wajar {max_plausible:.2f} poin — diabaikan, "
+                                  f"pakai snapshot harga (${price:.2f}). Candle mentah:\n"
+                                  f"{df_m[['open','high','low','close']].to_string()}")
+                        else:
+                            recent_low  = min(price, w_low)
+                            recent_high = max(price, w_high)
 
                 # SL/TP dicek terhadap low/high candle sejak polling terakhir
                 # (bukan cuma titik harga sekarang) — spike sesaat yang recover
