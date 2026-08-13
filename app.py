@@ -1183,6 +1183,7 @@ def run_monitor_check() -> list:
                 # trade dibuka, padahal harga real belum pernah menyentuhnya
                 # sejak posisi ini ada.
                 recent_low, recent_high = price, price
+                df_m_used = None  # candle mentah yang benar-benar dipakai — buat debug log outcome
                 in_warmup = (time.time() - _monitor_started_at) < MONITOR_WARMUP_SEC
                 if in_warmup:
                     print(f"[Monitor] #{mid} 🌡️ Warm-up ({MONITOR_WARMUP_SEC}s sejak thread mulai) — "
@@ -1218,6 +1219,7 @@ def run_monitor_check() -> list:
                         else:
                             recent_low  = min(price, w_low)
                             recent_high = max(price, w_high)
+                            df_m_used   = df_m
 
                 # SL/TP dicek terhadap low/high candle sejak polling terakhir
                 # (bukan cuma titik harga sekarang) — spike sesaat yang recover
@@ -1318,6 +1320,13 @@ def run_monitor_check() -> list:
                     print(f"[Monitor] #{mid} {direction} -> {outcome} @ {hit_price:.2f} "
                           f"(live: {price:.2f} | range: {recent_low:.2f}-{recent_high:.2f} | "
                           f"PnL: {pnl:+.2f} | realized: {realized:+.2f} | SL: {new_sl:.2f})")
+                    if df_m_used is not None and not df_m_used.empty:
+                        # Debug: timestamp ASLI tiap candle yang dipakai buat outcome ini —
+                        # supaya kalau range-nya kelihatan mustahil lagi, tinggal bandingkan
+                        # timestamp di sini vs jam sinyal dibuka, tanpa harus nebak dari chart.
+                        print(f"[Monitor] #{mid} candle dipakai ({len(df_m_used)}x): " +
+                              ", ".join(f"{ts}→H{row.high:.2f}/L{row.low:.2f}"
+                                        for ts, row in df_m_used.iterrows()))
 
                     trade_mult = m.get("martingale_mult") or 1
 
