@@ -1094,21 +1094,6 @@ def run_monitor_check() -> list:
             if not price:
                 return updates
 
-            # Snapshot harga saja tidak cukup: kalau volatilitas tinggi membuat
-            # harga menusuk SL/TP lalu recover di antara dua polling (loop ini
-            # jalan tiap 60 detik), snapshot terakhir bisa saja sudah balik ke
-            # atas SL padahal candle sempat menembusnya — SL/TP dianggap tidak
-            # pernah kena. Ambil juga low/high beberapa candle M1 terakhir
-            # supaya sentuhan sesaat itu tetap terdeteksi.
-            recent_low, recent_high = price, price
-            try:
-                df_recent, _src_recent = fetch_ohlcv_primary(timeframe="1m", count=5)
-                if df_recent is not None and not df_recent.empty:
-                    recent_low  = float(df_recent["low"].min())
-                    recent_high = float(df_recent["high"].max())
-            except Exception as e:
-                print(f"[Monitor] Gagal ambil range candle M1, fallback ke harga snapshot: {e}")
-
             bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
             chat_id   = os.getenv("TELEGRAM_CHAT_ID",   "")
 
@@ -1128,37 +1113,30 @@ def run_monitor_check() -> list:
                     """Profit per unit posisi penuh pada harga px."""
                     return (px - entry) if direction == "BUY" else (entry - px)
 
-                # SL/TP dicek terhadap low/high candle sejak polling terakhir
-                # (bukan cuma titik harga sekarang) — spike sesaat yang recover
-                # sebelum polling berikutnya tetap tertangkap.
                 if direction == "BUY":
-                    hit_sl  = recent_low <= sl
-                    hit_tp1 = bool(tp1) and recent_high >= tp1
-                    hit_tp2 = bool(tp2) and recent_high >= tp2
-                    hit_tp3 = bool(tp3) and recent_high >= tp3
-                    best_gain  = _gain(recent_high)  # MFE: titik terbaik searah posisi
-                    worst_gain = _gain(recent_low)   # MAE: titik terburuk melawan posisi
+                    hit_sl  = price <= sl
+                    hit_tp1 = bool(tp1) and price >= tp1
+                    hit_tp2 = bool(tp2) and price >= tp2
+                    hit_tp3 = bool(tp3) and price >= tp3
                 else:
-                    hit_sl  = recent_high >= sl
-                    hit_tp1 = bool(tp1) and recent_low <= tp1
-                    hit_tp2 = bool(tp2) and recent_low <= tp2
-                    hit_tp3 = bool(tp3) and recent_low <= tp3
-                    best_gain  = _gain(recent_low)
-                    worst_gain = _gain(recent_high)
+                    hit_sl  = price >= sl
+                    hit_tp1 = bool(tp1) and price <= tp1
+                    hit_tp2 = bool(tp2) and price <= tp2
+                    hit_tp3 = bool(tp3) and price <= tp3
 
                 outcome      = None
                 pnl          = 0.0
-                hit_price    = price  # harga yang dicatat sbg outcome_price — override di tiap cabang
                 new_tp_hit   = tp_hit
                 new_sl       = sl
                 be_moved     = int(m.get("be_moved") or 0)
                 should_close = False
 
-                # ── MFE / MAE tracking (data diagnosis) ──
+                # ── MFE / MAE tracking (per tick, data diagnosis) ──
                 # MFE: pergerakan maksimum SEARAH posisi ($/unit)
                 # MAE: pergerakan maksimum MELAWAN posisi ($/unit, negatif)
-                new_mfe = max(float(m.get("mfe") or 0), best_gain)
-                new_mae = min(float(m.get("mae") or 0), worst_gain)
+                tick_gain = _gain(price)
+                new_mfe   = max(float(m.get("mfe") or 0), tick_gain)
+                new_mae   = min(float(m.get("mae") or 0), tick_gain)
 
                 if hit_sl:
                     remaining = max(0.0, (3 - tp_hit) / 3.0)
@@ -1167,7 +1145,6 @@ def run_monitor_check() -> list:
                     # EARLY_BE_MOVE) → ini bukan loss murni, walau tp_hit==0.
                     outcome   = "SL_HIT" if (tp_hit == 0 and not be_moved) else "BE_HIT"
                     should_close = True
-                    hit_price = sl
 
                 elif hit_tp1 or hit_tp2 or hit_tp3:
                     # Bukukan tiap level TP baru yang tercapai (limit order 1/3)
@@ -1188,12 +1165,12 @@ def run_monitor_check() -> list:
                     if new_tp_hit > tp_hit:
                         outcome = f"TP{new_tp_hit}_HIT"
                         pnl     = round(realized, 2)
-                        hit_price = {1: tp1, 2: tp2, 3: tp3}[new_tp_hit]
 
                 elif be_moved == 0 and tp1 > 0:
                     tp1_dist = abs(tp1 - entry)
                     if tp1_dist > 0:
-                        ratio = best_gain / tp1_dist
+                        traveled = _gain(price)
+                        ratio = traveled / tp1_dist
                         if ratio >= 0.7:  # 70% progress towards TP1
                             new_sl = entry
                             be_moved = 1
@@ -1212,7 +1189,7 @@ def run_monitor_check() -> list:
                             pnl_pips=?, realized_pnl=?, tp_hit=?,
                             stop_loss=?, be_moved=?, mfe=?, mae=?, status=?
                         WHERE id=? AND status='ACTIVE' AND COALESCE(tp_hit,0)=?
-                    """, (outcome, hit_price, datetime.now(WIB).isoformat(),
+                    """, (outcome, price, datetime.now(WIB).isoformat(),
                           status, datetime.now(WIB).isoformat(),
                           round(pnl, 2), round(realized, 2), new_tp_hit,
                           new_sl, be_moved, round(new_mfe, 2), round(new_mae, 2),
@@ -1224,8 +1201,8 @@ def run_monitor_check() -> list:
                     if not changed:
                         continue  # sudah diproses proses lain — skip notifikasi
 
-                    print(f"[Monitor] #{mid} {direction} -> {outcome} @ {hit_price:.2f} "
-                          f"(live: {price:.2f} | PnL: {pnl:+.2f} | realized: {realized:+.2f} | SL: {new_sl:.2f})")
+                    print(f"[Monitor] #{mid} {direction} -> {outcome} @ {price:.2f} "
+                          f"(PnL: {pnl:+.2f} | realized: {realized:+.2f} | SL: {new_sl:.2f})")
 
                     trade_mult = m.get("martingale_mult") or 1
 
@@ -1233,7 +1210,7 @@ def run_monitor_check() -> list:
                         "monitor_id": mid,
                         "direction":  direction,
                         "outcome":    outcome,
-                        "price":      hit_price,
+                        "price":      price,
                         "pnl_pips":   pnl,
                         "pnl_usd":    _money(pnl, trade_mult),
                     })
@@ -1263,7 +1240,7 @@ def run_monitor_check() -> list:
                             "━━━━━━━━━━━━━━━━━━",
                             dir_emoji + " " + direction + " XAU/USD",
                             "📊 Hasil   : <b>" + label_map.get(outcome, outcome.replace("_", " ")) + "</b>",
-                            "💰 Harga   : $" + f"{hit_price:,.2f}",
+                            "💰 Harga   : $" + f"{price:,.2f}",
                             "📈 PnL     : <b>" + pnl_str + "</b>",
                         ]
                         if outcome in ("TP1_HIT", "TP2_HIT", "EARLY_BE_MOVE"):
