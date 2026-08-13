@@ -351,6 +351,17 @@ EARLY_BE_MIN_POINTS    = float(os.getenv("EARLY_BE_MIN_POINTS", "2.5"))
 # kalau rentang window melebihi ini, window itu tidak dipercaya.
 MAX_POINTS_PER_CANDLE = float(os.getenv("MAX_POINTS_PER_CANDLE", "8.0"))
 
+# ── Warm-up setelah restart/redeploy ────────────────────────────
+# Insiden 13/08/2026 19:59 WIB: ~3 menit setelah redeploy, trade yang
+# SEDANG AKTIF sejak sebelum redeploy tiba-tiba "SL_HIT" dengan range
+# candle 14.42 poin yang tidak match chart broker sama sekali. Threads
+# scheduler & monitor sama-sama baru mulai lagi setelah leader promotion —
+# window candle & cache OHLCV belum tentu stabil di detik-detik pertama.
+# Selama warm-up, jangan pakai window candle sama sekali — cek SL/TP
+# cuma dari snapshot harga live (perilaku paling konservatif/aman; sama
+# seperti kalau candle fetch gagal).
+MONITOR_WARMUP_SEC = int(os.getenv("MONITOR_WARMUP_SEC", "180"))
+
 
 def _money(points, mult: float = 1.0) -> float:
     """Konversi jarak poin → USD pada basis DISPLAY_LOT_SIZE.
@@ -773,8 +784,9 @@ def get_trade_history_count(days: int = 0) -> int:
 # ─────────────────────────────────────────────
 # BACKGROUND MONITOR ENGINE
 # ─────────────────────────────────────────────
-_monitor_thread = None
-_monitor_lock   = threading.Lock()
+_monitor_thread     = None
+_monitor_lock       = threading.Lock()
+_monitor_started_at = 0.0  # unix ts saat background_monitor_loop() mulai (0 = belum jalan)
 
 
 def is_direction_blocked(direction: str) -> tuple:
@@ -1171,7 +1183,11 @@ def run_monitor_check() -> list:
                 # trade dibuka, padahal harga real belum pernah menyentuhnya
                 # sejak posisi ini ada.
                 recent_low, recent_high = price, price
-                if df_recent is not None and not df_recent.empty:
+                in_warmup = (time.time() - _monitor_started_at) < MONITOR_WARMUP_SEC
+                if in_warmup:
+                    print(f"[Monitor] #{mid} 🌡️ Warm-up ({MONITOR_WARMUP_SEC}s sejak thread mulai) — "
+                          f"skip window candle, pakai snapshot harga (${price:.2f})")
+                elif df_recent is not None and not df_recent.empty:
                     n_candles = RECENT_CANDLES
                     entry_ts = m.get("created_at") or m.get("timestamp")
                     if entry_ts:
@@ -1369,6 +1385,8 @@ def run_monitor_check() -> list:
 
 def background_monitor_loop():
     """Loop background thread — cek monitor setiap 60 detik."""
+    global _monitor_started_at
+    _monitor_started_at = time.time()
     print("[Monitor] Background thread started")
     while True:
         try:
