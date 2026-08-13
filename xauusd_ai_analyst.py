@@ -810,7 +810,12 @@ def get_martingale_multiplier():
                 multiplier *= 2
             elif outcome in ('TP1_HIT', 'TP2_HIT', 'TP3_HIT', 'BE_HIT'):
                 break
-        return multiplier
+
+        # Circuit breaker: tanpa batas, rentetan SL beruntun bisa membuat lot
+        # membengkak eksponensial (5x SL = 32x lot). Default 4x = maksimal
+        # 2x doubling (1 -> 2 -> 4), bisa diatur lewat env var jika perlu.
+        max_multiplier = int(float(os.getenv("MAX_MARTINGALE_MULT", "4")))
+        return min(multiplier, max_multiplier)
     except Exception:
         return 1
 
