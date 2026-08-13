@@ -343,25 +343,6 @@ PNL_MULT            = DISPLAY_LOT_SIZE * POINT_VALUE_PER_LOT
 EARLY_BE_TRIGGER_RATIO = float(os.getenv("EARLY_BE_TRIGGER_RATIO", "0.85"))
 EARLY_BE_MIN_POINTS    = float(os.getenv("EARLY_BE_MIN_POINTS", "2.5"))
 
-# ── Sanity guard candle M1 di run_monitor_check() ──────────────
-# Insiden #163 (13/08/2026): window candle mencatat rentang 20+ poin dalam
-# <2 menit — mustahil buat gold, indikasi data OHLCV korup/outlier dari
-# Bridge/TwelveData. Batas ini adalah "poin per candle M1" yang masih masuk
-# akal (generous supaya tidak menahan lonjakan asli saat berita besar);
-# kalau rentang window melebihi ini, window itu tidak dipercaya.
-MAX_POINTS_PER_CANDLE = float(os.getenv("MAX_POINTS_PER_CANDLE", "8.0"))
-
-# ── Warm-up setelah restart/redeploy ────────────────────────────
-# Insiden 13/08/2026 19:59 WIB: ~3 menit setelah redeploy, trade yang
-# SEDANG AKTIF sejak sebelum redeploy tiba-tiba "SL_HIT" dengan range
-# candle 14.42 poin yang tidak match chart broker sama sekali. Threads
-# scheduler & monitor sama-sama baru mulai lagi setelah leader promotion —
-# window candle & cache OHLCV belum tentu stabil di detik-detik pertama.
-# Selama warm-up, jangan pakai window candle sama sekali — cek SL/TP
-# cuma dari snapshot harga live (perilaku paling konservatif/aman; sama
-# seperti kalau candle fetch gagal).
-MONITOR_WARMUP_SEC = int(os.getenv("MONITOR_WARMUP_SEC", "180"))
-
 
 def _money(points, mult: float = 1.0) -> float:
     """Konversi jarak poin → USD pada basis DISPLAY_LOT_SIZE.
@@ -784,9 +765,8 @@ def get_trade_history_count(days: int = 0) -> int:
 # ─────────────────────────────────────────────
 # BACKGROUND MONITOR ENGINE
 # ─────────────────────────────────────────────
-_monitor_thread     = None
-_monitor_lock       = threading.Lock()
-_monitor_started_at = 0.0  # unix ts saat background_monitor_loop() mulai (0 = belum jalan)
+_monitor_thread = None
+_monitor_lock   = threading.Lock()
 
 
 def is_direction_blocked(direction: str) -> tuple:
@@ -1132,30 +1112,6 @@ def run_monitor_check() -> list:
             if not price:
                 return updates
 
-            # Snapshot harga saja tidak cukup: kalau volatilitas tinggi membuat
-            # harga menusuk SL/TP lalu recover di antara dua polling (loop ini
-            # jalan tiap 60 detik), snapshot terakhir bisa saja sudah balik ke
-            # atas SL padahal candle sempat menembusnya — SL/TP dianggap tidak
-            # pernah kena. Ambil juga low/high beberapa candle M1 terakhir
-            # supaya sentuhan sesaat itu tetap terdeteksi.
-            #
-            # PENTING: fetch_ohlcv_primary() lewat cache bersama yang dipakai
-            # juga oleh scheduler analisis (fetch "1m", 500). Cache itu sudah
-            # diperbaiki untuk membedakan berdasarkan (timeframe, count), tapi
-            # sebagai lapis pengaman kedua kita tetap potong hasilnya sendiri
-            # ke N candle TERAKHIR (.tail) — supaya walau suatu saat cache
-            # balikin window yang lebih besar dari diminta, kode ini tidak
-            # pernah diam-diam menganggap low/high dari berjam-jam lalu
-            # sebagai "baru saja terjadi".
-            RECENT_CANDLES = 5
-            df_recent = None
-            try:
-                df_recent, _src_recent = fetch_ohlcv_primary(timeframe="1m", count=RECENT_CANDLES)
-                if df_recent is not None and not df_recent.empty:
-                    df_recent = df_recent.tail(RECENT_CANDLES)
-            except Exception as e:
-                print(f"[Monitor] Gagal ambil range candle M1, fallback ke harga snapshot: {e}")
-
             bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
             chat_id   = os.getenv("TELEGRAM_CHAT_ID",   "")
 
@@ -1175,55 +1131,24 @@ def run_monitor_check() -> list:
                     """Profit per unit posisi penuh pada harga px."""
                     return (px - entry) if direction == "BUY" else (entry - px)
 
-                # Window candle di-anchor ke umur trade INI, bukan cuma "5
-                # candle terakhir saat ini". Kalau trade baru dibuka X menit
-                # lalu, momentum SEBELUM entry (yang justru memicu sinyal ini
-                # terbit) tidak boleh dianggap seolah terjadi setelah entry —
-                # itu bisa memicu TP1/EARLY_BE "hit" palsu di menit yang sama
-                # trade dibuka, padahal harga real belum pernah menyentuhnya
-                # sejak posisi ini ada.
-                recent_low, recent_high = price, price
-                df_m_used = None  # candle mentah yang benar-benar dipakai — buat debug log outcome
-                in_warmup = (time.time() - _monitor_started_at) < MONITOR_WARMUP_SEC
-                if in_warmup:
-                    print(f"[Monitor] #{mid} 🌡️ Warm-up ({MONITOR_WARMUP_SEC}s sejak thread mulai) — "
-                          f"skip window candle, pakai snapshot harga (${price:.2f})")
-                elif df_recent is not None and not df_recent.empty:
-                    n_candles = RECENT_CANDLES
-                    entry_ts = m.get("created_at") or m.get("timestamp")
-                    if entry_ts:
-                        try:
-                            entry_dt = datetime.fromisoformat(entry_ts)
-                            elapsed_min = (datetime.now(WIB) - entry_dt).total_seconds() / 60.0
-                            n_candles = max(1, min(RECENT_CANDLES, int(elapsed_min) + 1))
-                        except Exception:
-                            pass  # parse gagal — fallback ke window penuh (perilaku lama, aman)
-                    df_m = df_recent.tail(n_candles)
-                    if not df_m.empty:
-                        w_low  = float(df_m["low"].min())
-                        w_high = float(df_m["high"].max())
+                # Cek SL/TP/EARLY_BE dari snapshot harga live saja.
+                #
+                # Sempat dicoba tambah window candle M1 (fetch_ohlcv_primary
+                # count=5) supaya spike sesaat yang recover di antara dua
+                # polling tetap tertangkap — tapi window count=5 dari Bridge
+                # berulang kali balikin high/low yang tidak match harga riil
+                # sama sekali (insiden #163, #165, #931: SL/EARLY_BE palsu
+                # dengan range candle yang mustahil untuk gold), bahkan
+                # setelah dilapis anchoring ke waktu entry + sanity-check
+                # rentang + masa warm-up redeploy — sumber datanya sendiri
+                # tidak cukup andal untuk window sekecil itu. Snapshot murni
+                # sudah terbukti stabil >1 bulan sebelum window ini pernah
+                # ditambahkan, jadi dikembalikan ke sini. Trade-off yang
+                # disadari: spike-sesaat-lalu-recover di antara dua polling
+                # (~60 detik) bisa saja tidak tertangkap — itu risiko yang
+                # jauh lebih kecil/jarang dibanding false-stop berulang.
+                recent_low = recent_high = price
 
-                        # Sanity guard: data OHLCV dari Bridge/TwelveData sesekali bisa
-                        # balikin candle dengan high/low yang korup/outlier (insiden #163:
-                        # range 20+ poin dalam <2 menit — mustahil buat gold). Kalau rentang
-                        # window jauh melebihi yang wajar untuk sejumlah candle M1 ini, jangan
-                        # dipakai buat trigger SL/TP/EARLY_BE — fallback ke snapshot harga saja
-                        # (aman: polling berikutnya coba lagi dengan data baru).
-                        max_plausible = MAX_POINTS_PER_CANDLE * len(df_m)
-                        if (w_high - w_low) > max_plausible:
-                            print(f"[Monitor] #{mid} ⚠️ Range candle {w_low:.2f}-{w_high:.2f} "
-                                  f"({w_high - w_low:.2f} poin dalam {len(df_m)} candle M1) "
-                                  f"melebihi batas wajar {max_plausible:.2f} poin — diabaikan, "
-                                  f"pakai snapshot harga (${price:.2f}). Candle mentah:\n"
-                                  f"{df_m[['open','high','low','close']].to_string()}")
-                        else:
-                            recent_low  = min(price, w_low)
-                            recent_high = max(price, w_high)
-                            df_m_used   = df_m
-
-                # SL/TP dicek terhadap low/high candle sejak polling terakhir
-                # (bukan cuma titik harga sekarang) — spike sesaat yang recover
-                # sebelum polling berikutnya tetap tertangkap.
                 if direction == "BUY":
                     hit_sl  = recent_low <= sl
                     hit_tp1 = bool(tp1) and recent_high >= tp1
@@ -1320,14 +1245,6 @@ def run_monitor_check() -> list:
                     print(f"[Monitor] #{mid} {direction} -> {outcome} @ {hit_price:.2f} "
                           f"(live: {price:.2f} | range: {recent_low:.2f}-{recent_high:.2f} | "
                           f"PnL: {pnl:+.2f} | realized: {realized:+.2f} | SL: {new_sl:.2f})")
-                    if df_m_used is not None and not df_m_used.empty:
-                        # Debug: timestamp ASLI tiap candle yang dipakai buat outcome ini —
-                        # supaya kalau range-nya kelihatan mustahil lagi, tinggal bandingkan
-                        # timestamp di sini vs jam sinyal dibuka, tanpa harus nebak dari chart.
-                        print(f"[Monitor] #{mid} candle dipakai ({len(df_m_used)}x): " +
-                              ", ".join(f"{ts}→H{row.high:.2f}/L{row.low:.2f}"
-                                        for ts, row in df_m_used.iterrows()))
-
                     trade_mult = m.get("martingale_mult") or 1
 
                     updates.append({
@@ -1347,7 +1264,7 @@ def run_monitor_check() -> list:
                             "TP1_HIT": "TP1 HIT — SL pindah ke breakeven",
                             "TP2_HIT": "TP2 HIT — SL pindah ke TP1",
                             "TP3_HIT": "TP3 HIT — FULL TARGET",
-                            "EARLY_BE_MOVE": "MOVE TO BE — Harga mendekati TP1 (70%), SL dipindahkan ke entry untuk mengunci risiko",
+                            "EARLY_BE_MOVE": f"MOVE TO BE — Harga mendekati TP1 ({EARLY_BE_TRIGGER_RATIO:.0%}), SL dipindahkan ke entry untuk mengunci risiko",
                         }
                         emoji = ("🛡️" if outcome == "EARLY_BE_MOVE" else
                                  "✅" if outcome in ("TP1_HIT", "TP2_HIT", "TP3_HIT") else
@@ -1394,8 +1311,6 @@ def run_monitor_check() -> list:
 
 def background_monitor_loop():
     """Loop background thread — cek monitor setiap 60 detik."""
-    global _monitor_started_at
-    _monitor_started_at = time.time()
     print("[Monitor] Background thread started")
     while True:
         try:
