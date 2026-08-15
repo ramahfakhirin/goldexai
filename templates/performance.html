@@ -307,6 +307,16 @@
       <div class="pp-insight-card" id="pp-insight">Memuat insight...</div>
     </div>
 
+    <div class="card card-trade-history" style="margin-top:12px">
+      <div class="card-label-row">
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>HASIL TRADE</span></span>
+        <button class="btn-clear" onclick="ppLoadTradeHistoryList()">Refresh</button>
+      </div>
+      <div class="history-list" id="pp-trade-history-list">
+        <div class="history-empty">Belum ada trade selesai</div>
+      </div>
+    </div>
+
   </section>
 
 </main>
@@ -540,6 +550,110 @@ renderLangToggle("dash-lang-toggle");
       if (typeof showToast === "function") showToast("Gagal reset", "error");
     }
   }
+
+  // ── HASIL TRADE (kartu terpisah, filter periode sendiri — sama dengan
+  // widget "trade-history-list" di dashboard, di-port ke sini karena
+  // halaman ini tidak load app.js). ──
+  const PP_HIST_PAGE_SIZE = 10;
+  let ppHistPage  = 1;
+  let ppHistTotal = 0;
+  let ppHistDays  = 7;
+
+  function ppSetHistDays(days) {
+    if (days === ppHistDays) return;
+    ppHistDays = days;
+    ppHistPage = 1;
+    ppLoadTradeHistoryList();
+  }
+
+  function ppGoToHistPage(page) {
+    const maxPage = Math.max(1, Math.ceil(ppHistTotal / PP_HIST_PAGE_SIZE));
+    ppHistPage = Math.min(Math.max(1, page), maxPage);
+    ppLoadTradeHistoryList();
+  }
+
+  function ppRenderHistFilter() {
+    const opts = [[1, "24H"], [7, "7D"], [30, "30D"]];
+    return `<div class="perf-filter hist-period-filter">` +
+      opts.map(([d, label]) =>
+        `<button class="perf-filter-btn ${ppHistDays === d ? "active" : ""}" onclick="ppSetHistDays(${d})">${label}</button>`
+      ).join("") +
+      `</div>`;
+  }
+
+  function ppRenderHistPagination() {
+    if (ppHistTotal <= PP_HIST_PAGE_SIZE) return "";
+    const maxPage = Math.max(1, Math.ceil(ppHistTotal / PP_HIST_PAGE_SIZE));
+    const page    = ppHistPage;
+    const from    = (page - 1) * PP_HIST_PAGE_SIZE + 1;
+    const to      = Math.min(page * PP_HIST_PAGE_SIZE, ppHistTotal);
+    return `
+      <div class="hist-pagination">
+        <button class="hist-page-btn" ${page <= 1 ? "disabled" : ""} onclick="ppGoToHistPage(${page - 1})">‹ Prev</button>
+        <span class="hist-page-info">${from}–${to} of ${ppHistTotal} · Page ${page}/${maxPage}</span>
+        <button class="hist-page-btn" ${page >= maxPage ? "disabled" : ""} onclick="ppGoToHistPage(${page + 1})">Next ›</button>
+      </div>`;
+  }
+
+  async function ppLoadTradeHistoryList() {
+    try {
+      const offset = (ppHistPage - 1) * PP_HIST_PAGE_SIZE;
+      const res  = await fetch(`/api/trade_history?limit=${PP_HIST_PAGE_SIZE}&offset=${offset}&days=${ppHistDays}`);
+      const data = await res.json();
+      if (!data.ok) return;
+
+      const trades = data.data || [];
+      ppHistTotal = data.total || 0;
+      const el = document.getElementById("pp-trade-history-list");
+      if (!el) return;
+
+      const filterHtml = ppRenderHistFilter();
+
+      if (!trades.length) {
+        el.innerHTML = filterHtml + '<div class="history-empty">Belum ada trade selesai</div>';
+        return;
+      }
+
+      const outcomeLabel = {
+        SL_HIT: "STOP LOSS", BE_HIT: "BREAKEVEN",
+        TP1_HIT: "TP1 HIT", TP2_HIT: "TP2 HIT", TP3_HIT: "FULL TP",
+      };
+
+      const itemsHtml = trades
+        .filter(t => t.status !== "ACTIVE")
+        .map(t => {
+          const pnl   = Number(t.pnl_usd ?? (Number(t.pnl_pips || 0) * 10));
+          const isBE  = t.outcome === "BE_HIT";
+          const cls   = isBE ? "be" : pnl > 0 ? "win" : "loss";
+          const pnlStr  = money(pnl);
+          const outcome = outcomeLabel[t.outcome] || (t.outcome ? t.outcome.replace("_", " ") : "-");
+          const ts      = new Date(t.outcome_time || t.timestamp)
+                            .toLocaleString("en-US", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+          const dir     = t.direction || "-";
+          const tpBadge = (t.tp_hit || 0) > 0
+            ? `<span class="trade-meta tp-partial">✓ TP${t.tp_hit} partial</span>`
+            : `<span class="trade-meta">TP hit: 0</span>`;
+
+          return `<div class="trade-item ${cls}">
+            <div class="trade-row1">
+              <span class="trade-outcome ${cls}">${dir} ${outcome}</span>
+              <span class="trade-pnl ${pnl > 0 ? "pos" : pnl < 0 ? "neg" : "be"}">${pnlStr}</span>
+            </div>
+            <div class="trade-row2">
+              <span class="trade-meta">Entry: $${Number(t.entry_price || 0).toFixed(2)}</span>
+              ${tpBadge}
+              <span class="trade-meta">${ts}</span>
+            </div>
+          </div>`;
+        }).join("") || '<div class="history-empty">Belum ada trade selesai</div>';
+
+      el.innerHTML = filterHtml + itemsHtml + ppRenderHistPagination();
+    } catch (e) {
+      console.error("Trade history error:", e);
+    }
+  }
+
+  ppLoadTradeHistoryList();
 
   document.getElementById("pp-filter").querySelectorAll(".perf-filter-btn").forEach(btn => {
     btn.addEventListener("click", () => {
