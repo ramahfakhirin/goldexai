@@ -340,23 +340,6 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 .form-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 .form-title{font-family:var(--disp);font-size:20px;font-weight:700;margin-bottom:4px}
 .form-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
-.form-group{margin-bottom:18px}
-.form-label{display:block;font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px}
-.form-input{width:100%;background:var(--bg1);border:1px solid var(--border2);border-radius:7px;padding:12px 14px;color:var(--text);font-family:var(--body);font-size:14px;outline:none;transition:border-color .2s}
-.form-input:focus{border-color:var(--gold)}
-.form-input::placeholder{color:var(--text3)}
-.form-divider{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin:20px 0 16px;text-align:center;position:relative}
-.form-divider::before,.form-divider::after{content:'';position:absolute;top:50%;width:35%;height:1px;background:var(--border)}
-.form-divider::before{left:0}
-.form-divider::after{right:0}
-.payment-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
-.pay-opt{background:var(--bg1);border:1px solid var(--border);border-radius:7px;padding:10px 12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)}
-.pay-opt:hover,.pay-opt.selected{border-color:var(--gold);color:var(--text)}
-.pay-opt.selected{background:rgba(212,168,67,0.06)}
-.pay-opt-icon{font-size:16px}
-.form-submit{width:100%;background:var(--gold);color:#000;font-family:var(--disp);font-weight:700;font-size:16px;padding:15px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
-.form-submit:hover{background:var(--gold-hi);box-shadow:0 8px 32px rgba(212,168,67,0.35)}
-.form-security{text-align:center;font-size:11px;color:var(--text3);margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px}
 .form-price-banner{background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:8px;padding:14px 16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
 .form-price-name{font-family:var(--disp);font-size:14px;font-weight:600}
 .form-price-tag{font-family:var(--disp);font-size:20px;font-weight:700;color:var(--gold)}
@@ -364,7 +347,6 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 
 @media(max-width:480px){
   .float-notif{left:12px;right:12px;max-width:none;min-width:0;bottom:16px;transform:translateX(calc(-100% - 24px))}
-  .payment-opts{grid-template-columns:1fr}
   .form-card{padding:24px 16px}
 }
 
@@ -1110,89 +1092,6 @@ footer{background:var(--bg1);border-top:1px solid var(--border);padding:40px 24p
 
     <div class="payment-form-wrap reveal">
 
-      <!-- Checkout via lynk.id -->
-
-      <!-- WA Form -->
-      <div id="checkout-wa" style="display:none">
-      <div class="form-card">
-
-        <!-- Price banner -->
-        <div class="form-price-banner">
-          <div>
-            <div class="form-price-name" data-i18n="form_price_name">GOLDEX AI — Akses Seumur Hidup</div>
-            <div style="font-size:11px;color:var(--text2);margin-top:2px" data-i18n="form_price_sub">Dashboard + Telegram VIP + Update Selamanya</div>
-          </div>
-          <div style="text-align:right">
-            <div class="form-price-old">Rp1.499.000</div>
-            <div class="form-price-tag">Rp299.000</div>
-          </div>
-        </div>
-
-        <div class="form-title" data-i18n="form_title">Lengkapi Informasi Kamu</div>
-        <div class="form-sub" data-i18n="form_sub">Semua kolom wajib diisi. Akses akan dikirim ke WhatsApp & email kamu.</div>
-
-        <!-- Form -->
-        <div class="form-group">
-          <label class="form-label" data-i18n="form_name">Nama Lengkap *</label>
-          <input class="form-input" type="text" placeholder="Masukkan nama lengkap kamu" id="f-nama" data-i18n="form_name_ph" data-i18n-attr="placeholder">
-        </div>
-        <div class="form-group">
-          <label class="form-label" data-i18n="form_wa">Nomor WhatsApp *</label>
-          <div style="display:flex;gap:8px">
-            <div style="background:var(--bg1);border:1px solid var(--border2);border-radius:7px;padding:12px 14px;display:flex;align-items:center;gap:6px;color:var(--text2);font-size:14px;flex-shrink:0;white-space:nowrap">🇮🇩 +62</div>
-            <input class="form-input" type="tel" placeholder="8123456789" id="f-wa" style="flex:1">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" data-i18n="form_email">Alamat Email *</label>
-          <input class="form-input" type="email" placeholder="email@contoh.com" id="f-email" data-i18n="form_email_ph" data-i18n-attr="placeholder">
-        </div>
-        <div class="form-group">
-          <label class="form-label" data-i18n="form_tg">Username Telegram *</label>
-          <input class="form-input" type="text" placeholder="@username_telegram" id="f-tg">
-        </div>
-
-        <div class="form-divider" data-i18n="form_pay_select">Pilih Metode Pembayaran</div>
-
-        <div class="payment-opts" id="pay-opts">
-          <div class="pay-opt selected" onclick="selectPay(this)">
-            <span class="pay-opt-icon">🏦</span>
-            <span data-i18n="pay_bank2">Transfer Bank</span>
-          </div>
-          <div class="pay-opt" onclick="selectPay(this)">
-            <span class="pay-opt-icon">📱</span>
-            <span>GoPay / OVO</span>
-          </div>
-          <div class="pay-opt" onclick="selectPay(this)">
-            <span class="pay-opt-icon">⊡</span>
-            <span>QRIS</span>
-          </div>
-          <div class="pay-opt" onclick="selectPay(this)">
-            <span class="pay-opt-icon">💳</span>
-            <span data-i18n="pay_va">Virtual Account</span>
-          </div>
-        </div>
-
-        <div style="background:var(--bg1);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.7">
-          <div style="color:var(--text);font-weight:600;margin-bottom:4px" data-i18n="what_you_get">Yang kamu dapatkan:</div>
-          <div data-i18n="get1">✓ Akun dashboard GOLDEX AI</div>
-          <div data-i18n="get2">✓ Link grup Telegram VIP</div>
-          <div data-i18n="get3">✓ Sinyal XAU/USD M1 real-time</div>
-          <div data-i18n="get4">✓ Update sistem seumur hidup</div>
-        </div>
-
-        <button class="form-submit" onclick="submitOrder()" data-i18n="form_submit_btn">
-          🔒 Amankan Akses Seumur Hidup — Rp299.000
-        </button>
-
-        <div class="form-security" data-i18n="form_security">
-          🔒 Informasi kamu aman & tidak akan dibagikan ke pihak ketiga
-        </div>
-
-        <div id="form-msg" style="display:none;margin-top:14px;padding:12px 16px;border-radius:7px;font-size:13px;text-align:center"></div>
-      </div>
-      </div><!-- end #checkout-wa -->
-
       <!-- Direct Payment via lynk.id -->
       <div id="checkout-scalev" style="display:block">
         <div class="form-card" style="text-align:center">
@@ -1336,7 +1235,7 @@ initI18n({
     pricing_btn: "Dapatkan Akses Seumur Hidup — Rp299.000", pricing_slots_text: "dari 50 slot Founding Member tersisa",
     pricing_urgency: "Harga naik ke Rp399.000 setelah <span>50 slot terisi</span>",
     cd_hrs: "JAM", cd_min: "MNT", cd_sec: "DTK",
-    payment_methods_label: "Metode pembayaran:", pay_bank: "Transfer Bank", pay_bank2: "Transfer Bank", pay_va: "Virtual Account",
+    payment_methods_label: "Metode pembayaran:", pay_bank: "Transfer Bank",
     payment_confirm_note: "Setelah pembayaran dikonfirmasi, kamu akan menerima detail akun dashboard dan link Telegram VIP dalam 24 jam.",
     faq_eyebrow: "FAQ", faq_title: "Pertanyaan yang Sering Diajukan",
     faq1_q: "Apakah ini robot trading otomatis yang eksekusi trade langsung?",
@@ -1357,14 +1256,8 @@ initI18n({
     final_eyebrow: "🔒 AMANKAN SLOT KAMU SEKARANG", final_title: "Bayar Sekali.<br>Sinyal Selamanya.",
     final_sub: "Lengkapi informasi di bawah — akses dikonfirmasi dalam <strong style=\"color:var(--text)\">kurang dari 24 jam</strong>",
     form_price_name: "GOLDEX AI — Akses Seumur Hidup", form_price_sub: "Dashboard + Telegram VIP + Update Selamanya",
-    form_title: "Lengkapi Informasi Kamu", form_sub: "Semua kolom wajib diisi. Akses akan dikirim ke WhatsApp & email kamu.",
-    form_name: "Nama Lengkap *", form_name_ph: "Masukkan nama lengkap kamu",
-    form_wa: "Nomor WhatsApp *", form_email: "Alamat Email *", form_email_ph: "email@contoh.com", form_tg: "Username Telegram *",
-    form_pay_select: "Pilih Metode Pembayaran",
     what_you_get: "Yang kamu dapatkan:", get1: "✓ Akun dashboard GOLDEX AI", get2: "✓ Link grup Telegram VIP",
     get3: "✓ Sinyal XAU/USD M1 real-time", get4: "✓ Update sistem seumur hidup",
-    form_submit_btn: "🔒 Amankan Akses Seumur Hidup — Rp299.000", form_submit_btn_raw: "🔒 Amankan Akses Seumur Hidup — Rp299.000",
-    form_security: "🔒 Informasi kamu aman & tidak akan dibagikan ke pihak ketiga",
     direct_pay_title: "Pembayaran Langsung — Checkout Instan", direct_pay_sub: "Klik tombol di bawah untuk checkout aman via lynk.id. Detail akses dikirim ke email & WhatsApp kamu dalam 24 jam.",
     checkout_now_btn: "🔒 Checkout Sekarang — Rp299.000", secure_pay_note: "Pembayaran aman via lynk.id · Transfer Bank · QRIS · E-Wallet · Virtual Account",
     trust1: "✓ Pembayaran aman", trust2: "✓ Setup &lt; 24 jam", trust3: "✓ Akses seumur hidup", trust4: "dari 50 slot tersisa",
@@ -1373,8 +1266,6 @@ initI18n({
     footer_terms: "Syarat & Ketentuan", footer_privacy: "Kebijakan Privasi", footer_contact: "Hubungi Kami",
     footer_disclaimer: "⚠ Trading forex dan gold berisiko tinggi dan mungkin tidak cocok untuk semua investor. Kamu bisa kehilangan sebagian atau seluruh investasimu. GOLDEX AI menyediakan sinyal edukasi — bukan nasihat finansial. Selalu terapkan manajemen risiko yang ketat.",
     sticky_sub: "Founding Member · 37/50 slot tersisa", sticky_btn: "Dapatkan Akses →",
-    err_required: "⚠ Semua kolom wajib diisi sebelum lanjut.", err_email: "⚠ Format email tidak valid.",
-    processing_order: "⏳ Memproses pesanan...", order_received: "✅ Pesanan diterima! Mengalihkan ke WhatsApp untuk konfirmasi pembayaran...",
   },
   en: {
     nav_how: "How it Works", nav_track: "Track Record", nav_pricing: "Pricing", nav_faq: "FAQ", nav_login: "Login", nav_cta: "Get Access →",
@@ -1433,7 +1324,7 @@ initI18n({
     pricing_btn: "Get Lifetime Access — Rp299,000", pricing_slots_text: "of 50 Founding Member slots remaining",
     pricing_urgency: "Price increases to Rp399,000 once <span>50 slots fill up</span>",
     cd_hrs: "HRS", cd_min: "MIN", cd_sec: "SEC",
-    payment_methods_label: "Payment methods:", pay_bank: "Bank Transfer", pay_bank2: "Bank Transfer", pay_va: "Virtual Account",
+    payment_methods_label: "Payment methods:", pay_bank: "Bank Transfer",
     payment_confirm_note: "After payment confirmation, you will receive dashboard account details and the VIP Telegram link within 24 hours.",
     faq_eyebrow: "FAQ", faq_title: "Frequently Asked Questions",
     faq1_q: "Is this an automated trading robot that executes trades directly?",
@@ -1454,14 +1345,8 @@ initI18n({
     final_eyebrow: "🔒 SECURE YOUR SLOT NOW", final_title: "One-Time Payment.<br>Signals Forever.",
     final_sub: "Complete the information below — access confirmed in <strong style=\"color:var(--text)\">under 24 hours</strong>",
     form_price_name: "GOLDEX AI — Lifetime Access", form_price_sub: "Dashboard + VIP Telegram + Lifetime Updates",
-    form_title: "Complete Your Information", form_sub: "All fields required. Access will be sent to your WhatsApp & email.",
-    form_name: "Full Name *", form_name_ph: "Enter your full name",
-    form_wa: "WhatsApp Number *", form_email: "Email Address *", form_email_ph: "email@example.com", form_tg: "Telegram Username *",
-    form_pay_select: "Select Payment Method",
     what_you_get: "What you get:", get1: "✓ GOLDEX AI dashboard account", get2: "✓ VIP Telegram group link",
     get3: "✓ Real-time XAU/USD M1 signals", get4: "✓ Lifetime system updates",
-    form_submit_btn: "🔒 Secure Lifetime Access — Rp299,000", form_submit_btn_raw: "🔒 Secure Lifetime Access — Rp299,000",
-    form_security: "🔒 Your information is secure & will not be shared with third parties",
     direct_pay_title: "Direct Payment — Instant Checkout", direct_pay_sub: "Click the button below for secure checkout via lynk.id. Access details delivered to your email & WhatsApp within 24 hours.",
     checkout_now_btn: "🔒 Checkout Now — Rp299,000", secure_pay_note: "Secure payment via lynk.id · Bank Transfer · QRIS · E-Wallet · Virtual Account",
     trust1: "✓ Secure payment", trust2: "✓ Setup &lt; 24 hrs", trust3: "✓ Lifetime access", trust4: "of 50 slots remaining",
@@ -1470,8 +1355,6 @@ initI18n({
     footer_terms: "Terms & Conditions", footer_privacy: "Privacy Policy", footer_contact: "Contact Us",
     footer_disclaimer: "⚠ Trading forex and gold carries high risk and may not be suitable for all investors. You could lose some or all of your investment. GOLDEX AI provides educational signals — not financial advice. Always practice strict risk management.",
     sticky_sub: "Founding Member · 37/50 slots left", sticky_btn: "Get Access →",
-    err_required: "⚠ All fields are required before proceeding.", err_email: "⚠ Invalid email format.",
-    processing_order: "⏳ Processing order...", order_received: "✅ Order received! Redirecting to WhatsApp for payment confirmation...",
   },
 });
 renderLangToggle("landing-lang-toggle");
@@ -1591,99 +1474,6 @@ document.querySelectorAll('.faq-q[role="button"]').forEach(q => {
     }
   });
 });
-
-// ── Checkout tab switching ──
-function switchCheckout(tab) {
-  const waEl     = document.getElementById('checkout-wa');
-  const scalevEl = document.getElementById('checkout-scalev');
-  const tabWa    = document.getElementById('tab-wa');
-  const tabSc    = document.getElementById('tab-scalev');
-
-  if(tab === 'wa') {
-    waEl.style.display     = 'block';
-    scalevEl.style.display = 'none';
-    tabWa.style.background = 'var(--gold)'; tabWa.style.color = '#000';
-    tabSc.style.background = 'transparent'; tabSc.style.color = 'var(--text2)';
-  } else {
-    waEl.style.display     = 'none';
-    scalevEl.style.display = 'block';
-    tabWa.style.background = 'transparent'; tabWa.style.color = 'var(--text2)';
-    tabSc.style.background = 'var(--gold)'; tabSc.style.color = '#000';
-  }
-}
-
-// ── Payment method selection ──
-function selectPay(el) {
-  document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
-// ── Order form submit ──
-function submitOrder() {
-  const nama  = document.getElementById('f-nama').value.trim();
-  const wa    = document.getElementById('f-wa').value.trim();
-  const email = document.getElementById('f-email').value.trim();
-  const tg    = document.getElementById('f-tg').value.trim();
-  const msg   = document.getElementById('form-msg');
-  const payMethod = document.querySelector('.pay-opt.selected span:last-child')?.textContent || '-';
-
-  if(!nama || !wa || !email || !tg) {
-    msg.style.display = 'block';
-    msg.style.background = 'rgba(224,82,82,0.1)';
-    msg.style.border = '1px solid rgba(224,82,82,0.25)';
-    msg.style.color = '#E05252';
-    msg.textContent = t('err_required');
-    return;
-  }
-  if(!/^[\w.-]+@[\w.-]+\.\w+$/.test(email)) {
-    msg.style.display = 'block';
-    msg.style.background = 'rgba(224,82,82,0.1)';
-    msg.style.border = '1px solid rgba(224,82,82,0.25)';
-    msg.style.color = '#E05252';
-    msg.textContent = t('err_email');
-    return;
-  }
-
-  const btn = document.querySelector('.form-submit');
-  btn.disabled = true;
-  btn.innerHTML = t('processing_order');
-
-  const waNum = '628XXXXXXXXXX';
-  const text  = encodeURIComponent(
-    `🟡 NEW ORDER — GOLDEX AI\n\n` +
-    `Name   : ${nama}\n` +
-    `WA     : +62${wa}\n` +
-    `Email  : ${email}\n` +
-    `Telegram: ${tg}\n` +
-    `Payment: ${payMethod}\n` +
-    `Plan   : Lifetime Rp299,000\n\n` +
-    `Hello, I would like to get Lifetime access to GOLDEX AI. Please confirm payment. Thank you!`
-  );
-
-  setTimeout(() => {
-    btn.disabled = false;
-    btn.innerHTML = t('form_submit_btn_raw');
-    msg.style.display = 'block';
-    msg.style.background = 'rgba(38,193,126,0.1)';
-    msg.style.border = '1px solid rgba(38,193,126,0.25)';
-    msg.style.color = '#26C17E';
-    msg.innerHTML = t('order_received');
-    setTimeout(() => {
-      window.open(`https://wa.me/${waNum}?text=${text}`, '_blank');
-    }, 1500);
-
-    const slotEl = document.getElementById('live-slots');
-    if(slotEl) {
-      const cur = parseInt(slotEl.textContent) || 37;
-      if(cur > 1) slotEl.textContent = cur - 1;
-    }
-    const slotEl2 = document.getElementById('slots-left');
-    if(slotEl2) {
-      const cur2 = parseInt(slotEl2.textContent) || 37;
-      if(cur2 > 1) slotEl2.textContent = cur2 - 1;
-    }
-  }, 1200);
-}
 
 // ── Scroll reveal ──
 const observer = new IntersectionObserver((entries) => {
