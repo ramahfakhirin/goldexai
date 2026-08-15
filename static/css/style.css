@@ -289,6 +289,7 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 10px;
   min-height: 380px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
