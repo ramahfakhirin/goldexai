@@ -1823,73 +1823,14 @@ function renderVisionResult(vision) {
 // SERVER POLLING MODE
 // ═══════════════════════════════════════════════
 
-// ─── START POLLING & WEBSOCKETS ─────────────
-let wsInstance = null;
-
-function connectWebSocket() {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${protocol}//${window.location.host}`;
-  console.log("[WebSocket] Connecting to", wsUrl);
-
-  try {
-    wsInstance = new WebSocket(wsUrl);
-
-    wsInstance.onopen = () => {
-      console.log("[WebSocket] Connected successfully");
-      const statusDot = document.getElementById("ws-status-dot");
-      if (statusDot) {
-        statusDot.style.background = "var(--green)";
-        statusDot.title = "WebSocket Connected (Real-Time)";
-      }
-    };
-
-    wsInstance.onmessage = async (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        console.log("[WebSocket] Message received:", msg);
-        if (msg.type === "LATEST_SIGNAL" && msg.data) {
-          processReceivedSignal(msg.data);
-        } else if (msg.type === "MONITOR_UPDATE") {
-          console.log("[WebSocket] Active trade monitors updated instantly!");
-          await loadActiveMonitors();
-          await loadHistory();
-          await loadPerformance();
-          await loadStats();
-        }
-      } catch (err) {
-        console.error("[WebSocket] Failed to process message data:", err);
-      }
-    };
-
-    wsInstance.onclose = () => {
-      console.log("[WebSocket] Connection lost. Retrying in 5s...");
-      const statusDot = document.getElementById("ws-status-dot");
-      if (statusDot) {
-        statusDot.style.background = "var(--red)";
-        statusDot.title = "WebSocket Disconnected (Polling backup active)";
-      }
-      setTimeout(connectWebSocket, 5000);
-    };
-
-    wsInstance.onerror = (err) => {
-      console.error("[WebSocket] Socket error:", err);
-    };
-  } catch (err) {
-    console.error("[WebSocket] Connection attempt failed:", err);
-  }
-}
-
+// ─── START POLLING ───────────────────────────
 function startServerPolling() {
-  // Live signal polling/WS only matters where the signal card actually
+  // Live signal polling only matters where the signal card actually
   // renders (the dashboard). On pages like /history or /performance that
-  // just reuse this shared script, this used to still connect a WebSocket
-  // and poll every 5s, throwing on the dashboard-only DOM it tried to update.
+  // just reuse this shared script, this used to still poll every 5s,
+  // throwing on the dashboard-only DOM it tried to update.
   if (!document.getElementById("signal-hero")) return;
 
-  // Connect WebSocket first for real-time instant data stream
-  connectWebSocket();
-
-  // Poll every 5s as a foolproof fallback
   pollLatestSignal();
   pollTimer = setInterval(pollLatestSignal, 5000);
   console.log("[Polling] Active — checking every 5s");
