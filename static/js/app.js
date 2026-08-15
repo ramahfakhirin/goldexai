@@ -1228,10 +1228,11 @@ async function loadActiveMonitors() {
         const tp1    = Number(m.tp1 || 0);
         const tp2    = Number(m.tp2 || 0);
         const tp3    = Number(m.tp3 || 0);
+        const mult   = Number(m.martingale_mult) || 1;
         const ts     = new Date(m.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
         const livePnl = currentPrice
-          ? (dir === "BUY" ? currentPrice - entry : entry - currentPrice) * PNL_MULT
+          ? (dir === "BUY" ? currentPrice - entry : entry - currentPrice) * PNL_MULT * mult
           : null;
 
         // Calculate running duration
@@ -1251,6 +1252,9 @@ async function loadActiveMonitors() {
         const tpHit = m.tp_hit || 0;
         const tpBadge = tpHit > 0
           ? `<span class="tp-badge">TP${tpHit} ✓</span>`
+          : "";
+        const martBadge = mult > 1
+          ? `<span class="tp-badge" style="background:rgba(241,196,15,0.15);color:var(--gold,#f1c40f);border-color:rgba(241,196,15,0.35)">🔥 Martingale ${mult}x</span>`
           : "";
 
         return `<div class="monitor-item ${dir}">
@@ -1282,6 +1286,7 @@ async function loadActiveMonitors() {
             </div>
           </div>
           ${tpBadge}
+          ${martBadge}
           <div class="mon-live-price" style="font-size:11px;color:var(--text-dim);margin-top:4px;">
             Live price: <span id="liveprice-${m.id}">${currentPrice ? "$" + currentPrice.toFixed(2) : "..."}</span>
           </div>
@@ -1312,7 +1317,8 @@ async function loadActiveMonitors() {
         monitors.forEach(m => {
           const dir   = m.direction;
           const entry = Number(m.entry_price);
-          const pnl   = (dir === "BUY" ? livePrice - entry : entry - livePrice) * PNL_MULT;
+          const mult  = Number(m.martingale_mult) || 1;
+          const pnl   = (dir === "BUY" ? livePrice - entry : entry - livePrice) * PNL_MULT * mult;
           const pnlEl = document.getElementById("pnl-" + m.id);
           const prEl  = document.getElementById("liveprice-" + m.id);
           if (pnlEl) {
