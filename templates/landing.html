@@ -64,7 +64,13 @@
 }
 
 html{scroll-behavior:smooth}
-body{background:var(--bg0);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.6;overflow-x:hidden}
+body{background:var(--bg0);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.6;overflow-x:hidden;position:relative}
+/* Grain halus di seluruh halaman — tekstur premium dark-UI (Linear/Vercel-style),
+   opacity sangat rendah supaya cuma nambah kedalaman, bukan noise yang mengganggu. */
+body::before{
+  content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
 /* ── TOPNAV ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,10,15,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
@@ -88,7 +94,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,10,15,0.92
 
 /* ── HERO ── */
 .hero{min-height:calc(100vh - 88px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 24px 40px;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(212,168,67,0.08) 0%,transparent 70%);pointer-events:none}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(212,168,67,0.1) 0%,transparent 70%);pointer-events:none}
+/* Glow kedua, offset & warna beda (hijau "live market" desaturasi) — hindari
+   kesan satu warna datar, nambah kedalaman ambient tanpa berisik. */
+.hero::after{content:'';position:absolute;top:-15%;right:-15%;width:55%;height:70%;background:radial-gradient(circle,rgba(38,193,126,0.07) 0%,transparent 65%);filter:blur(50px);pointer-events:none}
 
 .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.25);border-radius:20px;padding:6px 16px;font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:0.08em;margin-bottom:24px}
 .hero-eyebrow-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
@@ -111,7 +120,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,10,15,0.92
 .btn-secondary:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ── LIVE TERMINAL WIDGET ── */
-.terminal-widget{background:var(--bg1);border:1px solid var(--border2);border-radius:12px;padding:20px;max-width:600px;margin:48px auto 0;text-align:left;position:relative}
+.terminal-widget{
+  background:var(--bg1);border:1px solid var(--border2);border-radius:12px;padding:20px;
+  max-width:600px;margin:48px auto 0;text-align:left;position:relative;
+  /* Shadow berlapis: drop shadow lembut buat kesan "melayang" + glow gold
+     tipis di tepi + highlight tipis di bagian atas (kesan edge kaca). */
+  box-shadow:0 30px 70px -25px rgba(0,0,0,.6),0 0 0 1px rgba(212,168,67,.06),inset 0 1px 0 rgba(255,255,255,.04);
+}
 .terminal-widget::before{content:'';position:absolute;inset:-1px;border-radius:12px;background:linear-gradient(135deg,rgba(212,168,67,0.2),transparent 40%);pointer-events:none;z-index:-1}
 .tw-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
 .tw-pair{font-family:var(--disp);font-weight:700;font-size:15px}
