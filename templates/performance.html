@@ -46,6 +46,13 @@
   }
   .perf-page-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
+  /* .card-trade-history di style.css punya max-height:280px + inner scroll,
+     dibuat buat widget sidebar dashboard yang sempit. Di halaman ini kartu
+     boleh sepanjang kontennya — pindah dari inner-scroll ke paginasi
+     (sudah ada, 10 trade/halaman) supaya tidak ada scrollbar di dalam scrollbar. */
+  #pp-trade-history-card { max-height: none; overflow: visible; }
+  #pp-trade-history-card .history-list { overflow-y: visible; flex: none; }
+
   /* ── Page header ── */
   .pp-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
   .pp-title { font-family: var(--sans); font-size: 18px; font-weight: 800; }
@@ -307,7 +314,7 @@
       <div class="pp-insight-card" id="pp-insight">Memuat insight...</div>
     </div>
 
-    <div class="card card-trade-history" style="margin-top:12px">
+    <div class="card card-trade-history" id="pp-trade-history-card" style="margin-top:12px">
       <div class="card-label-row">
         <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>HASIL TRADE</span></span>
         <button class="btn-clear" onclick="ppLoadTradeHistoryList()">Refresh</button>
