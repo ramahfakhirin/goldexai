@@ -2045,7 +2045,60 @@ function switchMfxTab(name, btn) {
   const panel = document.getElementById("mfx-" + name);
   if (panel) panel.style.display = "block";
   if (btn)   btn.classList.add("active");
+
+  // Widget TradingView (kalender/berita) baru dimuat pas tab-nya BENERAN
+  // dibuka, bukan langsung saat halaman dashboard dibuka — dua-duanya
+  // duduk di tab "Kalender Ekonomi" yang defaultnya tersembunyi, jadi
+  // tidak ada gunanya ikut nge-load network request di initial page load.
+  if (name === "calendar") loadCalendarWidget();
+  if (name === "news")     loadNewsWidget();
 }
+
+let _calendarWidgetLoaded = false;
+function loadCalendarWidget() {
+  if (_calendarWidgetLoaded) return;
+  _calendarWidgetLoaded = true;
+  const container = document.getElementById("mfx-calendar-widget");
+  if (!container) return;
+  const script = document.createElement("script");
+  script.type = "text/javascript";
+  script.src  = "https://s3.tradingview.com/external-embedding/embed-widget-events.js";
+  script.async = true;
+  script.text = JSON.stringify({
+    colorTheme: "dark", isTransparent: true, width: "100%", height: "465",
+    locale: "en", importanceFilter: "-1,0,1", countryFilter: "us",
+  });
+  container.appendChild(script);
+}
+
+let _newsWidgetLoaded = false;
+function loadNewsWidget() {
+  if (_newsWidgetLoaded) return;
+  _newsWidgetLoaded = true;
+  const iframe = document.getElementById("mfx-news-iframe");
+  if (iframe && iframe.dataset.src) iframe.src = iframe.dataset.src;
+}
+
+// ── Iframe TradingView di tab yang aktif secara default (mis. chart live
+// di dashboard) — ditunda sampai benar-benar mendekati viewport, bukan
+// langsung fetch semua widget berat begitu halaman dibuka. ──
+document.addEventListener("DOMContentLoaded", () => {
+  const lazyIframes = document.querySelectorAll("iframe.lazy-iframe[data-src]");
+  if (!lazyIframes.length) return;
+  if (!("IntersectionObserver" in window)) {
+    lazyIframes.forEach(el => { el.src = el.dataset.src; });
+    return;
+  }
+  const io = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.src = entry.target.dataset.src;
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: "200px" });
+  lazyIframes.forEach(el => io.observe(el));
+});
 
 // ═══════════════════════════════════════════════
 // NEWS & SENTIMENT
