@@ -119,6 +119,14 @@ html, body {
   color: var(--text-dim);
   margin-bottom: 12px;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.card-label .ci {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
 }
 .card-label-row {
   display: flex;

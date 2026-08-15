@@ -175,7 +175,7 @@
     <!-- Trade History -->
     <section class="card card-trade-history">
       <div class="card-label-row">
-        <span class="card-label" data-i18n="trade_outcomes">📋 HASIL TRADE</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span data-i18n="trade_outcomes">HASIL TRADE</span></span>
         <button class="btn-clear" onclick="loadTradeHistory()" data-i18n="refresh">Refresh</button>
       </div>
       <div class="history-list" id="trade-history-list">
@@ -341,7 +341,7 @@
             <ul class="cf-list" id="cf-list"></ul>
           </div>
           <div class="cf-col">
-            <div class="card-label red-label" data-i18n="warning">⚠ PERINGATAN</div>
+            <div class="card-label red-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span data-i18n="warning">PERINGATAN</span></div>
             <ul class="cf-list warn" id="warn-list"></ul>
           </div>
         </div>
@@ -369,7 +369,7 @@
          script loader embed-widget-*.js) supaya konsisten dengan pola
          widget Berita yang sudah terbukti tampil di production. -->
     <div class="card" id="live-chart-card" style="margin-bottom:12px">
-      <div class="card-label" data-i18n="live_chart">📈 CHART LIVE XAU/USD</div>
+      <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span data-i18n="live_chart">CHART LIVE XAU/USD</span></div>
       <div class="tradingview-widget-container" style="height:400px;width:100%">
         <iframe
           scrolling="no"
@@ -450,7 +450,7 @@
       <!-- Sentiment Overview -->
       <div class="card card-sentiment" id="sentiment-card">
         <div class="card-label-row">
-          <span class="card-label" data-i18n="gold_market_sentiment">🌐 SENTIMEN PASAR GOLD</span>
+          <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span data-i18n="gold_market_sentiment">SENTIMEN PASAR GOLD</span></span>
           <div style="display:flex;gap:6px;align-items:center">
             <span style="font-size:9px;color:var(--text-dim)" id="news-source-label">MarketWatch RSS</span>
             <button class="btn-clear" onclick="loadNewsSentiment(true)" id="btn-refresh-news" data-i18n="refresh">↻ Refresh</button>
@@ -477,13 +477,13 @@
 
       <!-- Key Factors -->
       <div class="card card-factors" id="factors-card" style="display:none">
-        <div class="card-label" data-i18n="key_factors">⚡ FAKTOR KUNCI</div>
+        <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span data-i18n="key_factors">FAKTOR KUNCI</span></div>
         <div class="factors-list" id="factors-list"></div>
       </div>
 
       <!-- Headlines -->
       <div class="card card-headlines" id="headlines-card" style="display:none">
-        <div class="card-label" data-i18n="latest_headlines">📰 HEADLINE TERBARU (48 Jam)</div>
+        <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h13a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4z"/><path d="M19 8h2v10a1 1 0 0 1-1 1h-2"/><line x1="8" y1="8" x2="14" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span data-i18n="latest_headlines">HEADLINE TERBARU (48 Jam)</span></div>
         <div class="headlines-list" id="headlines-list"></div>
       </div>
 
@@ -497,7 +497,7 @@
     <!-- ═══ LOT & RISK CALCULATOR (desktop only) ═══ -->
     <section class="card card-calc-v2">
       <div class="card-label-row">
-        <span class="card-label">🧮 KALKULATOR LOT &amp; RISIKO</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8.01" y2="10"/><line x1="12" y1="10" x2="12.01" y2="10"/><line x1="16" y1="10" x2="16.01" y2="10"/><line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/><line x1="16" y1="14" x2="16.01" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>KALKULATOR LOT &amp; RISIKO</span>
         <button class="btn-clear" onclick="gxUseActiveSignal()" title="Isi dari sinyal aktif">↻ Sinyal Aktif</button>
       </div>
       <div class="calc-grid-v2">
@@ -536,7 +536,7 @@
     <!-- ═══ SESSION SCHEDULE (superadmin only) ═══ -->
     <section class="card card-session-sched" id="session-sched-panel">
       <div class="card-label-row">
-        <div class="card-label" data-i18n="session_schedule">⏱ JADWAL SESI</div>
+        <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="session_schedule">JADWAL SESI</span></div>
         <span class="sched-curr-badge" id="sched-curr-badge">--</span>
       </div>
       <div class="sched-map-v2">
@@ -611,7 +611,7 @@
     <!-- ═══ SESSION STATUS (user read-only) ═══ -->
     <section class="card card-session-sched" id="session-status-panel">
       <div class="card-label-row">
-        <div class="card-label" data-i18n="session_status">⏱ STATUS SESI</div>
+        <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="session_status">STATUS SESI</span></div>
         <span class="sched-curr-badge" id="user-sess-badge">--</span>
       </div>
       <div class="sched-map-v2">
@@ -674,7 +674,7 @@
     <!-- Performance Stats -->
     <section class="card card-perf" id="perf-card">
       <div class="card-label-row">
-        <span class="card-label" data-i18n="trade_performance">📊 PERFORMA TRADE</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg><span data-i18n="trade_performance">PERFORMA TRADE</span></span>
         <div style="display:flex;align-items:center;gap:6px">
           <button onclick="resetPerformance()" title="Reset performance data"
             style="background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text-dim);font-size:9px;padding:2px 8px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all .2s"
@@ -736,7 +736,7 @@
     <!-- Analytics Diagnosis -->
     <section class="card card-analytics">
       <div class="card-label-row">
-        <span class="card-label" data-i18n="analytics">🔬 ANALYTICS</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span data-i18n="analytics">ANALYTICS</span></span>
         <span class="analytics-period" id="analytics-period" data-i18n="days_7">7 DAYS</span>
       </div>
       <div class="analytics-body" id="analytics-body">
@@ -747,7 +747,7 @@
     <!-- Active Monitors -->
     <section class="card card-monitors">
       <div class="card-label-row">
-        <span class="card-label" data-i18n="live_monitors">🔴 MONITOR LIVE</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="#e05252" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span data-i18n="live_monitors">MONITOR LIVE</span></span>
         <span class="monitor-count" id="monitor-count"><span data-i18n="active_count">0 aktif</span></span>
       </div>
       <div class="monitor-list" id="monitor-list">
@@ -792,7 +792,7 @@
     <!-- Session Schedule (superadmin mobile) -->
     <section class="card mobile-card card-session-sched" id="m-session-sched-panel">
       <div class="card-label-row">
-        <div class="card-label" data-i18n="session_schedule">⏱ JADWAL SESI</div>
+        <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="session_schedule">JADWAL SESI</span></div>
         <span class="sched-curr-badge" id="m-sched-curr-badge">--</span>
       </div>
       <div class="sched-list">
@@ -819,7 +819,7 @@
     <!-- Session Status (user mobile read-only) -->
     <section class="card mobile-card card-session-sched" id="m-session-status-panel">
       <div class="card-label-row">
-        <div class="card-label" data-i18n="session_status">⏱ STATUS SESI</div>
+        <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="session_status">STATUS SESI</span></div>
         <span class="sched-curr-badge" id="m-user-sess-badge">--</span>
       </div>
       <div class="sched-list">
@@ -846,7 +846,7 @@
 
     <!-- Trade Performance -->
     <section class="card mobile-card">
-      <div class="card-label" data-i18n="trade_performance">📊 PERFORMA TRADE</div>
+      <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg><span data-i18n="trade_performance">PERFORMA TRADE</span></div>
       <div class="perf-grid">
         <div class="perf-item"><div class="perf-val" id="m-perf-total">0</div><div class="perf-lbl" data-i18n="total">Total</div></div>
         <div class="perf-item win"><div class="perf-val" id="m-perf-wins">0</div><div class="perf-lbl" data-i18n="win">Win</div></div>
@@ -864,7 +864,7 @@
     <!-- Live Monitors -->
     <section class="card mobile-card">
       <div class="card-label-row">
-        <span class="card-label" data-i18n="live_monitors">🔴 MONITOR LIVE</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="#e05252" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span data-i18n="live_monitors">MONITOR LIVE</span></span>
         <span class="monitor-count" id="m-monitor-count"><span data-i18n="active_count">0 aktif</span></span>
       </div>
       <div class="monitor-list" id="m-monitor-list">
@@ -875,7 +875,7 @@
     <!-- Analytics (mobile) -->
     <section class="card mobile-card">
       <div class="card-label-row">
-        <span class="card-label" data-i18n="analytics">🔬 ANALYTICS</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span data-i18n="analytics">ANALYTICS</span></span>
         <span class="analytics-period" data-i18n="days_7">7 DAYS</span>
       </div>
       <div class="analytics-body" id="m-analytics-body">
@@ -886,7 +886,7 @@
     <!-- Trade Outcomes -->
     <section class="card mobile-card">
       <div class="card-label-row">
-        <span class="card-label" data-i18n="trade_outcomes">📋 HASIL TRADE</span>
+        <span class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span data-i18n="trade_outcomes">HASIL TRADE</span></span>
         <button class="btn-clear" onclick="loadTradeHistory()" data-i18n="refresh">Refresh</button>
       </div>
       <div class="history-list" id="m-trade-history-list">
@@ -902,7 +902,7 @@
     <div class="settings-drawer-backdrop" id="settings-drawer-backdrop" onclick="gxCloseDrawer()"></div>
     <div class="settings-drawer" id="settings-drawer">
       <div class="settings-drawer-head">
-        <h3>⚙️ Pengaturan &amp; Detail Teknikal</h3>
+        <h3 style="display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Pengaturan &amp; Detail Teknikal</h3>
         <button class="settings-drawer-close" onclick="gxCloseDrawer()">✕</button>
       </div>
       <div class="settings-drawer-body">
@@ -956,7 +956,7 @@
 
     <!-- Telegram & Signal Dispatch Control Panel -->
     <section class="card card-telegram" style="display:block">
-      <div class="card-label" data-i18n="tg_control_title">📡 KONTROL TELEGRAM & SINYAL MANUAL</div>
+      <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span data-i18n="tg_control_title">KONTROL TELEGRAM & SINYAL MANUAL</span></div>
 
       <!-- Quick Action Buttons -->
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
@@ -1064,7 +1064,7 @@
         <span class="ind-badge" id="ind-ha-badge"></span>
       </div>
       <div class="ind-divider"></div>
-      <div class="card-label" style="margin-top:4px;color:#e05252" data-i18n="sl_guide">⚠ PANDUAN SL (berbasis ATR)</div>
+      <div class="card-label" style="margin-top:4px;color:#e05252"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span data-i18n="sl_guide">PANDUAN SL (berbasis ATR)</span></div>
       <div class="ind-row">
         <span class="ind-name" data-i18n="sl_min">SL Min (1.5x)</span>
         <span class="ind-val red" id="atr-sl-min">-</span>
@@ -1162,7 +1162,7 @@ initI18n({
     loading_price: "● Memuat harga live...",
     server_scheduler: "SERVER SCHEDULER", connecting: "Menghubungkan...",
     timeframe: "Timeframe", interval: "Interval", minutes_5: "5 menit",
-    tg_control_title: "📡 KONTROL TELEGRAM & SINYAL MANUAL",
+    tg_control_title: "KONTROL TELEGRAM & SINYAL MANUAL",
     btn_run_scan: "⚡ Jalankan Scan & Kirim", btn_send_tg: "📢 Kirim Sinyal ke TG",
     btn_manual_signal: "✏️ Buat & Kirim Sinyal Manual",
     bot_token: "Bot Token", chat_id: "Chat ID",
@@ -1170,10 +1170,10 @@ initI18n({
     auto_notify: "Auto-notifikasi Telegram untuk:",
     signal_stats: "STATISTIK SINYAL", total: "Total", avg_confidence: "Rata-rata Confidence",
     risk_mode: "MODE RISIKO",
-    session_schedule: "⏱ JADWAL SESI", session_status: "⏱ STATUS SESI",
+    session_schedule: "JADWAL SESI", session_status: "STATUS SESI",
     loading_schedule: "Memuat jadwal...", loading_session_status: "Memuat status sesi...",
     tech_indicators: "INDIKATOR TEKNIKAL",
-    sl_guide: "⚠ PANDUAN SL (berbasis ATR)", sl_min: "SL Min (1.5x)", sl_optimal: "SL Optimal (2x)",
+    sl_guide: "PANDUAN SL (berbasis ATR)", sl_min: "SL Min (1.5x)", sl_optimal: "SL Optimal (2x)",
     min_rr: "Min RR", sl_too_narrow: "⚠ SL terlalu sempit!",
     smc_structure: "STRUKTUR SMC", swing_high: "Swing High", swing_low: "Swing Low",
     tab_signal_full: "📊 Sinyal & Analisis", tab_signal_short: "📊 Sinyal",
@@ -1184,22 +1184,22 @@ initI18n({
     loading_latest_signal: "Memuat sinyal terbaru...", connecting_server: "Menghubungkan ke server",
     saved_record: "📋 Data tersimpan", current_price: "HARGA SAAT INI", confidence: "CONFIDENCE",
     entry_zone: "ENTRY ZONE", stop_loss: "STOP LOSS", risk_reward: "RISK / REWARD",
-    ai_analysis: "ANALISIS AI", confluence: "✓ CONFLUENCE", warning: "⚠ PERINGATAN",
+    ai_analysis: "ANALISIS AI", confluence: "✓ CONFLUENCE", warning: "PERINGATAN",
     best_window: "Waktu Terbaik", avoid: "Hindari", next_review: "Review Berikutnya",
-    confidence_history: "RIWAYAT CONFIDENCE", live_chart: "📈 CHART LIVE XAU/USD",
+    confidence_history: "RIWAYAT CONFIDENCE", live_chart: "CHART LIVE XAU/USD",
     econ_calendar: "📅 Kalender Ekonomi", market_news: "📰 Berita Market",
     impact: "IMPACT:", high: "TINGGI", medium: "SEDANG", low: "RENDAH",
-    gold_market_sentiment: "🌐 SENTIMEN PASAR GOLD", refresh: "↻ Refresh",
+    gold_market_sentiment: "SENTIMEN PASAR GOLD", refresh: "↻ Refresh",
     loading_sentiment: "Memuat analisis sentimen...", sentiment_score: "SKOR SENTIMEN",
-    key_factors: "⚡ FAKTOR KUNCI", latest_headlines: "📰 HEADLINE TERBARU (48 Jam)",
+    key_factors: "FAKTOR KUNCI", latest_headlines: "HEADLINE TERBARU (48 Jam)",
     econ_calendar_week: "📅 KALENDER EKONOMI (Minggu Ini)", loading_calendar: "Memuat kalender...",
     recent_signals: "📡 SINYAL TERBARU",
-    trade_performance: "📊 PERFORMA TRADE", days_7: "7 HARI", reset: "↺ Reset",
+    trade_performance: "PERFORMA TRADE", days_7: "7 HARI", reset: "↺ Reset",
     win: "Win", loss: "Loss", neutral: "Netral", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
     best: "Best", worst: "Worst", profit_factor: "Profit Factor",
-    analytics: "🔬 ANALYTICS", no_trade_data: "Belum ada data trade",
-    live_monitors: "🔴 MONITOR LIVE", active_count: "0 aktif", no_monitored_positions: "Belum ada posisi dipantau",
-    trade_outcomes: "📋 HASIL TRADE", no_completed_trades: "Belum ada trade selesai",
+    analytics: "ANALYTICS", no_trade_data: "Belum ada data trade",
+    live_monitors: "MONITOR LIVE", active_count: "0 aktif", no_monitored_positions: "Belum ada posisi dipantau",
+    trade_outcomes: "HASIL TRADE", no_completed_trades: "Belum ada trade selesai",
     signal_history: "RIWAYAT SINYAL", clear: "Hapus", no_saved_signals: "Belum ada sinyal tersimpan",
     lstep1: "📡 Mengambil data XAU/USD...", lstep2: "📊 Menghitung indikator teknikal...",
     lstep3: "🔍 Mendeteksi struktur SMC...", lstep4: "🤖 Memproses dengan Gemini AI...",
@@ -1210,7 +1210,7 @@ initI18n({
     loading_price: "● Loading live price...",
     server_scheduler: "SERVER SCHEDULER", connecting: "Connecting...",
     timeframe: "Timeframe", interval: "Interval", minutes_5: "5 minutes",
-    tg_control_title: "📡 TELEGRAM & MANUAL SIGNAL CONTROL",
+    tg_control_title: "TELEGRAM & MANUAL SIGNAL CONTROL",
     btn_run_scan: "⚡ Run Scan & Send", btn_send_tg: "📢 Send Signal to TG",
     btn_manual_signal: "✏️ Create & Dispatch Manual Signal",
     bot_token: "Bot Token", chat_id: "Chat ID",
@@ -1218,10 +1218,10 @@ initI18n({
     auto_notify: "Auto-notify Telegram for:",
     signal_stats: "SIGNAL STATS", total: "Total", avg_confidence: "Avg Confidence",
     risk_mode: "RISK MODE",
-    session_schedule: "⏱ SESSION SCHEDULE", session_status: "⏱ SESSION STATUS",
+    session_schedule: "SESSION SCHEDULE", session_status: "SESSION STATUS",
     loading_schedule: "Loading schedule...", loading_session_status: "Loading session status...",
     tech_indicators: "TECHNICAL INDICATORS",
-    sl_guide: "⚠ SL GUIDE (ATR-based)", sl_min: "SL Min (1.5x)", sl_optimal: "SL Optimal (2x)",
+    sl_guide: "SL GUIDE (ATR-based)", sl_min: "SL Min (1.5x)", sl_optimal: "SL Optimal (2x)",
     min_rr: "Min RR", sl_too_narrow: "⚠ SL too narrow!",
     smc_structure: "SMC STRUCTURE", swing_high: "Swing High", swing_low: "Swing Low",
     tab_signal_full: "📊 Signal & Analysis", tab_signal_short: "📊 Signal",
@@ -1232,22 +1232,22 @@ initI18n({
     loading_latest_signal: "Loading latest signal...", connecting_server: "Connecting to server",
     saved_record: "📋 Saved record", current_price: "CURRENT PRICE", confidence: "CONFIDENCE",
     entry_zone: "ENTRY ZONE", stop_loss: "STOP LOSS", risk_reward: "RISK / REWARD",
-    ai_analysis: "AI ANALYSIS", confluence: "✓ CONFLUENCE", warning: "⚠ WARNING",
+    ai_analysis: "AI ANALYSIS", confluence: "✓ CONFLUENCE", warning: "WARNING",
     best_window: "Best Window", avoid: "Avoid", next_review: "Next Review",
-    confidence_history: "CONFIDENCE HISTORY", live_chart: "📈 LIVE XAU/USD CHART",
+    confidence_history: "CONFIDENCE HISTORY", live_chart: "LIVE XAU/USD CHART",
     econ_calendar: "📅 Economic Calendar", market_news: "📰 Market News",
     impact: "IMPACT:", high: "HIGH", medium: "MEDIUM", low: "LOW",
-    gold_market_sentiment: "🌐 GOLD MARKET SENTIMENT", refresh: "↻ Refresh",
+    gold_market_sentiment: "GOLD MARKET SENTIMENT", refresh: "↻ Refresh",
     loading_sentiment: "Loading sentiment analysis...", sentiment_score: "SENTIMENT SCORE",
-    key_factors: "⚡ KEY FACTORS", latest_headlines: "📰 LATEST HEADLINES (48 Hours)",
+    key_factors: "KEY FACTORS", latest_headlines: "LATEST HEADLINES (48 Hours)",
     econ_calendar_week: "📅 ECONOMIC CALENDAR (This Week)", loading_calendar: "Loading calendar...",
     recent_signals: "📡 RECENT SIGNALS",
-    trade_performance: "📊 TRADE PERFORMANCE", days_7: "7 DAYS", reset: "↺ Reset",
+    trade_performance: "TRADE PERFORMANCE", days_7: "7 DAYS", reset: "↺ Reset",
     win: "Win", loss: "Loss", neutral: "Neutral", win_rate: "Win Rate", total_pnl: "Total PnL", avg_trade: "Avg/Trade",
     best: "Best", worst: "Worst", profit_factor: "Profit Factor",
-    analytics: "🔬 ANALYTICS", no_trade_data: "No trade data yet",
-    live_monitors: "🔴 LIVE MONITORS", active_count: "0 active", no_monitored_positions: "No monitored positions",
-    trade_outcomes: "📋 TRADE OUTCOMES", no_completed_trades: "No completed trades yet",
+    analytics: "ANALYTICS", no_trade_data: "No trade data yet",
+    live_monitors: "LIVE MONITORS", active_count: "0 active", no_monitored_positions: "No monitored positions",
+    trade_outcomes: "TRADE OUTCOMES", no_completed_trades: "No completed trades yet",
     signal_history: "SIGNAL HISTORY", clear: "Clear", no_saved_signals: "No saved signals yet",
     lstep1: "📡 Fetching XAU/USD data...", lstep2: "📊 Calculating technical indicators...",
     lstep3: "🔍 Detecting SMC structure...", lstep4: "🤖 Processing with Gemini AI...",
