@@ -1573,10 +1573,17 @@ async function loadPerformance() {
     // Sync lot multiplier from backend
     if (p.pnl_mult) PNL_MULT = Number(p.pnl_mult);
     if (p.lot_size) PNL_LOT  = Number(p.lot_size);
+    // "(0.10 lot)" cuma akurat kalau semua trade di periode ini basis 1x —
+    // total PnL sendiri sudah benar (backend jumlahkan per-trade martingale
+    // mult), tapi label statis ini menyesatkan begitu ada trade Martingale
+    // yang lot efektifnya lebih besar dari basis.
+    const lotNote = p.has_martingale
+      ? `(basis ${PNL_LOT.toFixed(2)} lot + Martingale)`
+      : `(${PNL_LOT.toFixed(2)} lot)`;
     const lotLbl = document.getElementById("perf-lot-note");
-    if (lotLbl) lotLbl.textContent = `(${PNL_LOT.toFixed(2)} lot)`;
+    if (lotLbl) lotLbl.textContent = lotNote;
     document.querySelectorAll(".m-lot-note").forEach(el => {
-      el.textContent = `(${PNL_LOT.toFixed(2)} lot)`;
+      el.textContent = lotNote;
     });
 
     const totalPnl = p.total_pnl ?? p.total_pips ?? 0;

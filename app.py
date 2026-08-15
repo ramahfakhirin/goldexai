@@ -649,6 +649,7 @@ def get_performance_stats(days: int = 7) -> dict:
             "gross_profit": 0, "gross_loss": 0, "profit_factor": 0,
             "be_count": 0, "sl_count": 0,
             "lot_size": DISPLAY_LOT_SIZE, "pnl_mult": PNL_MULT,
+            "has_martingale": False,
             "period_days": days,
         }
 
@@ -686,6 +687,13 @@ def get_performance_stats(days: int = 7) -> dict:
     be_count = sum(1 for t in closed if (t.get("outcome") or "") == "BE_HIT")
     sl_count = sum(1 for t in closed if (t.get("outcome") or "") == "SL_HIT")
 
+    # "(0.10 lot)" di UI cuma benar kalau SEMUA trade di periode ini basis
+    # 1x — begitu ada yang kena Martingale, PnL total sudah menjumlahkan
+    # lot efektif yang lebih besar dari label statis itu (lihat get_pnl()
+    # di atas, sudah pakai martingale_mult per trade). Frontend perlu tahu
+    # supaya labelnya tidak menyesatkan.
+    has_martingale = any((t.get("martingale_mult") or 1) > 1 for t in closed)
+
     decisive = wins + losses
     return {
         "total":      total,
@@ -709,6 +717,7 @@ def get_performance_stats(days: int = 7) -> dict:
         "sl_count":      sl_count,
         "lot_size":      DISPLAY_LOT_SIZE,
         "pnl_mult":      PNL_MULT,
+        "has_martingale": has_martingale,
         "period_days": days,
     }
 
