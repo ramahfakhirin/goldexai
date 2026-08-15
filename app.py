@@ -2789,6 +2789,14 @@ def fetch_gold_news_sentiment() -> dict:
         "selloff", "pressure", "hawkish", "outflow", "retreat", "slump",
     ]
 
+    # Match kata utuh (word-boundary), bukan substring naif — "fed" dengan
+    # `in` biasa cocok di dalam "federal court", "confederate", dll. dan
+    # meloloskan berita yang sama sekali tidak relevan ke skor sentimen gold.
+    def _kw_hits(keywords, text):
+        # "s?" opsional supaya bentuk jamak (rate -> rates, yield -> yields)
+        # tetap cocok tanpa membuka celah substring-di-tengah-kata lagi.
+        return [kw for kw in keywords if re.search(r"\b" + re.escape(kw) + r"s?\b", text)]
+
     headlines = []
     errors    = []
     now_utc   = datetime.now(timezone.utc)
@@ -2816,7 +2824,7 @@ def fetch_gold_news_sentiment() -> dict:
                     continue
 
                 title_lower = title.lower()
-                if not any(kw in title_lower for kw in GOLD_KEYWORDS):
+                if not _kw_hits(GOLD_KEYWORDS, title_lower):
                     count_skipped_kw += 1
                     continue
 
@@ -2843,8 +2851,8 @@ def fetch_gold_news_sentiment() -> dict:
                 pub_wib  = pub_dt.astimezone(WIB)
                 time_str = pub_wib.strftime("%d/%m %H:%M WIB")
 
-                score = (sum(1 for w in BULL_WORDS if w in title_lower)
-                         - sum(1 for w in BEAR_WORDS if w in title_lower))
+                score = (len(_kw_hits(BULL_WORDS, title_lower))
+                         - len(_kw_hits(BEAR_WORDS, title_lower)))
                 sentiment = "BULLISH" if score > 0 else "BEARISH" if score < 0 else "NEUTRAL"
 
                 headlines.append({
