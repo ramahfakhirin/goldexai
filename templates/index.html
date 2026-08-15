@@ -92,6 +92,7 @@
         {% if session.get('role') == 'superadmin' %}
         <a href="/admin/users" data-i18n="nav_admin">👥 Admin</a>
         {% endif %}
+        <a onclick="gxOpenDrawer()" role="button" tabindex="0" data-i18n="nav_settings">⚙️ Pengaturan</a>
         <a href="/logout" data-i18n="nav_logout">⏻ Keluar</a>
       </div>
     </div>
@@ -136,10 +137,6 @@
       <a onclick="gxNav('sentiment')" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         Skor Sentimen
-      </a>
-      <a onclick="gxOpenDrawer()" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Pengaturan
       </a>
     </nav>
 
@@ -1122,10 +1119,6 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
     <span>Sentimen</span>
   </a>
-  <a onclick="gxOpenDrawer()" role="button" tabindex="0">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    <span>Pengaturan</span>
-  </a>
 </nav>
 
 <!-- ── TOAST ── -->
@@ -1148,7 +1141,7 @@
 <script>
 initI18n({
   id: {
-    nav_admin: "👥 Admin", nav_logout: "⏻ Keluar",
+    nav_admin: "👥 Admin", nav_settings: "⚙️ Pengaturan", nav_logout: "⏻ Keluar",
     gold_spot: "M1 · Gold Spot", live_scanning: "MEMINDAI LIVE",
     loading_price: "● Memuat harga live...",
     server_scheduler: "SERVER SCHEDULER", connecting: "Menghubungkan...",
@@ -1196,7 +1189,7 @@ initI18n({
     lstep3: "🔍 Mendeteksi struktur SMC...", lstep4: "🤖 Memproses dengan Gemini AI...",
   },
   en: {
-    nav_admin: "👥 Admin", nav_logout: "⏻ Logout",
+    nav_admin: "👥 Admin", nav_settings: "⚙️ Settings", nav_logout: "⏻ Logout",
     gold_spot: "M1 · Gold Spot", live_scanning: "LIVE SCANNING",
     loading_price: "● Loading live price...",
     server_scheduler: "SERVER SCHEDULER", connecting: "Connecting...",
@@ -1255,7 +1248,7 @@ renderLangToggle("dash-lang-toggle");
   // fokusable/keyboard-activatable. role="button"+tabindex di HTML bikin
   // dia kelihatan di tab order, ini yang bikin Enter/Space benar-benar
   // memicu klik-nya (perilaku native <button>, tidak otomatis di <a>).
-  document.querySelectorAll('.side-nav-v2 a[role="button"], .bottom-nav-v2 a[role="button"]').forEach(a => {
+  document.querySelectorAll('.side-nav-v2 a[role="button"], .bottom-nav-v2 a[role="button"], .tb-user-menu a[role="button"]').forEach(a => {
     a.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
