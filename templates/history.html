@@ -139,7 +139,9 @@
     <section class="card card-history">
       <div class="card-label-row">
         <span class="card-label" data-i18n="signal_history">RIWAYAT SINYAL</span>
+        {% if session.get('role') == 'superadmin' %}
         <button class="btn-clear" onclick="clearHistory()" data-i18n="clear">Hapus</button>
+        {% endif %}
       </div>
       <div class="history-list" id="history-list">
         <div class="history-empty" data-i18n="no_saved_signals">Belum ada sinyal tersimpan</div>

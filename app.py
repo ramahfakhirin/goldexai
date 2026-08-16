@@ -3475,7 +3475,7 @@ def stats():
 
 
 @app.route("/api/clear_history", methods=["POST"])
-@login_required
+@superadmin_required
 def clear_history():
     """Endpoint: hapus semua history."""
     conn = sqlite3.connect(DB_PATH)
@@ -3487,7 +3487,7 @@ def clear_history():
 
 
 @app.route("/api/send_telegram", methods=["POST"])
-@login_required
+@superadmin_required
 def send_telegram():
     """Endpoint: kirim signal ke Telegram."""
     try:
@@ -3520,7 +3520,7 @@ def send_telegram():
 
 
 @app.route("/api/broadcast_latest_signal", methods=["POST"])
-@login_required
+@superadmin_required
 def broadcast_latest_signal():
     """Endpoint: kirim ulang signal aktif terbaru (dari DB) ke Telegram."""
     try:
@@ -3580,7 +3580,7 @@ def broadcast_latest_signal():
 
 
 @app.route("/api/dispatch_manual_signal", methods=["POST"])
-@login_required
+@superadmin_required
 def dispatch_manual_signal():
     """Endpoint: buat signal manual & kirim ke Dashboard + Telegram sekaligus (satu sumber data untuk keduanya)."""
     try:
@@ -3669,7 +3669,7 @@ def performance():
 
 
 @app.route("/api/reset_performance", methods=["POST"])
-@login_required
+@superadmin_required
 def reset_performance():
     """Reset semua data performa (hapus semua trade_monitors CLOSED)."""
     try:
@@ -3812,6 +3812,7 @@ def active_monitors():
 
 
 @app.route("/api/save_telegram_config", methods=["POST"])
+@superadmin_required
 def save_telegram_config():
     """Simpan konfigurasi Telegram ke DB config table."""
     try:

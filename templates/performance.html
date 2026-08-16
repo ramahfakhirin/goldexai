@@ -234,7 +234,9 @@
           <button class="perf-filter-btn active" data-days="7">7D</button>
           <button class="perf-filter-btn" data-days="30">30D</button>
         </div>
+        {% if session.get('role') == 'superadmin' %}
         <button class="btn-clear" onclick="ppResetPerformance()" title="Reset performance data">↺ Reset</button>
+        {% endif %}
       </div>
     </div>
 

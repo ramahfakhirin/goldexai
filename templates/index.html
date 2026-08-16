@@ -749,7 +749,9 @@
     <section class="card card-history" id="history-card-hidden-source">
       <div class="card-label-row">
         <span class="card-label" data-i18n="signal_history">RIWAYAT SINYAL</span>
+        {% if session.get('role') == 'superadmin' %}
         <button class="btn-clear" onclick="clearHistory()" data-i18n="clear">Hapus</button>
+        {% endif %}
       </div>
       <div class="history-list" id="history-list">
         <div class="history-empty" data-i18n="no_saved_signals">Belum ada sinyal tersimpan</div>
@@ -949,11 +951,15 @@
       <!-- Quick Action Buttons -->
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
         <button class="btn-save-key" style="background:var(--gold,#f1c40f); color:#000; font-weight:700; border:none; padding:8px;" onclick="triggerManualAnalysis()" data-i18n="btn_run_scan">⚡ Jalankan Scan & Kirim</button>
+        {% if session.get('role') == 'superadmin' %}
         <button class="btn-save-key" style="background:#2ecc71; color:#000; font-weight:700; border:none; padding:8px;" onclick="broadcastLatestSignal()" data-i18n="btn_send_tg">📢 Kirim Sinyal ke TG</button>
+        {% endif %}
       </div>
+      {% if session.get('role') == 'superadmin' %}
       <div style="margin-bottom:12px;">
         <button class="btn-save-key" style="width:100%; background:#3498db; color:#fff; font-weight:700; border:none; padding:8px;" onclick="dispatchManualSignal()" data-i18n="btn_manual_signal">✏️ Buat & Kirim Sinyal Manual</button>
       </div>
+      {% endif %}
 
       <div class="input-group">
         <label class="input-label" data-i18n="bot_token">Bot Token</label>
@@ -967,7 +973,9 @@
       </div>
       <div class="tg-controls" style="display:flex; gap:8px;">
         <button class="btn-save-key" style="flex:1;" onclick="saveTelegram()" data-i18n="btn_save_cred">Simpan Kredensial</button>
+        {% if session.get('role') == 'superadmin' %}
         <button class="btn-save-key" style="flex:1; background:rgba(255,255,255,0.1);" onclick="testTelegram()" data-i18n="btn_test_tg">Tes Kirim TG</button>
+        {% endif %}
       </div>
       <div class="key-status" id="tg-status"></div>
       <div class="tg-notify-row" style="margin-top:10px;">
