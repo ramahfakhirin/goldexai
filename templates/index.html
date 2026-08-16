@@ -945,21 +945,18 @@
     </section>
 
     <!-- Telegram & Signal Dispatch Control Panel -->
+    {% if session.get('role') == 'superadmin' %}
     <section class="card card-telegram" style="display:block">
       <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span data-i18n="tg_control_title">KONTROL TELEGRAM & SINYAL MANUAL</span></div>
 
       <!-- Quick Action Buttons -->
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
         <button class="btn-save-key" style="background:var(--gold,#f1c40f); color:#000; font-weight:700; border:none; padding:8px;" onclick="triggerManualAnalysis()" data-i18n="btn_run_scan">⚡ Jalankan Scan & Kirim</button>
-        {% if session.get('role') == 'superadmin' %}
         <button class="btn-save-key" style="background:#2ecc71; color:#000; font-weight:700; border:none; padding:8px;" onclick="broadcastLatestSignal()" data-i18n="btn_send_tg">📢 Kirim Sinyal ke TG</button>
-        {% endif %}
       </div>
-      {% if session.get('role') == 'superadmin' %}
       <div style="margin-bottom:12px;">
         <button class="btn-save-key" style="width:100%; background:#3498db; color:#fff; font-weight:700; border:none; padding:8px;" onclick="dispatchManualSignal()" data-i18n="btn_manual_signal">✏️ Buat & Kirim Sinyal Manual</button>
       </div>
-      {% endif %}
 
       <div class="input-group">
         <label class="input-label" data-i18n="bot_token">Bot Token</label>
@@ -973,9 +970,7 @@
       </div>
       <div class="tg-controls" style="display:flex; gap:8px;">
         <button class="btn-save-key" style="flex:1;" onclick="saveTelegram()" data-i18n="btn_save_cred">Simpan Kredensial</button>
-        {% if session.get('role') == 'superadmin' %}
         <button class="btn-save-key" style="flex:1; background:rgba(255,255,255,0.1);" onclick="testTelegram()" data-i18n="btn_test_tg">Tes Kirim TG</button>
-        {% endif %}
       </div>
       <div class="key-status" id="tg-status"></div>
       <div class="tg-notify-row" style="margin-top:10px;">
@@ -987,6 +982,7 @@
         </div>
       </div>
     </section>
+    {% endif %}
 
     <!-- Stats Bar -->
     <section class="card card-stats">
