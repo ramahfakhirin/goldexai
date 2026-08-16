@@ -35,13 +35,13 @@
     display: grid;
     grid-template-columns: 224px 1fr;
     gap: 12px;
-    padding: 72px 20px 12px;
+    padding: calc(72px + env(safe-area-inset-top)) 20px 12px;
     min-height: 100vh;
     max-width: 1900px;
     margin: 0 auto;
   }
   @media (max-width: 1179px) {
-    .perf-page-layout { grid-template-columns: 1fr; padding: 56px 12px calc(76px + env(safe-area-inset-bottom)); }
+    .perf-page-layout { grid-template-columns: 1fr; padding: calc(56px + env(safe-area-inset-top)) 12px calc(76px + env(safe-area-inset-bottom)); }
     .perf-page-layout .panel-left { display: none !important; }
   }
   .perf-page-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }

@@ -36,13 +36,21 @@ html, body {
 .topbar {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 44px;
+  /* height:44px tetap jadi tinggi konten -- env(safe-area-inset-top) ditambah
+     sebagai ruang ekstra di ATAS-nya lewat padding-top (box-sizing:border-box
+     dari reset global bikin box total tumbuh, bukan meremas 44px-nya). Perlu
+     ini karena apple-mobile-web-app-status-bar-style=black-translucent +
+     viewport-fit=cover bikin konten meluas di BAWAH status bar OS saat PWA
+     terinstall/standalone -- tanpa padding ini topbar ketutup status bar
+     (jam, sinyal, baterai) karena env() = 0 di browser tab biasa/desktop. */
+  height: calc(44px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
   background: var(--bg1);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding-left: 20px; padding-right: 20px;
   z-index: 100;
 }
 .topbar-left { display: flex; align-items: center; gap: 10px; }
@@ -1201,8 +1209,9 @@ html, body {
 
   /* Topbar */
   .topbar {
-    padding: 0 10px;
-    height: 48px;
+    padding-left: 10px; padding-right: 10px;
+    height: calc(48px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
     gap: 6px;
   }
   .logo-text { font-size: 12px; }
@@ -1360,7 +1369,7 @@ html, body {
 @media (max-width: 480px) {
 
   /* Topbar */
-  .topbar { padding: 0 10px; height: 48px; gap: 6px; }
+  .topbar { padding-left: 10px; padding-right: 10px; height: calc(48px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); gap: 6px; }
   .logo-text { font-size: 12px; }
   .logo-sub  { display: none; }
   .logo-dot  { width: 7px; height: 7px; }
@@ -1509,7 +1518,11 @@ html, body {
     color: var(--gold) !important;
     font-weight: 600;
   }
-  .topbar { height: 48px !important; padding: 0 12px !important; }
+  .topbar {
+    height: calc(48px + env(safe-area-inset-top)) !important;
+    padding-top: env(safe-area-inset-top) !important;
+    padding-left: 12px !important; padding-right: 12px !important;
+  }
   .topbar-left { gap: 6px; }
   .topbar-right { gap: 8px; }
 
@@ -1522,7 +1535,7 @@ html, body {
 
   /* Layout utama */
   .layout {
-    padding: 56px 0 12px !important;
+    padding: calc(56px + env(safe-area-inset-top)) 0 12px !important;
     grid-template-columns: 1fr !important;
     gap: 0 !important;
   }
@@ -1553,7 +1566,7 @@ html, body {
   main.layout {
     display: flex !important;
     flex-direction: column !important;
-    padding: 56px 0 12px !important;
+    padding: calc(56px + env(safe-area-inset-top)) 0 12px !important;
   }
 }
 

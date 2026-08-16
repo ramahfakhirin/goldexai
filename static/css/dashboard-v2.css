@@ -57,7 +57,7 @@
   .layout {
     display: flex !important;
     flex-direction: column !important;
-    padding: 56px 0 12px !important;
+    padding: calc(56px + env(safe-area-inset-top)) 0 12px !important;
     gap: 0 !important;
   }
   .panel-left, .panel-right { display: none !important; }
@@ -90,7 +90,7 @@
    actions collapse into one small circle + dropdown instead of two
    underlined text links with pipe dividers. */
 @media (max-width: 1179px) {
-  .topbar { padding: 0 12px; gap: 6px; }
+  .topbar { padding-left: 12px; padding-right: 12px; gap: 6px; }
   .topbar-left { gap: 6px; }
   .logo-text { font-size: 12px; }
   .logo-sub { display: none; }
@@ -144,8 +144,8 @@
 .tb-user-menu a:hover { background: var(--bg3); color: var(--text-pri); }
 
 @media (min-width: 1180px) {
-  .topbar { height: 60px; padding: 0 20px; gap: 16px; }
-  .layout { padding-top: 72px; }
+  .topbar { height: calc(60px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); padding-left: 20px; padding-right: 20px; gap: 16px; }
+  .layout { padding-top: calc(72px + env(safe-area-inset-top)); }
 
   .topbar-v2-stats { display: flex; gap: 8px; }
   .tb-stat-pill {
