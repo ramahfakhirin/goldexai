@@ -23,7 +23,11 @@
   z-index: 150;
   background: var(--bg1);
   border-top: 1px solid var(--border);
-  padding: 6px 2px calc(6px + env(safe-area-inset-bottom));
+  /* Buffer di bawah ikon sengaja dikurangi jadi 40% dari safe-area-inset-bottom
+     penuh (bukan dihilangkan total) -- permintaan eksplisit supaya ikon terasa
+     lebih dekat ke tepi bawah, dengan risiko yang disadari: makin kecil buffer
+     ini, makin dekat touch target ke zona gesture swipe-up OS. */
+  padding: 6px 2px calc(6px + env(safe-area-inset-bottom) * 0.4);
   gap: 2px;
 }
 .bottom-nav-v2 a {
