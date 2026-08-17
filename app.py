@@ -19,7 +19,7 @@ from pathlib import Path
 os.environ.setdefault('MPLBACKEND', 'Agg')
 
 from flask import (Flask, jsonify, redirect, render_template,
-                   request, session, url_for, send_from_directory)
+                   request, session, url_for, send_from_directory, make_response)
 
 # ── Timezone WIB (UTC+7) ──
 from datetime import timezone, timedelta
@@ -2558,22 +2558,32 @@ def dashboard_dummy():
     return render_template("dashboard_dummy.html")
 
 
+def _no_cache_html(rendered: str):
+    """Cegah browser/PWA nyimpen versi lama halaman ini (mis. lewat back-forward
+    cache) sehingga update markup (seperti item navbar) tidak butuh hard-refresh
+    manual buat muncul di device yang sudah install PWA-nya."""
+    resp = make_response(rendered)
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
+
+
 @app.route("/dashboard")
 @login_required
 def index():
-    return render_template("index.html", username=session.get("username", "admin"))
+    return _no_cache_html(render_template("index.html", username=session.get("username", "admin")))
 
 
 @app.route("/history")
 @login_required
 def history_page():
-    return render_template("history.html", username=session.get("username", "admin"))
+    return _no_cache_html(render_template("history.html", username=session.get("username", "admin")))
 
 
 @app.route("/performance")
 @login_required
 def performance_page():
-    return render_template("performance.html", username=session.get("username", "admin"))
+    return _no_cache_html(render_template("performance.html", username=session.get("username", "admin")))
 
 
 @app.route("/api/vision_confirm", methods=["POST"])
