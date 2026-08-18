@@ -1052,6 +1052,16 @@ _bridge_ohlcv_cache = {"data": None, "timeframe": None, "count": None, "fetched_
 _twelve_price_cache = {"price": 0.0, "fetched_at": 0}
 _twelve_ohlcv_cache = {"data": None, "timeframe": None, "count": None, "fetched_at": 0}
 
+# ── Cache response /api/public/price ──
+# Endpoint publik TANPA auth yang di-poll landing page tiap 5 detik PER
+# PENGUNJUNG. Cache internal bridge cuma 3 detik (_bridge_price_cache di atas),
+# jadi polling 5 detik selalu meleset dari cache itu — artinya jumlah pengunjung
+# landing page langsung berbanding lurus dengan beban ke MT5 Bridge. TTL 10
+# detik di level response memutus hubungan itu: seramai apa pun landing page,
+# upstream paling sering dipanggil 6x per menit.
+_public_price_cache = {"payload": None, "fetched_at": 0}
+_PUBLIC_PRICE_TTL   = 10
+
 
 def fetch_price_from_bridge() -> float:
     """
@@ -2677,14 +2687,41 @@ def public_price():
     Mengembalikan harga XAU/USD real-time dari bridge/Twelve Data.
     CORS diizinkan untuk domain landing page.
     """
-    price = fetch_current_price_server()
-    source = "MT5 Bridge" if fetch_price_from_bridge() > 0 else "Twelve Data"
-    return jsonify({
+    import time as _time
+    now = _time.time()
+
+    cached = _public_price_cache["payload"]
+    if cached is not None and now - _public_price_cache["fetched_at"] < _PUBLIC_PRICE_TTL:
+        return jsonify(cached)
+
+    # Versi lama memanggil fetch_current_price_server() (yang di dalamnya sudah
+    # memanggil bridge) LALU fetch_price_from_bridge() sekali lagi hanya untuk
+    # menentukan label source — dua panggilan untuk satu informasi. Di sini
+    # cukup satu kali, dan label "Offline" dipakai saat semua sumber mati
+    # (sebelumnya tetap tertulis "Twelve Data" walau price 0).
+    try:
+        bridge_price = fetch_price_from_bridge()
+        if bridge_price > 0:
+            price, source = bridge_price, "MT5 Bridge"
+        else:
+            price  = fetch_price_from_twelvedata()
+            source = "Twelve Data" if price > 0 else "Offline"
+    except Exception as e:
+        # Endpoint publik — apa pun yang terjadi harus tetap JSON valid dengan
+        # ok:false, bukan HTTP 500 yang bikin frontend masuk blok catch.
+        print(f"[PublicPrice] error: {e}")
+        price, source = 0.0, "Offline"
+
+    payload = {
         "ok":     price > 0,
         "price":  round(price, 2),
         "source": source,
         "time":   now_wib_str("%H:%M WIB"),
-    })
+    }
+    # Hasil gagal ikut di-cache — saat semua sumber mati, justru itu momen yang
+    # paling tidak boleh memicu retry badai ke upstream.
+    _public_price_cache.update({"payload": payload, "fetched_at": now})
+    return jsonify(payload)
 
 
 @app.route("/login", methods=["GET", "POST"])

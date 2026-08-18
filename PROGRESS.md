@@ -94,6 +94,82 @@ Simulasi logika `adx_available` (4 kasus):
 
 ---
 
+## TASK 2 (P0) — `/api/public/price` kontrak frontend ✅ SELESAI (cakupan direvisi)
+
+**File diubah:** `app.py`
+
+### Diagnosa (premis brief TIDAK terbukti)
+
+Brief menyatakan JS landing page mengakses `d.change.toFixed(2)`, `d.change_pct`,
+`d.timestamp`, `d.candles`, `d.signal_engine` → `TypeError` → badge stuck di
+`RECONNECTING...`. Diverifikasi 4 cara, semuanya membantah:
+
+1. **Konsumen sebenarnya** (`templates/landing.html:1408-1423`) hanya memakai
+   `data.ok`, `data.price`, `data.source`, `data.time` — persis yang sudah
+   dikembalikan endpoint.
+2. **Grep seluruh `templates/` + `static/`**: nol kemunculan `change_pct`,
+   `.candles`, `signal_engine`, `d.change`. String **`RECONNECTING` tidak ada
+   di repo sama sekali.**
+3. **Uji endpoint**: HTTP 200, JSON valid, keys `[ok, price, source, time]`.
+   Requirement item 7 (`ok:false`, bukan HTTP 500) sudah terpenuhi sejak awal.
+4. **Muat landing page**: console bersih tanpa `TypeError`, `RECONNECTING`
+   tidak ada di DOM, widget harga berfungsi.
+
+`templates/landing - Copy.html` (backup, nol referensi di `app.py`, tidak pernah
+di-render) juga identik.
+
+**Keputusan:** item 2–5 (tambah `change`/`change_pct`/`candles`/`signal_engine`)
+dibatalkan atas persetujuan — tidak ada yang membacanya, dan menambah fetch
+OHLCV ke endpoint publik tanpa auth justru berlawanan dengan tujuan item 6.
+
+### Masalah nyata yang tetap dikerjakan (item 6 + 7)
+
+`public_price()` lama:
+
+```python
+price  = fetch_current_price_server()                           # panggil bridge
+source = "MT5 Bridge" if fetch_price_from_bridge() > 0 else ... # panggil bridge LAGI
+```
+
+- Endpoint publik tanpa auth, di-poll **tiap 5 detik per pengunjung**.
+- Cache internal bridge hanya **3 detik** (`app.py:1064`) → polling 5 detik
+  **selalu meleset**, jadi jumlah pengunjung berbanding lurus dengan beban ke
+  MT5 Bridge.
+- Panggilan bridge ganda yang redundan per request.
+- Saat semua sumber mati, `source` tetap tertulis `"Twelve Data"` walau
+  `price = 0`.
+
+### Perubahan
+
+| Lokasi | Perubahan |
+|---|---|
+| `app.py` ~1055 | Tambah `_public_price_cache` + `_PUBLIC_PRICE_TTL = 10`, mengikuti pola `_bridge_price_cache` |
+| `app.py` `public_price()` | Cache response 10 detik (hasil gagal ikut di-cache supaya sumber mati tidak memicu badai retry); satu panggilan bridge saja; label `"Offline"` saat semua sumber mati; `try/except` agar tidak pernah HTTP 500 |
+
+Kontrak response **tidak berubah** — tetap `[ok, price, source, time]`.
+
+### Cara verifikasi
+
+```bash
+GOLDEX_DISABLE_SCHEDULER_AUTOSTART=1 python -X utf8 -c "import app"   # sukses
+```
+
+3 request beruntun dalam <1 detik:
+
+```
+all_status_200:       true
+keys_unchanged:       ["ok","price","source","time"]
+identical_within_ttl: true            ← cache hit terbukti
+sample: {ok:false, price:0, source:"Offline", time:"06:31 WIB"}
+```
+
+Landing page dimuat ulang: console bersih, tidak ada error server.
+
+Catatan: `ok:false` di lokal wajar — dev tidak punya `MT5_BRIDGE_URL` /
+`TWELVE_DATA_KEY`. Di produksi log menunjukkan bridge aktif normal.
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)
