@@ -285,6 +285,12 @@ def init_db():
         # Dipakai buat bandingkan win rate kedua jalur secara terpisah —
         # lihat get_vision_rescue_stats().
         "ALTER TABLE trade_monitors ADD COLUMN vision_rescued INTEGER DEFAULT 0",
+        # Kaufman Efficiency Ratio M5 saat trade dibuka. SELALU dicatat, tidak
+        # peduli ER_GATE_ENABLED on/off — justru datanya yang dipakai untuk
+        # memutuskan apakah gate itu layak diaktifkan (bandingkan proporsi
+        # SL_HIT di rentang ER transisi vs trade yang menang). NULL = trade
+        # lama sebelum kolom ini ada, atau ER gagal dihitung.
+        "ALTER TABLE trade_monitors ADD COLUMN efficiency_ratio REAL",
     ):
         try:
             conn.execute(_col_sql)
@@ -542,7 +548,8 @@ def get_stats() -> dict:
 
 def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          sl: float, tp1: float, tp2: float, tp3: float,
-                         timeframe: str, vision_rescued: bool = False) -> int | None:
+                         timeframe: str, vision_rescued: bool = False,
+                         efficiency_ratio: float | None = None) -> int | None:
     """Buat trade monitor baru setelah signal BUY/SELL.
 
     Menangkap martingale_mult SAAT INI (dari rentetan loss murni terbaru) dan
@@ -552,6 +559,9 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
     vision_rescued=True kalau sinyal ini lolos lewat zona borderline yang
     dikonfirmasi Vision AI (bukan auto-pass skor tinggi) — dipakai
     get_vision_rescue_stats() buat bandingkan win rate kedua jalur.
+
+    efficiency_ratio = nilai Kaufman ER M5 saat trade dibuka (instrumentasi
+    untuk evaluasi ER gate nanti; dicatat terlepas dari gate aktif/tidak).
 
     Return None jika ada monitor ACTIVE lain yang menang race (idx_one_active_monitor) —
     caller harus perlakukan sama seperti has_active_monitor()==True (skip alert).
@@ -564,10 +574,12 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
         cursor = conn.execute("""
             INSERT INTO trade_monitors
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
-             stop_loss, tp1, tp2, tp3, status, martingale_mult, vision_rescued)
-            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?)
+             stop_loss, tp1, tp2, tp3, status, martingale_mult, vision_rescued,
+             efficiency_ratio)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?,?)
         """, (signal_id, now_iso, now_iso, timeframe,
-              direction, entry, sl, tp1, tp2, tp3, mult, int(vision_rescued)))
+              direction, entry, sl, tp1, tp2, tp3, mult, int(vision_rescued),
+              efficiency_ratio))
         monitor_id = cursor.lastrowid
         conn.commit()
         if mult > 1:
@@ -1884,7 +1896,7 @@ def run_scheduled_analysis():
             build_analysis_prompt, calculate_indicators,
             detect_smc_structure, fetch_market_data,
             detect_berkah_signal, run_multi_timeframe_scan,
-            _fetch_twelve_data,
+            _fetch_twelve_data, efficiency_ratio,
         )
 
         # ── Fetch M5 (sinyal utama) ──
@@ -1949,6 +1961,49 @@ def run_scheduled_analysis():
                 print("[Scheduler] ⚠️ H1 tidak tersedia — HTF fallback EMA lokal")
         except Exception as _e_h1:
             print(f"[Scheduler] ⚠️ H1 fetch error: {_e_h1} — HTF fallback EMA lokal")
+
+        # ── Efficiency Ratio (Kaufman) — deteksi rezim transisi ──
+        # SELALU dihitung & dicatat, terlepas dari gate aktif atau tidak.
+        # Justru datanya yang nanti dipakai memutuskan apakah gate ini layak
+        # diaktifkan: dari trade yang outcome='SL_HIT', berapa persen lahir di
+        # rentang ER transisi? Kalau proporsinya tidak lebih tinggi dari trade
+        # yang menang, gate ini tidak layak dinyalakan.
+        er_value   = None
+        _er_period = int(os.getenv("ER_GATE_PERIOD", "20"))
+        try:
+            if df_m5 is not None and len(df_m5) > _er_period:
+                er_value = float(efficiency_ratio(df_m5["close"], _er_period).iloc[-1])
+        except Exception as _e_er:
+            print(f"[Scheduler] ⚠️ ER gagal dihitung: {_e_er}")
+
+        if er_value is not None:
+            _cfg_set("er_cache", json.dumps({
+                "er":         round(er_value, 4),
+                "period":     _er_period,
+                "updated_at": datetime.now(WIB).isoformat(),
+            }, ensure_ascii=False))
+
+        # Gate-nya sendiri DEFAULT OFF — menunggu bukti dari data di atas.
+        if er_value is not None and os.getenv("ER_GATE_ENABLED", "false").lower() == "true":
+            _er_min = float(os.getenv("ER_GATE_MIN", "0.20"))
+            _er_max = float(os.getenv("ER_GATE_MAX", "0.35"))
+            if _er_min <= er_value <= _er_max:
+                _reason_er = f"Regime transisi (ER={er_value:.2f}) — scan dilewati"
+                print(f"[Scheduler] 🌀 {_reason_er}")
+                # _save_wait_ratelimited() butuh market/indicators/smc, yang
+                # normalnya baru dibangun setelah MTF scan. Dibangun di sini
+                # saja — murni CPU dari df_m5 yang sudah ada di memori (tanpa
+                # network), dan tetap jauh lebih murah daripada MTF scan penuh
+                # yang mengulang proses itu untuk M5 + M1 + Mean-Reversion.
+                try:
+                    analyst.BRIDGE_DF = df_m5
+                    _mkt_er = fetch_market_data("5m")
+                    _save_wait_ratelimited(_reason_er, _mkt_er,
+                                           calculate_indicators(_mkt_er),
+                                           detect_smc_structure(_mkt_er), "5m")
+                except Exception as _e_save:
+                    print(f"[Scheduler] ⚠️ ER gate: gagal simpan WAIT: {_e_save}")
+                return None
 
         # ── Multi-Timeframe Scan (M1 + M5, gate HTF H1) ──
         mtf = run_multi_timeframe_scan(
@@ -2330,6 +2385,7 @@ def run_scheduled_analysis():
                     tp3       = float(berkah["tp3"]),
                     timeframe = tf_label,
                     vision_rescued = needs_vision_rescue,
+                    efficiency_ratio = er_value,
                 )
                 if monitor_id is None:
                     # Kalah race vs monitor ACTIVE lain — jangan set cache/kirim Telegram
@@ -2897,6 +2953,22 @@ def api_guard_status():
     if not htf:
         htf = {"bias": "UNKNOWN", "note": "Belum pernah dihitung scheduler", "updated_at": None}
 
+    er_raw = _cfg_get("er_cache", "")
+    try:
+        er_info = json.loads(er_raw) if er_raw else None
+    except Exception:
+        er_info = None
+    if not er_info:
+        er_info = {"er": None, "period": int(os.getenv("ER_GATE_PERIOD", "20")),
+                   "updated_at": None}
+    er_info["gate_enabled"] = os.getenv("ER_GATE_ENABLED", "false").lower() == "true"
+    er_info["gate_min"]     = float(os.getenv("ER_GATE_MIN", "0.20"))
+    er_info["gate_max"]     = float(os.getenv("ER_GATE_MAX", "0.35"))
+    _er_now = er_info.get("er")
+    er_info["in_transition_zone"] = (
+        _er_now is not None and er_info["gate_min"] <= _er_now <= er_info["gate_max"]
+    )
+
     window = int(os.getenv("LOSS_STREAK_WINDOW", "6"))
 
     def _rolling_summary(direction):
@@ -2927,6 +2999,7 @@ def api_guard_status():
     return jsonify({
         "ok":                    True,
         "htf_bias":              htf,
+        "efficiency_ratio":      er_info,
         "martingale_multiplier": get_martingale_multiplier(),
         "guard_window":          window,
         "guard_threshold":       int(os.getenv("LOSS_STREAK_THRESHOLD", "3")),

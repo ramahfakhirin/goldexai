@@ -15,9 +15,12 @@ from pathlib import Path
 
 import numpy as np
 
+import pandas as pd
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from xauusd_ai_analyst import (  # noqa: E402
     compute_adx_rising, check_volatility_floor, is_momentum_exhausted,
+    efficiency_ratio,
 )
 
 
@@ -107,6 +110,43 @@ class MomentumExhaustedTestCase(unittest.TestCase):
     def test_custom_thresholds(self):
         self.assertTrue(is_momentum_exhausted("BUY", rsi_val=68, adx_rising=False,
                                                overbought=65, oversold=35))
+
+
+class EfficiencyRatioTestCase(unittest.TestCase):
+    """Kaufman ER — 0 = chop, 1 = tren bersih."""
+
+    def test_perfect_trend_gives_er_one(self):
+        # Naik lurus konsisten: perpindahan bersih == total jarak ditempuh.
+        s = pd.Series([100 + i for i in range(40)], dtype=float)
+        self.assertAlmostEqual(efficiency_ratio(s, 20).iloc[-1], 1.0, places=6)
+
+    def test_pure_chop_gives_er_near_zero(self):
+        # Bolak-balik 2 nilai: banyak bergerak, tidak ke mana-mana.
+        s = pd.Series([100.0, 101.0] * 20, dtype=float)
+        self.assertLess(efficiency_ratio(s, 20).iloc[-1], 0.05)
+
+    def test_transition_regime_lands_between(self):
+        # Tren naik yang diselingi retrace -- ER menengah, bukan 0 atau 1.
+        vals, price = [], 100.0
+        for i in range(60):
+            price += 1.0 if i % 3 else -1.6
+            vals.append(price)
+        er = efficiency_ratio(pd.Series(vals, dtype=float), 20).iloc[-1]
+        self.assertGreater(er, 0.0)
+        self.assertLess(er, 1.0)
+
+    def test_flat_series_does_not_divide_by_zero(self):
+        # volatility = 0 -> tanpa guard replace(0, nan) ini jadi ZeroDivision/inf.
+        s = pd.Series([100.0] * 40, dtype=float)
+        er = efficiency_ratio(s, 20).iloc[-1]
+        self.assertEqual(er, 0.0)
+
+    def test_er_always_within_zero_and_one(self):
+        import random
+        random.seed(42)
+        s = pd.Series([100 + random.uniform(-5, 5) for _ in range(200)], dtype=float)
+        series = efficiency_ratio(s, 20)
+        self.assertTrue((series >= 0).all() and (series <= 1).all())
 
 
 if __name__ == "__main__":

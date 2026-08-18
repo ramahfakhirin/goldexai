@@ -170,6 +170,75 @@ Catatan: `ok:false` di lokal wajar — dev tidak punya `MT5_BRIDGE_URL` /
 
 ---
 
+## TASK 3 (P1) — Regime gate Efficiency Ratio (default OFF) ✅ SELESAI
+
+**File diubah:** `xauusd_ai_analyst.py`, `app.py`, `.env.example`,
+`tests/test_signal_engine.py`
+
+**Gate TIDAK diaktifkan** — task ini hanya memasang instrumentasi + toggle.
+
+### Perubahan
+
+| Lokasi | Perubahan |
+|---|---|
+| `xauusd_ai_analyst.py` | Tambah `efficiency_ratio(s, n=20)` — Kaufman ER |
+| `app.py` `init_db()` | `ALTER TABLE trade_monitors ADD COLUMN efficiency_ratio REAL` (pola migrasi yang sudah ada) |
+| `app.py` `create_trade_monitor()` | Param baru `efficiency_ratio=None`, ikut di-INSERT |
+| `app.py` `run_scheduled_analysis()` | Hitung ER dari `df_m5["close"]` setelah slice closed-candle, sebelum `run_multi_timeframe_scan()`. **Selalu** dihitung + di-cache ke `config.er_cache`, gate-nya terpisah dan default OFF |
+| `app.py` `/api/admin/guard_status` | Expose blok `efficiency_ratio` (nilai, period, gate on/off, min/max, `in_transition_zone`) |
+| `.env.example` | `ER_GATE_ENABLED=false`, `ER_GATE_PERIOD=20`, `ER_GATE_MIN=0.20`, `ER_GATE_MAX=0.35` |
+
+Catatan implementasi: saat gate aktif dan trip, `_save_wait_ratelimited()`
+butuh `market`/`indicators`/`smc` yang normalnya baru dibangun **setelah** MTF
+scan. Objek itu dibangun di dalam cabang gate — murni CPU dari `df_m5` yang
+sudah di memori (tanpa network), dan tetap jauh lebih murah daripada MTF scan
+penuh yang mengulang proses itu untuk M5 + M1 + Mean-Reversion.
+
+### Cara verifikasi
+
+```bash
+GOLDEX_DISABLE_SCHEDULER_AUTOSTART=1 python -X utf8 -c "import app"   # sukses
+python -X utf8 -m unittest discover tests                              # 45 tests OK
+```
+
+Kolom DB terbentuk:
+```
+efficiency_ratio ada di trade_monitors: True
+```
+
+`/api/admin/guard_status` (superadmin):
+```json
+"efficiency_ratio": {"er": null, "period": 20, "gate_enabled": false,
+                     "gate_min": 0.2, "gate_max": 0.35,
+                     "in_transition_zone": false}
+```
+(`er: null` karena scheduler belum jalan di lokal — dev tanpa MT5 Bridge.)
+
+**Checklist "dengan `ER_GATE_ENABLED=false` perilaku identik"** — tabel
+keputusan gate (ekspresi persis seperti di `app.py`):
+
+| ER | ENABLED=false | ENABLED=true |
+|---|---|---|
+| 0.10 | False | False |
+| 0.25 | False | **True** |
+| 0.35 | False | **True** |
+| 0.50 | False | False |
+| None | False | False |
+
+Gate tidak pernah trip saat OFF, apa pun nilai ER → alur scheduler tidak
+berubah. Satu-satunya tambahan kerja adalah menghitung ER + satu `_cfg_set`.
+
+### Data awal untuk keputusan aktivasi nanti
+
+ER pada 13.799 candle M5 nyata (GC=F): `min=0.001 max=0.969 median=0.197`.
+**27,0% candle berada di zona transisi 0.20–0.35.** Artinya kalau gate
+dinyalakan, sekitar seperempat kesempatan scan akan dilewati — dampaknya
+besar, jadi jangan diaktifkan sebelum ada bukti dari kolom
+`trade_monitors.efficiency_ratio` bahwa proporsi `SL_HIT` di rentang itu
+memang lebih tinggi daripada trade yang menang.
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)

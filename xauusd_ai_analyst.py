@@ -837,6 +837,24 @@ def compute_adx_rising(adx_arr: np.ndarray, start_adx: int, lookback: int = 3) -
     return True
 
 
+def efficiency_ratio(s, n: int = 20):
+    """
+    Kaufman Efficiency Ratio: 0 = noise/chop, 1 = tren bersih.
+
+    Rasio antara perpindahan harga BERSIH selama n periode dengan total jarak
+    yang benar-benar ditempuh harga di periode yang sama. Kalau harga bergerak
+    100 poin naik-turun bolak-balik tapi hanya berakhir 10 poin dari titik
+    awal, ER kecil — pasar sibuk tapi tidak ke mana-mana.
+
+    Berguna sebagai deteksi rezim karena tidak punya lag smoothing seperti ADX
+    (yang di-smooth dua kali: DX lalu RMA), jadi lebih cepat mengenali zona
+    transisi. Return Series (sejajar input), ambil .iloc[-1] untuk nilai kini.
+    """
+    direction  = (s - s.shift(n)).abs()
+    volatility = s.diff().abs().rolling(n).sum()
+    return (direction / volatility.replace(0, np.nan)).fillna(0)
+
+
 def is_momentum_exhausted(direction: str, rsi_val: float, adx_rising: bool,
                            overbought: float = 75.0, oversold: float = 25.0) -> bool:
     """
