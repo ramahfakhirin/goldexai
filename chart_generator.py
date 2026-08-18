@@ -101,7 +101,17 @@ def fetch_ohlcv(timeframe: str = "15min",
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    return df.dropna()
+    # Volume sengaja TIDAK ikut menentukan baris mana yang dibuang. XAU/USD di
+    # Twelve Data kerap tidak punya volume nyata — kolomnya bisa absen, atau ada
+    # tapi berisi null. Dengan df.dropna() polos, null itu jadi NaN lalu
+    # menghapus SELURUH baris meskipun OHLC-nya valid, sehingga chart yang
+    # dikirim ke Vision AI keluar kosong total. Jalur analyst
+    # (xauusd_ai_analyst.py) sudah menjaga ini lewat dropna(subset=[OHLC]);
+    # di sini disamakan.
+    ohlc_cols = [c for c in ("open", "high", "low", "close") if c in df.columns]
+    if not ohlc_cols:
+        raise ValueError("Twelve Data tidak mengirim kolom OHLC")
+    return df.dropna(subset=ohlc_cols)
 
 
 # ─────────────────────────────────────────────

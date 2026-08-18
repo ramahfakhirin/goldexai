@@ -386,6 +386,70 @@ viewport mobile 375px label membungkus di dalam tile (`scrollWidth` 126 <
 
 ---
 
+## FOLLOW-UP — `df.dropna()` di chart generator ✅ SELESAI
+
+Menindaklanjuti temuan Task 4 item 3.
+
+**File diubah:** `chart_generator.py`, `tests/test_chart_generator.py` (baru)
+
+### Masalah — terkonfirmasi, bukan lagi dugaan
+
+`chart_generator.py:104` memanggil `df.dropna()` **tanpa `subset`**, padahal
+baris 100–102 sudah meng-`coerce` kolom `volume` jadi numerik. XAU/USD di
+Twelve Data kerap tidak punya volume nyata — kalau kolomnya **ada tapi berisi
+`null`**, hasil coerce jadi `NaN`, lalu `dropna()` polos membuang **seluruh
+baris** meski OHLC-nya valid.
+
+Dampaknya bukan kosmetik: `generate_chart_b64()` adalah sumber gambar yang
+dinilai Vision AI (jalur rescue maupun veto). Chart kosong = Vision menilai
+gambar tanpa data.
+
+Dibuktikan dengan menjalankan `fetch_ohlcv()` asli terhadap respons Twelve Data
+sintetis berisi `volume: null`, memakai kode **sebelum** perbaikan:
+
+```
+AssertionError: 0 != 5 : baris OHLC valid ikut terbuang gara-gara volume null
+```
+
+Nol dari lima baris bertahan — chart benar-benar kosong total.
+
+### Perubahan
+
+`dropna()` dibatasi ke kolom OHLC saja, menyamakan dengan pola defensif yang
+sudah dipakai jalur analyst (`xauusd_ai_analyst.py:160`):
+
+```python
+ohlc_cols = [c for c in ("open", "high", "low", "close") if c in df.columns]
+if not ohlc_cols:
+    raise ValueError("Twelve Data tidak mengirim kolom OHLC")
+return df.dropna(subset=ohlc_cols)
+```
+
+Sengaja **tidak** menyintesis kolom `volume` saat absen — blok gambar volume di
+`generate_chart_b64()` sudah dijaga `if "volume" in df.columns`, jadi menambah
+kolom nol justru mengubah tampilan (panel bergaris & berlabel, bukan kosong).
+Perbaikan ini murni menghentikan pembuangan baris, tanpa efek visual lain.
+
+### Cara verifikasi
+
+`tests/test_chart_generator.py` (5 test, tanpa network — `urlopen` di-patch
+dengan respons sintetis, `fetch_ohlcv()` asli tetap dijalankan):
+
+| Test | Menjaga |
+|---|---|
+| `test_null_volume_does_not_drop_rows` | Regresi utama — 5 baris bertahan |
+| `test_absent_volume_column_still_works` | Kolom absen tetap jalan, tidak disintesis |
+| `test_real_volume_preserved` | Volume asli tidak rusak |
+| `test_row_with_broken_ohlc_is_still_dropped` | Perbaikan **tidak** meloloskan harga tidak valid |
+| `test_missing_ohlc_columns_raises_clear_error` | Error jelas, bukan diam-diam kosong |
+
+Diverifikasi bahwa test ini benar-benar menangkap bug: dijalankan terhadap kode
+lama → **gagal** (`0 != 5`); terhadap kode baru → lulus.
+
+Total 50 test lulus. `import app` & `import chart_generator` sukses.
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)
