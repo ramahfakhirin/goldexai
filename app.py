@@ -280,6 +280,11 @@ def init_db():
         # Disimpan per-trade supaya kalkulasi PnL/outcome memakai lot riil saat itu,
         # bukan basis lot statis — trade lama tanpa kolom ini otomatis default 1.
         "ALTER TABLE trade_monitors ADD COLUMN martingale_mult REAL DEFAULT 1",
+        # 1 kalau sinyal ini lolos lewat zona Vision-rescue (skor borderline,
+        # dikonfirmasi Claude/Gemini Vision), 0 kalau auto-pass skor tinggi.
+        # Dipakai buat bandingkan win rate kedua jalur secara terpisah —
+        # lihat get_vision_rescue_stats().
+        "ALTER TABLE trade_monitors ADD COLUMN vision_rescued INTEGER DEFAULT 0",
     ):
         try:
             conn.execute(_col_sql)
@@ -537,12 +542,16 @@ def get_stats() -> dict:
 
 def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          sl: float, tp1: float, tp2: float, tp3: float,
-                         timeframe: str) -> int | None:
+                         timeframe: str, vision_rescued: bool = False) -> int | None:
     """Buat trade monitor baru setelah signal BUY/SELL.
 
     Menangkap martingale_mult SAAT INI (dari rentetan loss murni terbaru) dan
     menyimpannya di trade ini — dipakai nanti untuk skala PnL riil trade ini
     (lot efektif = DISPLAY_LOT_SIZE * martingale_mult), bukan basis lot statis.
+
+    vision_rescued=True kalau sinyal ini lolos lewat zona borderline yang
+    dikonfirmasi Vision AI (bukan auto-pass skor tinggi) — dipakai
+    get_vision_rescue_stats() buat bandingkan win rate kedua jalur.
 
     Return None jika ada monitor ACTIVE lain yang menang race (idx_one_active_monitor) —
     caller harus perlakukan sama seperti has_active_monitor()==True (skip alert).
@@ -555,10 +564,10 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
         cursor = conn.execute("""
             INSERT INTO trade_monitors
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
-             stop_loss, tp1, tp2, tp3, status, martingale_mult)
-            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?)
+             stop_loss, tp1, tp2, tp3, status, martingale_mult, vision_rescued)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?)
         """, (signal_id, now_iso, now_iso, timeframe,
-              direction, entry, sl, tp1, tp2, tp3, mult))
+              direction, entry, sl, tp1, tp2, tp3, mult, int(vision_rescued)))
         monitor_id = cursor.lastrowid
         conn.commit()
         if mult > 1:
@@ -722,6 +731,58 @@ def get_performance_stats(days: int = 7) -> dict:
     }
 
 
+def get_vision_rescue_stats(days: int = 30) -> dict:
+    """
+    Bandingkan win rate jalur auto-pass (skor tinggi, tanpa panggil AI) vs
+    jalur Vision-rescue (skor borderline, dikonfirmasi Claude/Gemini Vision)
+    secara terpisah. Dipakai buat evaluasi apakah Vision-rescue benar-benar
+    menaikkan kualitas sinyal atau justru menurunkan rata-rata — lihat
+    VISION_RESCUE_MIN_SCORE di .env.example.
+
+    Klasifikasi win/loss identik dengan get_performance_stats(): scratch/BE
+    (~$0) tidak dihitung win maupun loss.
+    """
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cutoff = _period_cutoff(days)
+    if cutoff:
+        rows = conn.execute("""
+            SELECT * FROM trade_monitors
+            WHERE status = 'CLOSED'
+            AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ? OR created_at >= ?)
+        """, (cutoff, cutoff, cutoff, cutoff)).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM trade_monitors WHERE status = 'CLOSED'").fetchall()
+    conn.close()
+
+    closed = [dict(r) for r in rows]
+
+    def _summarize(subset):
+        total = len(subset)
+        if total == 0:
+            return {"total": 0, "wins": 0, "losses": 0, "win_rate": 0, "total_pnl": 0}
+        pnl_list = [_money(t.get("pnl_pips"), t.get("martingale_mult")) for t in subset]
+        wins   = sum(1 for v in pnl_list if v > 0.01)
+        losses = sum(1 for v in pnl_list if v < -0.01)
+        decisive = wins + losses
+        return {
+            "total":     total,
+            "wins":      wins,
+            "losses":    losses,
+            "win_rate":  round(wins / decisive * 100, 1) if decisive else 0,
+            "total_pnl": round(sum(pnl_list), 2),
+        }
+
+    rescued  = [t for t in closed if (t.get("vision_rescued") or 0) == 1]
+    auto_pass = [t for t in closed if (t.get("vision_rescued") or 0) != 1]
+
+    return {
+        "period_days":  days,
+        "auto_pass":    _summarize(auto_pass),
+        "vision_rescued": _summarize(rescued),
+    }
+
+
 def get_trade_history(limit: int = 30, offset: int = 0, days: int = 0) -> list:
     """Ambil history trade yang sudah closed, mendukung pagination (offset)
     dan filter periode (days: 0 = semua, -1 = hari ini, N = N hari terakhir)."""
@@ -780,14 +841,24 @@ _monitor_lock   = threading.Lock()
 
 def is_direction_blocked(direction: str) -> tuple:
     """
-    Directional loss-streak guard.
-    Setelah N SL_HIT murni (tanpa TP) BERUNTUN di arah yang sama,
-    blokir arah tersebut selama BLOCK_HOURS dari loss terakhir.
-    Mencegah 'revenge entry' mesin: jual terus di hari harga naik.
+    Directional loss guard — rolling window, bukan BERUNTUN.
+
+    Blokir arah X selama BLOCK_HOURS kalau >= LOSS_STREAK_THRESHOLD dari
+    LOSS_STREAK_WINDOW trade CLOSED terakhir di arah itu adalah SL_HIT murni.
+    Mencegah 'revenge entry' mesin: jual/beli terus walau performa arah itu
+    sedang jelek.
+
+    Versi lama mensyaratkan SL_HIT harus BERUNTUN persis N kali tanpa
+    diselingi win/BE sedikit pun -- pola seperti W,L,W,L,L,L (4 loss dari 6
+    trade, win rate anjlok ke ~33%, profit factor <1) lolos begitu saja
+    karena tidak ada 2 SL berturut-turut. Window+threshold menangkap pola
+    "sering kalah" itu tanpa syarat runtun.
+
     BE_HIT tidak dihitung loss (SL sudah di breakeven = trade terlindungi).
     Return: (blocked: bool, keterangan: str)
     """
-    streak_n    = int(os.getenv("LOSS_STREAK_COUNT", "2"))
+    window      = int(os.getenv("LOSS_STREAK_WINDOW", "6"))
+    threshold   = int(os.getenv("LOSS_STREAK_THRESHOLD", "3"))
     block_hours = float(os.getenv("LOSS_STREAK_BLOCK_HOURS", "3"))
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -797,28 +868,76 @@ def is_direction_blocked(direction: str) -> tuple:
             FROM trade_monitors
             WHERE direction=? AND status='CLOSED'
             ORDER BY id DESC LIMIT ?
-        """, (direction, streak_n)).fetchall()
+        """, (direction, window)).fetchall()
         conn.close()
 
-        if len(rows) < streak_n:
+        if len(rows) < threshold:
             return False, ""
-        if any((r["outcome"] or "") != "SL_HIT" for r in rows):
+        sl_count = sum(1 for r in rows if (r["outcome"] or "") == "SL_HIT")
+        if sl_count < threshold:
             return False, ""
 
-        last_ct = rows[0]["ct"]
-        if not last_ct:
+        # Cooldown dihitung dari SL_HIT PALING BARU dalam window ini (bukan
+        # dari trade terakhir apapun outcome-nya) -- kalau trade terakhir
+        # kebetulan TP/BE tapi window tetap >= threshold, blokir tetap
+        # berjalan sampai BLOCK_HOURS sejak loss terakhir yang tercatat.
+        last_sl_ct = next((r["ct"] for r in rows if (r["outcome"] or "") == "SL_HIT" and r["ct"]), None)
+        if not last_sl_ct:
             return False, ""
-        last_dt = datetime.fromisoformat(last_ct)
+        last_dt = datetime.fromisoformat(last_sl_ct)
         if last_dt.tzinfo is None:
             last_dt = last_dt.replace(tzinfo=WIB)
         elapsed_h = (datetime.now(WIB) - last_dt).total_seconds() / 3600.0
         if elapsed_h < block_hours:
-            return True, (f"{streak_n}x SL beruntun arah {direction}, "
+            return True, (f"{sl_count}x SL dari {len(rows)} trade terakhir arah {direction}, "
                           f"blokir {block_hours - elapsed_h:.1f} jam lagi")
         return False, ""
     except Exception as e:
         print(f"[Guard] error: {e}")
         return False, ""
+
+
+def get_trend_age_days(direction: str) -> float:
+    """
+    Berapa hari sejak arah BERLAWANAN terakhir kali trading — dipakai sebagai
+    proxy 'sudah berapa lama tren satu arah ini berjalan tanpa terbantahkan'.
+
+    HTF bias (EMA50/200 H1) berubah lambat, jadi bisa tetap terbaca satu arah
+    berhari-hari walau momentum jangka pendek sudah melemah — confluence score
+    per-candle tidak tahu konteks itu. Dipakai untuk menaikkan ambang skor
+    minimum arah dominan makin lama tren berjalan tanpa sinyal berlawanan sama
+    sekali (lihat TREND_AGE_DAYS_THRESHOLD/TREND_AGE_SCORE_BONUS).
+
+    Kalau arah berlawanan belum PERNAH terjadi di histori, dihitung dari trade
+    PERTAMA di direction ini (menandakan sejak kapan sistem cuma trading satu
+    arah saja). Return 0.0 kalau belum ada histori sama sekali.
+    """
+    opposite = "SELL" if direction == "BUY" else "BUY"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        row_opp = conn.execute(
+            "SELECT MAX(created_at) AS ct FROM trade_monitors WHERE direction=?",
+            (opposite,)
+        ).fetchone()
+        anchor_ct = row_opp["ct"] if row_opp and row_opp["ct"] else None
+        if not anchor_ct:
+            row_first = conn.execute(
+                "SELECT MIN(created_at) AS ct FROM trade_monitors WHERE direction=?",
+                (direction,)
+            ).fetchone()
+            anchor_ct = row_first["ct"] if row_first and row_first["ct"] else None
+        conn.close()
+
+        if not anchor_ct:
+            return 0.0
+        anchor_dt = datetime.fromisoformat(anchor_ct)
+        if anchor_dt.tzinfo is None:
+            anchor_dt = anchor_dt.replace(tzinfo=WIB)
+        return (datetime.now(WIB) - anchor_dt).total_seconds() / 86400.0
+    except Exception as e:
+        print(f"[Guard] get_trend_age_days error: {e}")
+        return 0.0
 
 
 def has_active_monitor(direction: str = None) -> bool:
@@ -1680,6 +1799,14 @@ def run_scheduled_analysis():
         )
         print(f"[MTF] {mtf['summary']}")
 
+        # Cache HTF bias terakhir supaya panel status (superadmin) bisa
+        # ditampilkan tanpa perlu fetch H1 baru tiap kali dashboard dibuka.
+        _cfg_set("htf_bias_cache", json.dumps({
+            "bias": mtf.get("htf", {}).get("bias", "UNKNOWN"),
+            "note": mtf.get("htf", {}).get("note", ""),
+            "updated_at": datetime.now(WIB).isoformat(),
+        }, ensure_ascii=False))
+
         # Restore BRIDGE_DF ke M5 (default untuk indikator & SMC)
         analyst.BRIDGE_DF = df_m5
 
@@ -1871,22 +1998,48 @@ def run_scheduled_analysis():
         active_monitor = has_active_monitor()
 
         # ── Confluence score filter (3 tingkat: auto-pass / vision-rescue / buang) ──
-        # score >= MIN_CONFLUENCE_SCORE           → lolos langsung, tanpa panggil AI
-        # VISION_RESCUE_MIN_SCORE <= score < MIN_CONFLUENCE_SCORE → borderline,
+        # score >= effective_min_confluence       → lolos langsung, tanpa panggil AI
+        # VISION_RESCUE_MIN_SCORE <= score < effective_min_confluence → borderline,
         #   ditahan dulu dan baru diputuskan lewat Vision AI setelah cek cooldown/
         #   loss-streak/monitor aktif lolos (supaya tidak buang panggilan API untuk
         #   sinyal yang toh akan diblokir gerbang lain).
         # score < VISION_RESCUE_MIN_SCORE         → langsung WAIT, tidak ada rescue.
+        #
+        # NOTE: sebelumnya kondisi ini juga cek `confidence != "HIGH_CONFIDENCE"`,
+        # tapi score_high_conf DIHARDCODE ke 5 di run_multi_timeframe_scan
+        # (bukan ikut MIN_CONFLUENCE_SCORE) -- jadi kalau admin set
+        # MIN_CONFLUENCE_SCORE > 5, sinyal skor 5 tetap auto-pass diam-diam
+        # karena sudah "HIGH_CONFIDENCE" oleh definisi terpisah itu, membuat
+        # ambang >5 tidak pernah benar-benar berlaku. Dihapus di sini supaya
+        # effective_min_confluence (termasuk kenaikan trend-age di bawah)
+        # benar-benar ditegakkan. Untuk konfigurasi default (=5) perilakunya
+        # identik dengan sebelumnya.
         min_confluence     = int(os.getenv("MIN_CONFLUENCE_SCORE", "5"))
         vision_rescue_min  = int(os.getenv("VISION_RESCUE_MIN_SCORE", "3"))
         score_val = berkah.get("score", 0) if isinstance(berkah, dict) else 0
         needs_vision_rescue = False
-        if sig in ("BUY", "SELL") and score_val < min_confluence and berkah.get("confidence") != "HIGH_CONFIDENCE":
+
+        # ── Trend-age adjustment — makin lama satu arah trading tanpa ada
+        # sinyal arah berlawanan sama sekali, makin ketat ambang skor yang
+        # dibutuhkan buat lanjut ke arah dominan itu (HTF bias lambat
+        # berubah, jadi bisa "terkunci" satu arah walau momentum jangka
+        # pendek sudah melemah). ──
+        effective_min_confluence = min_confluence
+        if sig in ("BUY", "SELL"):
+            trend_age_days = get_trend_age_days(sig)
+            age_threshold  = float(os.getenv("TREND_AGE_DAYS_THRESHOLD", "5"))
+            age_bonus      = int(os.getenv("TREND_AGE_SCORE_BONUS", "1"))
+            if trend_age_days >= age_threshold:
+                effective_min_confluence = min(7, min_confluence + age_bonus)
+                print(f"[Scheduler] 📅 {trend_age_days:.1f} hari tanpa sinyal arah berlawanan "
+                      f"{sig} — ambang skor dinaikkan ke {effective_min_confluence}/7")
+
+        if sig in ("BUY", "SELL") and score_val < effective_min_confluence:
             if score_val < vision_rescue_min:
                 print(f"[Scheduler] ⚠️ Skor {score_val}/7 < {vision_rescue_min} — skip sinyal low-confluence {sig}")
                 return None
             needs_vision_rescue = True
-            print(f"[Scheduler] 🔍 Skor {score_val}/7 di zona rescue [{vision_rescue_min}-{min_confluence}) — ditahan, cek gerbang lain dulu sebelum panggil Vision AI")
+            print(f"[Scheduler] 🔍 Skor {score_val}/7 di zona rescue [{vision_rescue_min}-{effective_min_confluence}) — ditahan, cek gerbang lain dulu sebelum panggil Vision AI")
 
         # ── Signal cooldown — jangan emit sinyal baru terlalu cepat ──
         if sig in ("BUY", "SELL"):
@@ -1935,6 +2088,7 @@ def run_scheduled_analysis():
                     tp2       = float(berkah["tp2"]),
                     tp3       = float(berkah["tp3"]),
                     timeframe = tf_label,
+                    vision_rescued = needs_vision_rescue,
                 )
                 if monitor_id is None:
                     # Kalah race vs monitor ACTIVE lain — jangan set cache/kirim Telegram
@@ -2243,14 +2397,21 @@ def _leader_election_retry_loop(interval_sec: int = 30):
             return
 
 
-load_session_schedule_from_db()   # restore state toggle sesi dari DB
-if _acquire_leader_lock():
-    print(f"[Leader] Worker PID {os.getpid()} = LEADER — scheduler & monitor aktif")
-    start_background_monitor()
-    start_scheduled_analysis()
-else:
-    print(f"[Leader] Worker PID {os.getpid()} = follower — scheduler skip (anti duplikat), akan coba lagi tiap 30s")
-    threading.Thread(target=_leader_election_retry_loop, daemon=True, name="LeaderElectionThread").start()
+# Startup ini sengaja jalan di level modul (bukan di dalam __main__) karena
+# Gunicorn multi-worker meng-import modul ini per-worker untuk mendapat objek
+# `app` — tiap worker independen ikut leader election saat itu juga. Satu-
+# satunya cara aman men-skip ini (mis. saat app.py di-import oleh test suite)
+# tanpa mengubah perilaku produksi sama sekali adalah lewat flag eksplisit
+# yang TIDAK PERNAH di-set di Railway/production.
+if os.getenv("GOLDEX_DISABLE_SCHEDULER_AUTOSTART") != "1":
+    load_session_schedule_from_db()   # restore state toggle sesi dari DB
+    if _acquire_leader_lock():
+        print(f"[Leader] Worker PID {os.getpid()} = LEADER — scheduler & monitor aktif")
+        start_background_monitor()
+        start_scheduled_analysis()
+    else:
+        print(f"[Leader] Worker PID {os.getpid()} = follower — scheduler skip (anti duplikat), akan coba lagi tiap 30s")
+        threading.Thread(target=_leader_election_retry_loop, daemon=True, name="LeaderElectionThread").start()
 
 
 # ─────────────────────────────────────────────
@@ -2446,6 +2607,65 @@ def api_get_session_schedule():
             "tokyo":    "06:00–13:59 WIB",
             "sydney":   "04:00–09:59 WIB",
         }
+    })
+
+
+@app.route("/api/admin/guard_status")
+@superadmin_required
+def api_guard_status():
+    """
+    Status real-time gerbang risk-management — superadmin only.
+    HTF bias terakhir (dari cache scheduler, bukan fetch baru), status blokir
+    per arah (rolling-window loss guard), martingale multiplier aktif, umur
+    tren per arah, dan perbandingan win rate auto-pass vs Vision-rescue.
+    """
+    from xauusd_ai_analyst import get_martingale_multiplier
+
+    htf_raw = _cfg_get("htf_bias_cache", "")
+    try:
+        htf = json.loads(htf_raw) if htf_raw else None
+    except Exception:
+        htf = None
+    if not htf:
+        htf = {"bias": "UNKNOWN", "note": "Belum pernah dihitung scheduler", "updated_at": None}
+
+    window = int(os.getenv("LOSS_STREAK_WINDOW", "6"))
+
+    def _rolling_summary(direction):
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("""
+            SELECT outcome, pnl_pips, martingale_mult FROM trade_monitors
+            WHERE direction=? AND status='CLOSED'
+            ORDER BY id DESC LIMIT ?
+        """, (direction, window)).fetchall()
+        conn.close()
+        rows = [dict(r) for r in rows]
+        pnl_list = [_money(r.get("pnl_pips"), r.get("martingale_mult")) for r in rows]
+        wins     = sum(1 for v in pnl_list if v > 0.01)
+        losses   = sum(1 for v in pnl_list if v < -0.01)
+        decisive = wins + losses
+        blocked, note = is_direction_blocked(direction)
+        return {
+            "window_size":    len(rows),
+            "wins":           wins,
+            "losses":         losses,
+            "win_rate":       round(wins / decisive * 100, 1) if decisive else None,
+            "blocked":        blocked,
+            "blocked_reason": note,
+            "trend_age_days": round(get_trend_age_days(direction), 1),
+        }
+
+    return jsonify({
+        "ok":                    True,
+        "htf_bias":              htf,
+        "martingale_multiplier": get_martingale_multiplier(),
+        "guard_window":          window,
+        "guard_threshold":       int(os.getenv("LOSS_STREAK_THRESHOLD", "3")),
+        "trend_age_threshold_days": float(os.getenv("TREND_AGE_DAYS_THRESHOLD", "5")),
+        "buy":                   _rolling_summary("BUY"),
+        "sell":                  _rolling_summary("SELL"),
+        "vision_rescue":         get_vision_rescue_stats(days=30),
     })
 
 

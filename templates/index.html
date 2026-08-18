@@ -984,6 +984,43 @@
     </section>
     {% endif %}
 
+    <!-- Risk Guard Status Panel (superadmin only) -->
+    {% if session.get('role') == 'superadmin' %}
+    <section class="card card-guard-status" id="guard-status-card">
+      <div class="card-label-row">
+        <div class="card-label"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7z"/></svg><span>STATUS RISK GUARD</span></div>
+        <button class="btn-clear" onclick="loadGuardStatus()" title="Refresh">↺</button>
+      </div>
+
+      <div class="server-tf-row">
+        <span class="ind-name">HTF Bias (H1)</span>
+        <span class="ind-val" id="guard-htf-bias">–</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-sec);margin-bottom:10px" id="guard-htf-note"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px">
+          <div style="font-weight:700;color:var(--green);font-size:12px">BUY</div>
+          <div id="guard-buy-status" style="font-size:10.5px;color:var(--text-sec);margin-top:3px">–</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px">
+          <div style="font-weight:700;color:var(--red);font-size:12px">SELL</div>
+          <div id="guard-sell-status" style="font-size:10.5px;color:var(--text-sec);margin-top:3px">–</div>
+        </div>
+      </div>
+
+      <div class="server-tf-row">
+        <span class="ind-name">Martingale Aktif</span>
+        <span class="ind-val" id="guard-martingale">–</span>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="card-label" style="font-size:10px">AUTO-PASS vs VISION-RESCUE (30 HARI)</div>
+        <div id="guard-vision-table" style="font-size:11px;color:var(--text-sec);margin-top:4px">Memuat…</div>
+      </div>
+    </section>
+    {% endif %}
+
     <!-- Stats Bar -->
     <section class="card card-stats">
       <div class="card-label" data-i18n="signal_stats">STATISTIK SINYAL</div>
@@ -1294,6 +1331,53 @@ renderLangToggle("dash-lang-toggle");
   function gxOpenDrawer() {
     document.getElementById("settings-drawer")?.classList.add("open");
     document.getElementById("settings-drawer-backdrop")?.classList.add("open");
+    if (document.getElementById("guard-status-card")) loadGuardStatus();
+  }
+
+  async function loadGuardStatus() {
+    const dirBox = (id, res) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (res.blocked) {
+        el.innerHTML = `🚧 Diblokir<br>${res.blocked_reason || ""}`;
+        el.style.color = "var(--red)";
+      } else {
+        const wr = res.win_rate === null ? "belum cukup data" : `${res.win_rate}% (${res.wins}W/${res.losses}L dari ${res.window_size})`;
+        el.innerHTML = `✅ Aktif<br>Win rate: ${wr}<br>Umur tren: ${res.trend_age_days} hari`;
+        el.style.color = "var(--text-sec)";
+      }
+    };
+    try {
+      const res = await fetch("/api/admin/guard_status");
+      if (!res.ok) return; // bukan superadmin — diam saja
+      const data = await res.json();
+      if (!data.ok) return;
+
+      const htfEl = document.getElementById("guard-htf-bias");
+      if (htfEl) {
+        htfEl.textContent = data.htf_bias.bias || "UNKNOWN";
+        htfEl.className = "ind-val " + (data.htf_bias.bias === "BULL" ? "pos" : data.htf_bias.bias === "BEAR" ? "neg" : "");
+      }
+      const noteEl = document.getElementById("guard-htf-note");
+      if (noteEl) noteEl.textContent = data.htf_bias.note || "";
+
+      dirBox("guard-buy-status", data.buy);
+      dirBox("guard-sell-status", data.sell);
+
+      const martEl = document.getElementById("guard-martingale");
+      if (martEl) martEl.textContent = `${data.martingale_multiplier}x`;
+
+      const visEl = document.getElementById("guard-vision-table");
+      if (visEl) {
+        const ap = data.vision_rescue.auto_pass;
+        const vr = data.vision_rescue.vision_rescued;
+        visEl.innerHTML =
+          `Auto-pass: ${ap.total} trade, ${ap.win_rate}% win rate<br>` +
+          `Vision-rescue: ${vr.total} trade, ${vr.win_rate}% win rate`;
+      }
+    } catch (e) {
+      console.error("Gagal load guard status:", e);
+    }
   }
   function gxCloseDrawer() {
     document.getElementById("settings-drawer")?.classList.remove("open");
