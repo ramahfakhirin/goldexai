@@ -19,6 +19,7 @@ import os
 import sqlite3
 import sys
 import tempfile
+import types
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -166,6 +167,98 @@ class GuardTestCase(unittest.TestCase):
         self.assertTrue(data["ok"])
         self.assertTrue(data["buy"]["blocked"])
         self.assertIn("vision_rescue", data)
+
+
+def _fake_smc(ob_zones=None, fvg_zones=None, support_levels=None, resistance_levels=None):
+    return types.SimpleNamespace(
+        ob_zones=ob_zones or [], fvg_zones=fvg_zones or [],
+        support_levels=support_levels or [], resistance_levels=resistance_levels or [],
+    )
+
+
+class SLWideningTestCase(unittest.TestCase):
+    """widen_sl_for_smc_structure — perluas SL saat jatuh di tengah zona OB/FVG."""
+
+    def test_no_zones_leaves_sl_unchanged(self):
+        sl = goldex_app.widen_sl_for_smc_structure("BUY", 4000, 3990, _fake_smc())
+        self.assertEqual(sl, 3990)
+
+    def test_sl_outside_any_zone_unchanged(self):
+        smc = _fake_smc(ob_zones=[{"low": 3950, "high": 3960, "type": "BULLISH OB"}])
+        sl = goldex_app.widen_sl_for_smc_structure("BUY", 4000, 3990, smc)
+        self.assertEqual(sl, 3990)
+
+    def test_buy_sl_inside_zone_widens_below_it(self):
+        # SL asli 3990 (jarak 10 dari entry) jatuh di tengah zona [3987, 3993]
+        # -- harus digeser ke bawah 3987 (sisi zona yang lebih jauh dari
+        # entry 4000), masih dalam batas cap 1.5x (15 poin).
+        smc = _fake_smc(ob_zones=[{"low": 3987, "high": 3993, "type": "BULLISH OB"}])
+        sl = goldex_app.widen_sl_for_smc_structure("BUY", 4000, 3990, smc)
+        self.assertLess(sl, 3987)
+        self.assertAlmostEqual(sl, 3986.5, delta=0.01)
+
+    def test_sell_sl_inside_zone_widens_above_it(self):
+        smc = _fake_smc(ob_zones=[{"low": 4007, "high": 4013, "type": "BEARISH OB"}])
+        sl = goldex_app.widen_sl_for_smc_structure("SELL", 4000, 4010, smc)
+        self.assertGreater(sl, 4013)
+        self.assertAlmostEqual(sl, 4013.5, delta=0.01)
+
+    def test_widening_never_tightens_sl(self):
+        # Zona jauh di seberang entry dari SL -- tidak boleh mempersempit apapun.
+        smc = _fake_smc(ob_zones=[{"low": 4050, "high": 4060, "type": "BULLISH OB"}])
+        sl = goldex_app.widen_sl_for_smc_structure("BUY", 4000, 3990, smc)
+        self.assertEqual(sl, 3990)
+
+    def test_widening_capped_at_1_5x_original_distance(self):
+        # Original dist = 10 (4000-3990) -- zona sangat lebar/dekat entry
+        # yang kalau dituruti akan melebar >1.5x (>15 poin) harus DITOLAK.
+        smc = _fake_smc(ob_zones=[{"low": 3970, "high": 3995, "type": "BULLISH OB"}])
+        sl = goldex_app.widen_sl_for_smc_structure("BUY", 4000, 3990, smc)
+        self.assertLessEqual(4000 - sl, 15.0)
+
+    def test_stacked_zones_widen_iteratively(self):
+        # Dua zona bertumpuk berurutan -- SL harus bersih dari KEDUANYA,
+        # bukan cuma zona pertama yang ditemukan. entry-sl jarak dibuat besar
+        # (50 poin, cap 75) supaya dua tahap perluasan tidak kena cap.
+        smc = _fake_smc(ob_zones=[
+            {"low": 3945, "high": 3955, "type": "BULLISH OB"},
+            {"low": 3935, "high": 3945, "type": "BULLISH OB"},
+        ])
+        sl = goldex_app.widen_sl_for_smc_structure("BUY", 4000, 3950, smc)
+        self.assertLess(sl, 3935)
+
+
+class NearSmcLevelTestCase(unittest.TestCase):
+    """is_near_strong_smc_level — dipakai buat Vision Veto (default off)."""
+
+    def test_far_from_any_level_returns_false(self):
+        smc = _fake_smc(support_levels=[3900], resistance_levels=[4100])
+        self.assertFalse(goldex_app.is_near_strong_smc_level(4000, smc, atr_val=5.0))
+
+    def test_near_support_level_returns_true(self):
+        # threshold = 0.5 x ATR(5) = 2.5 -- harga 3998 cuma 2 poin dari support 4000
+        smc = _fake_smc(support_levels=[4000])
+        self.assertTrue(goldex_app.is_near_strong_smc_level(3998, smc, atr_val=5.0))
+
+    def test_near_resistance_level_returns_true(self):
+        smc = _fake_smc(resistance_levels=[4000])
+        self.assertTrue(goldex_app.is_near_strong_smc_level(4001.5, smc, atr_val=5.0))
+
+    def test_inside_ob_zone_returns_true(self):
+        smc = _fake_smc(ob_zones=[{"low": 3995, "high": 4005, "type": "BULLISH OB"}])
+        self.assertTrue(goldex_app.is_near_strong_smc_level(4000, smc, atr_val=5.0))
+
+    def test_near_fvg_zone_edge_returns_true(self):
+        smc = _fake_smc(fvg_zones=[{"low": 4010, "high": 4020, "type": "BULLISH FVG"}])
+        # 4008 ada 2 poin di bawah tepi zona (4010) -- dalam threshold 2.5
+        self.assertTrue(goldex_app.is_near_strong_smc_level(4008, smc, atr_val=5.0))
+
+    def test_zero_atr_returns_false(self):
+        smc = _fake_smc(support_levels=[4000])
+        self.assertFalse(goldex_app.is_near_strong_smc_level(4000, smc, atr_val=0.0))
+
+    def test_no_levels_at_all_returns_false(self):
+        self.assertFalse(goldex_app.is_near_strong_smc_level(4000, _fake_smc(), atr_val=5.0))
 
 
 if __name__ == "__main__":

@@ -897,6 +897,63 @@ def is_direction_blocked(direction: str) -> tuple:
         return False, ""
 
 
+def widen_sl_for_smc_structure(direction: str, entry: float, sl: float, smc) -> float:
+    """
+    Perluas SL kalau posisinya jatuh DI TENGAH zona order block / FVG SMC.
+
+    detect_smc_structure() sudah menghitung zona-zona ini setiap siklus, tapi
+    detect_berkah_signal() menaruh SL murni dari ATR (entry ± buffer + 0.8xATR)
+    tanpa pernah cek apakah level itu jatuh di tengah zona likuiditas — zona
+    yang secara statistik sering di-wick harga (stop-hunt) sebelum harga benar
+    lanjut ke arah sinyal. SL yang taruh pas di tengah zona jadi target wick
+    itu sendiri.
+
+    Kalau SL jatuh di dalam salah satu zona (OB atau FVG, tipe apapun — yang
+    penting levelnya adalah area minat, bukan arahnya), digeser ke SEBERANG
+    zona itu (sisi yang lebih jauh dari entry) supaya seluruh zona "tertelan"
+    jarak SL, bukan jadi titik stop-hunt di tengah jalan. HANYA PERNAH
+    MEMPERLEBAR, tidak pernah mempersempit SL asli — dan dibatasi maksimum
+    1.5x jarak SL asli supaya tidak melebar tak terbatas kalau ada banyak
+    zona bertumpuk (uncapped widening = risk per trade jadi tidak terkontrol).
+
+    Return SL baru (sama dengan SL asli kalau tidak ada zona yang perlu dihindari).
+    """
+    try:
+        zones = list(getattr(smc, "ob_zones", []) or []) + list(getattr(smc, "fvg_zones", []) or [])
+        if not zones:
+            return sl
+
+        original_dist = abs(entry - sl)
+        if original_dist <= 0:
+            return sl
+        max_dist = original_dist * 1.5
+
+        # Iteratif: kalau zona bertumpuk, terus dorong SL keluar sampai bersih
+        # dari semua zona atau sampai kena batas max_dist -- urutkan dari
+        # yang paling dekat entry dulu supaya perluasan bertahap masuk akal.
+        widened_sl = sl
+        zones_sorted = sorted(zones, key=lambda z: abs((z.get("low", 0) + z.get("high", 0)) / 2 - entry))
+        for z in zones_sorted:
+            lo, hi = z.get("low"), z.get("high")
+            if lo is None or hi is None:
+                continue
+            if direction == "BUY":
+                # SL BUY ada di bawah entry -- kalau SL (versi terkini) jatuh di dalam zona
+                if lo <= widened_sl <= hi:
+                    candidate = lo - 0.5
+                    if (entry - candidate) <= max_dist:
+                        widened_sl = candidate
+            else:  # SELL
+                if lo <= widened_sl <= hi:
+                    candidate = hi + 0.5
+                    if (candidate - entry) <= max_dist:
+                        widened_sl = candidate
+        return round(widened_sl, 2)
+    except Exception as e:
+        print(f"[SL-Guard] widen_sl_for_smc_structure error: {e}")
+        return sl
+
+
 def get_trend_age_days(direction: str) -> float:
     """
     Berapa hari sejak arah BERLAWANAN terakhir kali trading — dipakai sebagai
@@ -1696,6 +1753,92 @@ def _try_vision_rescue(sig: str, market, berkah: dict, indicators, smc, tf_label
         return False
 
 
+def is_near_strong_smc_level(price: float, smc, atr_val: float, proximity_atr: float = 0.5) -> bool:
+    """
+    True kalau harga saat ini berada dalam proximity_atr x ATR dari level SMC
+    kuat (support/resistance/order block/FVG). Skor confluence numerik tinggi
+    tidak pernah memperhitungkan apakah harga sedang di tengah zona struktur
+    besar — dipakai untuk memutuskan kapan sinyal auto-pass (skor tinggi)
+    tetap layak dapat sanity-check visual tambahan (lihat _try_vision_veto).
+    """
+    if atr_val <= 0:
+        return False
+    threshold = proximity_atr * atr_val
+    for lvl in list(getattr(smc, "support_levels", []) or []) + list(getattr(smc, "resistance_levels", []) or []):
+        if abs(price - lvl) <= threshold:
+            return True
+    for z in list(getattr(smc, "ob_zones", []) or []) + list(getattr(smc, "fvg_zones", []) or []):
+        lo, hi = z.get("low"), z.get("high")
+        if lo is None or hi is None:
+            continue
+        if lo - threshold <= price <= hi + threshold:
+            return True
+    return False
+
+
+def _try_vision_veto(sig: str, market, berkah: dict, indicators, smc, tf_label: str,
+                      twelve_key: str, api_key: str) -> bool:
+    """
+    Vision Veto: sanity-check visual TAMBAHAN untuk sinyal skor TINGGI
+    (auto-pass, tidak lewat zona rescue) yang harganya kebetulan dekat level
+    SMC kuat — skor numerik tidak pernah mengecek itu, jadi bisa auto-pass
+    walau visualnya jelas masih di tengah order block/FVG/S-R besar.
+
+    Fail-safe SENGAJA DIBALIK dari _try_vision_rescue: kalau Vision API
+    gagal/timeout/error di sini, JANGAN veto (biarkan sinyal lanjut apa
+    adanya) — sinyal ini sudah lolos gerbang numerik dengan skor tinggi atas
+    kemampuannya sendiri, gangguan API eksternal tidak seharusnya
+    membatalkan sinyal yang sudah valid secara numerik. Beda dengan rescue
+    (yang butuh Vision buat LOLOS), veto di sini cuma pengaman tambahan.
+
+    Return True kalau sinyal HARUS DIVETO (verdict Vision selain VALID).
+    """
+    try:
+        chart_tf = {"M5": "5m", "M1": "1m"}.get(tf_label, "5m")
+        entry = float(berkah.get("entry", 0))
+        sl    = float(berkah.get("sl", 0))
+        tp1   = float(berkah.get("tp1", 0))
+        tp2   = float(berkah.get("tp2", 0))
+        tp3   = float(berkah.get("tp3", 0))
+        score = int(berkah.get("score", 0))
+        pseudo_conf = min(100, max(0, score * 100 // 7))
+
+        gen   = get_chart_generator()
+        chart = gen(
+            timeframe  = chart_tf,
+            api_key    = twelve_key,
+            signal     = sig,
+            entry      = entry, stop_loss = sl,
+            tp1        = tp1, tp2 = tp2, tp3 = tp3,
+            confidence = pseudo_conf,
+        )
+
+        confirm_fn, _ = get_vision_analyzer()
+        indic_dict = {
+            "ema_21": indicators.ema_21, "ema_50": indicators.ema_50, "ema_200": indicators.ema_200,
+            "rsi": indicators.rsi_14, "macd": indicators.macd, "macd_signal": indicators.macd_signal,
+            "atr": indicators.atr_14,
+        }
+        smc_dict = {
+            "trend": smc.trend, "bos": smc.last_bos, "choch": smc.last_choch,
+            "swing_high": smc.swing_high, "swing_low": smc.swing_low,
+        }
+        vision = confirm_fn(
+            chart_b64  = chart["b64"], signal = sig,
+            price      = market.current_price, timeframe = chart_tf,
+            entry      = entry, stop_loss = sl, tp1 = tp1, tp2 = tp2, tp3 = tp3,
+            confidence = pseudo_conf,
+            indicators = indic_dict, smc = smc_dict, api_key = api_key,
+        )
+        verdict = vision.get("verdict", "SKIP")
+        print(f"[Vision Veto] {sig} skor {score}/7 dekat level SMC → verdict={verdict} | "
+              f"{str(vision.get('reasoning',''))[:150]}")
+        return verdict != "VALID"
+    except Exception as e:
+        print(f"[Vision Veto] Error: {e} — fail-safe, sinyal TETAP LANJUT (tidak diveto)")
+        return False
+
+
 def run_scheduled_analysis():
     """Jalankan analisis XAU/USD dan simpan ke DB. Dipanggil oleh scheduler."""
     try:
@@ -1837,6 +1980,29 @@ def run_scheduled_analysis():
             # WAIT dari MTF Scan — simpan rate-limited, tidak panggil Claude
             _save_wait_ratelimited(berkah["reason"], market, indicators, smc, "5m")
             return None
+
+        # ── SMC-aware SL widening — hindari SL taruh di tengah zona OB/FVG
+        # yang sering di-wick sebelum harga lanjut ke arah sinyal. TP
+        # direcalculate dari jarak SL baru supaya rasio RR (1:1/1.5/2) tetap
+        # konsisten. Hanya pernah memperlebar, tidak pernah mempersempit. ──
+        if berkah.get("sl") and berkah.get("entry"):
+            _old_sl  = float(berkah["sl"])
+            _new_sl  = widen_sl_for_smc_structure(sig, float(berkah["entry"]), _old_sl, smc)
+            if _new_sl != _old_sl:
+                _entry    = float(berkah["entry"])
+                _new_dist = abs(_entry - _new_sl)
+                if sig == "BUY":
+                    berkah["tp1"] = round(_entry + _new_dist * 1.0, 2)
+                    berkah["tp2"] = round(_entry + _new_dist * 1.5, 2)
+                    berkah["tp3"] = round(_entry + _new_dist * 2.0, 2)
+                else:
+                    berkah["tp1"] = round(_entry - _new_dist * 1.0, 2)
+                    berkah["tp2"] = round(_entry - _new_dist * 1.5, 2)
+                    berkah["tp3"] = round(_entry - _new_dist * 2.0, 2)
+                berkah["tp"] = berkah["tp3"]
+                berkah["sl"] = _new_sl
+                print(f"[Scheduler] 🛡️ SL diperluas {_old_sl:.2f} → {_new_sl:.2f} "
+                      f"(hindari zona OB/FVG) — TP direcalculate untuk jaga rasio RR")
 
         # ── BUY atau SELL terdeteksi — panggil Claude hanya untuk narasi ──
         price = market.current_price
@@ -2076,6 +2242,26 @@ def run_scheduled_analysis():
                         " 🔍 Dikonfirmasi Vision AI (skor numerik borderline)."
                     analysis["narrative_en"] = (analysis.get("narrative_en") or "") + \
                         " 🔍 Confirmed by Vision AI (borderline numeric score)."
+
+                # ── Vision Veto (opsional, default OFF) — sanity-check
+                # tambahan untuk sinyal auto-pass (skor tinggi, TIDAK lewat
+                # zona rescue) yang harganya dekat level SMC kuat. Beda dari
+                # rescue: di sini Vision AI cuma pengaman ekstra, bukan
+                # syarat lolos — gagal/error API TIDAK memveto sinyal yang
+                # sudah valid numerik. Nonaktif secara default karena belum
+                # tervalidasi backtest (butuh panggilan Vision berulang atas
+                # chart historis, mahal & lambat) DAN menambah biaya API
+                # berkelanjutan di production untuk sinyal yang sebelumnya
+                # auto-pass tanpa panggilan AI sama sekali. ──
+                if (not needs_vision_rescue
+                        and os.getenv("VISION_VETO_NEAR_SMC", "false").lower() == "true"
+                        and is_near_strong_smc_level(market.current_price, smc, indicators.atr_14)):
+                    vetoed = _try_vision_veto(
+                        sig, market, berkah, indicators, smc, tf_label, twelve_key, api_key
+                    )
+                    if vetoed:
+                        print(f"[Scheduler] 🔍🚫 Vision veto — {sig} skor {score_val}/7 dekat level SMC, ditahan")
+                        return None
 
                 signal_id = save_signal(analysis, tf_label, market.current_price)
 

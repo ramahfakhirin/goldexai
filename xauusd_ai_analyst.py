@@ -823,6 +823,57 @@ def get_martingale_multiplier():
 # ─────────────────────────────────────────────
 # 3C. BERKAH ENTRY SIGNAL — FULL REPLICATION
 # ─────────────────────────────────────────────
+def compute_adx_rising(adx_arr: np.ndarray, start_adx: int, lookback: int = 3) -> bool:
+    """
+    True kalau ADX saat ini lebih tinggi dari `lookback` candle lalu (momentum
+    lagi AKSELERASI, bukan cuma tinggi tapi sudah mulai melemah). Permisif
+    (True) kalau histori adx_arr belum cukup ter-"warm up" buat lookback ini —
+    jangan menghukum kondisi yang tidak bisa dibuktikan.
+    """
+    n = len(adx_arr)
+    idx = n - 1 - lookback
+    if idx > start_adx:
+        return float(adx_arr[-1]) > float(adx_arr[idx])
+    return True
+
+
+def is_momentum_exhausted(direction: str, rsi_val: float, adx_rising: bool,
+                           overbought: float = 75.0, oversold: float = 25.0) -> bool:
+    """
+    True kalau entry di arah ini kemungkinan "mengejar" pergerakan yang sudah
+    hampir habis tenaga — RSI di zona ekstrem TAPI momentum (ADX) TIDAK lagi
+    akselerasi.
+
+    Bukan veto keras murni RSI-ekstrem sendirian: di tren kuat RSI bisa
+    "nempel" overbought/oversold lama tanpa reversal selama momentumnya
+    masih menguat (veto RSI tunggal akan buang entry continuation yang
+    bagus). Kombinasi RSI-ekstrem + ADX-melemah lebih spesifik menandakan
+    pergerakan yang benar-benar kehabisan tenaga, bukan sekadar tren kuat
+    yang wajar RSI-nya tinggi.
+    """
+    if direction == "BUY":
+        return rsi_val > overbought and not adx_rising
+    return rsi_val < oversold and not adx_rising
+
+
+def check_volatility_floor(atr_val: float, tr_arr: np.ndarray,
+                            lookback: int = 20, floor_mult: float = 0.6) -> tuple:
+    """
+    Cek apakah ATR saat ini terkompresi jauh di bawah rata-rata True Range
+    `lookback` periode SENDIRI — proxy market choppy/sepi, kondisi di mana
+    BoS & Liquidity Sweep gampang false-positive (range terlalu sempit buat
+    jadi struktur beneran).
+    Return (is_low_volatility: bool, avg_tr_recent: float).
+    """
+    n = len(tr_arr)
+    if n <= lookback + 5:
+        return False, 0.0
+    avg_tr_recent = float(np.mean(tr_arr[-lookback:]))
+    if avg_tr_recent > 0 and atr_val < avg_tr_recent * floor_mult:
+        return True, avg_tr_recent
+    return False, avg_tr_recent
+
+
 def detect_berkah_signal(
     market: MarketData,
     indicators: Indicators,
@@ -844,6 +895,14 @@ def detect_berkah_signal(
     htf_bias_override: str | None = None,  # "BULL"|"BEAR"|"RANGING" dari data H1 asli (jika ada)
     htf_agg_factor: int       = 12,  # agregasi candle → struktur HTF (12xM5 = H1, 15xM1 = M15)
     max_extension_atr: float  = 1.5, # veto entry telat: jarak price↔EMA21 maks (xATR)
+    # Volatility floor — veto entry saat market choppy/sepi (ATR sekarang
+    # jauh di bawah rata-rata sendiri). BoS & Liquidity Sweep gampang false-
+    # positive di range sempit.
+    volatility_floor_mult: float = 0.6,
+    volatility_lookback: int     = 20,
+    # Momentum-exhaustion veto — lihat is_momentum_exhausted()
+    rsi_overbought: float = 75.0,
+    rsi_oversold: float   = 25.0,
 ) -> dict:
     """
     Confluence Score System untuk XAUUSD Scalping.
@@ -988,6 +1047,28 @@ def detect_berkah_signal(
 
     adx_current = float(adx_arr[-1])
 
+    # ── VETO VOLATILITAS RENDAH — lihat check_volatility_floor() ──
+    is_low_vol, avg_tr_recent = check_volatility_floor(
+        atr_val, tr_arr, lookback=volatility_lookback, floor_mult=volatility_floor_mult)
+    if is_low_vol:
+        return {
+            "signal":     "WAIT",
+            "entry":      round(price, 2),
+            "tp":         0.0, "tp1": 0.0, "tp2": 0.0, "tp3": 0.0, "sl": 0.0,
+            "lot_size":   0.0,
+            "score":      0,
+            "max_score":  7,
+            "confidence": "LOW_VOLATILITY",
+            "reason":     (f"LOW VOLATILITY — ATR {atr_val:.2f} < "
+                           f"{volatility_floor_mult:.0%} rata-rata TR {volatility_lookback} "
+                           f"periode ({avg_tr_recent:.2f}). Market kemungkinan choppy/sepi, "
+                           f"BoS & Liquidity Sweep rawan false-positive."),
+            "conditions": {"score_buy": 0, "score_sell": 0},
+        }
+
+    # ── ADX rising check — lihat compute_adx_rising() ──
+    adx_rising = compute_adx_rising(adx_arr, start_adx, lookback=3)
+
     # ─────────────────────────────────────────────
     # DETEKSI KONDISI INDIVIDUAL
     # ─────────────────────────────────────────────
@@ -1128,6 +1209,13 @@ def detect_berkah_signal(
         can_buy  = score_buy >= score_sell
         can_sell = not can_buy
 
+    # ── VETO MOMENTUM EXHAUSTED — lihat is_momentum_exhausted() ──
+    rsi_val = float(getattr(indicators, "rsi_14", 50.0) or 50.0)
+    if can_buy and is_momentum_exhausted("BUY", rsi_val, adx_rising, rsi_overbought, rsi_oversold):
+        can_buy = False
+    if can_sell and is_momentum_exhausted("SELL", rsi_val, adx_rising, rsi_overbought, rsi_oversold):
+        can_sell = False
+
     # ─────────────────────────────────────────────
     # TP / SL CALCULATION
     # TP1 = 1:1 dengan SL distance
@@ -1216,10 +1304,19 @@ def detect_berkah_signal(
             else f"HTF BEAR (skor sell={score_sell}/{score_threshold})" if htf_bias_bear
             else "HTF RANGING"
         )
+        # Kalau skor sebenarnya CUKUP tapi tetap WAIT, kemungkinan besar kena
+        # veto momentum-exhausted (RSI ekstrem + ADX melemah) -- catat
+        # eksplisit di reason supaya tidak terbaca seolah skor kurang.
+        exhaustion_note = ""
+        if htf_bias_bull and score_buy >= score_threshold:
+            exhaustion_note = " | DIVETO: momentum exhausted (RSI overbought + ADX melemah)"
+        elif htf_bias_bear and score_sell >= score_threshold:
+            exhaustion_note = " | DIVETO: momentum exhausted (RSI oversold + ADX melemah)"
         reason = (
             f"WAIT — {htf_note} | "
             f"BUY miss [{score_buy}/7 < {score_threshold}]: {miss_buy} | "
             f"SELL miss [{score_sell}/7 < {score_threshold}]: {miss_sell}"
+            f"{exhaustion_note}"
         )
         # WAIT reason bersifat debug/teknis — versi EN tidak signifikan, pakai apa adanya
         reason_en = reason
@@ -1254,6 +1351,7 @@ def detect_berkah_signal(
             "pin_bar_bear":   is_bear_pin,
             "adx_ok":         adx_current > adx_threshold,
             "adx_value":      round(adx_current, 2),
+            "adx_rising":     adx_rising,
             "ema_price_bull": ema_price_bull,
             "ema_price_bear": ema_price_bear,
             "session_ok":     session_ok,
