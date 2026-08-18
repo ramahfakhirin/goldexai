@@ -239,6 +239,105 @@ memang lebih tinggi daripada trade yang menang.
 
 ---
 
+## TASK 4 — Audit (TANPA perubahan kode) ✅ SELESAI
+
+Tidak ada file kode yang diubah untuk task ini.
+
+### 1. Martingale
+
+**(a) Kapan `get_martingale_multiplier()` > 1?**
+(`xauusd_ai_analyst.py:791`) Query 20 trade `status='CLOSED'` terbaru, lalu
+iterasi dari yang **paling baru ke lama**: tiap `SL_HIT` mengalikan 2, dan
+berhenti (`break`) begitu ketemu `TP1_HIT`/`TP2_HIT`/`TP3_HIT`/`BE_HIT`.
+Jadi multiplier = `2^n`, dengan n = **jumlah SL_HIT beruntun paling baru**.
+
+⚠️ **Catatan penting:** outcome di luar 6 nilai itu (mis. `NULL`, atau
+`EARLY_BE_MOVE` bila suatu saat tersimpan berstatus CLOSED) tidak
+menggandakan **maupun** menghentikan loop — outcome itu **dilewati diam-diam**,
+sehingga rentetan SL bisa "melompati" trade penyela. Saat ini `EARLY_BE_MOVE`
+membiarkan status tetap `ACTIVE` jadi belum kena, tapi ini bergantung pada
+detail implementasi lain, bukan dijaga eksplisit.
+
+**(b) Nilai maksimum:** dibatasi `MAX_MARTINGALE_MULT` (default **4**). Jadi
+1 SL → 2x, 2 SL → 4x, 3+ SL → tetap 4x. Tanpa cap ini 5 SL beruntun = 32x lot.
+
+**(c) Apakah `/performance` mencampur lot berbeda tanpa keterangan? → YA.**
+
+Backend sudah menyediakan flag: `get_performance_stats()` mengembalikan
+`has_martingale` (`app.py:716`) dan `lot_size`.
+
+| Halaman | Menampilkan keterangan? |
+|---|---|
+| Dashboard (`index.html` + `app.js:1580`) | ✅ Ya — label berubah jadi `(basis 0.10 lot + Martingale)` |
+| **`/performance` (`performance.html`)** | ❌ **Tidak** — nol kemunculan `has_martingale`, `lot_size`, maupun elemen `lot-note` |
+
+Jadi halaman `/performance` — justru halaman yang paling dituju untuk menilai
+performa — menampilkan Total PnL hasil penjumlahan trade dengan lot efektif
+berbeda-beda **tanpa penanda apa pun**. Angka PnL-nya sendiri benar (backend
+sudah mengalikan `martingale_mult` per trade lewat `_money()`), yang hilang
+adalah keterangannya.
+
+### 2. Sumber spread
+
+**Tidak ada data spread sama sekali di sistem.**
+
+- `fetch_ohlcv_from_bridge()` (`app.py:1147`) menyaring kolom menjadi persis
+  `["open","high","low","close","volume"]` — kalau bridge mengirim spread pun,
+  kolomnya dibuang di titik ini.
+- `fetch_price_from_bridge()` (`app.py:1103`) hanya membaca `data["price"]` —
+  satu harga tunggal, tanpa bid/ask.
+- Satu-satunya kemunculan kata "spread" di seluruh backend adalah **4 string
+  narasi** (`app.py:2148/2153/2183/2188`): *"Hindari entry jika spread > X
+  poin"* — itu imbauan tekstual ke user, bukan gate.
+
+**Konsekuensi:** tidak ada gate biaya sama sekali. SL/TP dihitung murni dari
+ATR + level SMC, tanpa kesadaran biaya transaksi. Untuk scalping M1/M5 dengan
+SL kerap hanya beberapa poin, spread riil (terutama saat pergantian sesi
+London/NY) bisa memakan porsi besar dari edge — dan sistem tidak bisa
+melihatnya, apalagi menolak entry karenanya.
+
+### 3. Jalur Twelve Data — kolom volume
+
+**Apakah DataFrame-nya punya kolom volume?** Ya, tapi **disintesis**, bukan
+data asli:
+- `app.py:1232` — `df["volume"] = df.get("volume", 0)` → 0 kalau tidak ada.
+- `xauusd_ai_analyst.py:155-158` — kalau kolom tidak ada, `df["volume"] = 0.0`.
+
+Twelve Data memang umumnya tidak menyediakan volume untuk forex/XAU.
+
+**Indikator mana yang diam-diam berubah perilaku? → TIDAK ADA.**
+
+Diverifikasi dengan menghitung kemunculan `volume` di dalam tiap fungsi:
+`calculate_indicators` = 0, `detect_berkah_signal` = 0, `detect_smc_structure`
+= 0. Seluruh indikator (EMA, RSI, MACD, ATR, Bollinger, Stochastic, Heiken
+Ashi) dan seluruh logika sinyal murni berbasis OHLC. Jadi volume=0 **tidak
+mengubah satu pun keputusan sinyal**.
+
+⚠️ **Tapi ada dampak lain yang tidak terduga — pada Vision AI:**
+
+`chart_generator.py:170` menyusun layout chart sebagai *main chart (70%) +
+**volume (15%)** + info panel (15%)*, dan baris 308–314 menggambar bar volume.
+`generate_chart_b64()` mengambil datanya lewat `fetch_ohlcv(timeframe,
+api_key, ...)` yang sumbernya **Twelve Data** (bukan bridge) — dipanggil dengan
+`api_key = twelve_key`.
+
+Artinya chart yang dikirim ke Vision AI kemungkinan besar **selalu** punya
+panel volume kosong/rata, memakan 15% area gambar tanpa informasi. Vision AI
+menilai gambar itu untuk memutuskan VALID/SKIP.
+
+⚠️ **Risiko lebih serius (perlu dikonfirmasi dengan API key asli):**
+`chart_generator.py:104` memanggil `df.dropna()` **tanpa `subset`**. Kalau
+Twelve Data mengirim kolom `volume` berisi `null` (bukan tidak mengirim sama
+sekali), `pd.to_numeric(..., errors="coerce")` mengubahnya jadi `NaN`, lalu
+`dropna()` akan membuang **seluruh baris** → chart kosong total.
+
+Bandingkan dengan `xauusd_ai_analyst.py:160` yang sudah defensif:
+`.dropna(subset=["open","high","low","close"])` — sengaja mengecualikan volume.
+Kedua jalur menangani hal yang sama dengan cara berbeda, dan jalur chart adalah
+yang rapuh. Belum bisa saya uji di lokal (tidak ada `TWELVE_DATA_KEY`).
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)
