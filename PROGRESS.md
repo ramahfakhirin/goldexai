@@ -338,6 +338,54 @@ yang rapuh. Belum bisa saya uji di lokal (tidak ada `TWELVE_DATA_KEY`).
 
 ---
 
+## FOLLOW-UP — Disclosure lot di `/performance` ✅ SELESAI
+
+Menindaklanjuti temuan Task 4 item 1(c).
+
+**File diubah:** `templates/performance.html`
+
+### Masalah
+
+`/performance` menampilkan Total PnL hasil penjumlahan trade dengan lot efektif
+berbeda (begitu Martingale pernah aktif) **tanpa penanda apa pun**. Angkanya
+benar — backend sudah mengalikan `martingale_mult` per trade lewat `_money()` —
+tapi pembaca wajar mengira semua trade memakai basis lot yang sama.
+
+Dashboard sudah punya penanda ini (`static/js/app.js:1580`), `/performance`
+tidak — padahal justru halaman itu yang paling dibaca sebagai ringkasan performa.
+
+### Perubahan
+
+| Lokasi | Perubahan |
+|---|---|
+| CSS scoped | `.pp-hero-lbl .lot-note { text-transform: none; }` — `.lot-note` dari `style.css` mewarisi `uppercase` dari `.pp-hero-lbl` |
+| Tile Total PnL | Tambah `<span class="lot-note" id="pp-lot-note">` |
+| `ppRenderPerf()` | Isi dari `p.lot_size` + `p.has_martingale`, pola label disamakan dengan dashboard |
+
+Tidak ada perubahan backend — `/api/performance` sudah mengirim `lot_size` dan
+`has_martingale` (termasuk saat nol trade).
+
+### Cara verifikasi
+
+Diuji dua skenario dengan data sintetis, lalu dibersihkan:
+
+| Skenario | Data | Label tampil | Total PnL |
+|---|---|---|---|
+| A — semua lot basis | 3 trade, `martingale_mult=1` | `Total PnL (0.10 lot)` | `+$600.00` |
+| B — ada Martingale | +1 trade `martingale_mult=2` | `Total PnL (basis 0.10 lot + Martingale)` | `+$2200.00` |
+
+Selisihnya sendiri membuktikan kenapa penanda ini perlu: trade keempat
+menyumbang 80 poin × $10 × **2** = $1600 — tanpa keterangan, pembaca akan
+menghitung $2200 itu terhadap basis 0.10 lot dan salah menyimpulkan.
+
+Cek tampilan: `text-transform` ternormalisasi (`none`), ukuran 8px, dan di
+viewport mobile 375px label membungkus di dalam tile (`scrollWidth` 126 <
+`clientWidth` 166) tanpa overflow horizontal pada body.
+
+45 test lulus, tidak ada error server.
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)

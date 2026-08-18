@@ -80,6 +80,9 @@
     font-family: var(--sans); font-size: 10.5px; color: var(--text-sec); text-transform: uppercase;
     letter-spacing: .06em; font-weight: 700; margin-bottom: 8px; position: relative;
   }
+  /* .lot-note (style.css) mewarisi text-transform:uppercase dari .pp-hero-lbl —
+     dinormalkan supaya keterangan lot terbaca wajar, bukan berteriak. */
+  .pp-hero-lbl .lot-note { text-transform: none; }
   .pp-hero-val { font-family: var(--mono); font-size: 30px; font-weight: 800; position: relative; line-height: 1; }
   .pp-hero-val.pos { color: var(--green); }
   .pp-hero-val.neg { color: var(--red); }
@@ -247,7 +250,7 @@
         <div class="pp-hero-sub" id="pp-winrate-sub">–</div>
       </div>
       <div class="pp-hero-tile accent">
-        <div class="pp-hero-lbl">Total PnL</div>
+        <div class="pp-hero-lbl">Total PnL <span class="lot-note" id="pp-lot-note"></span></div>
         <div class="pp-hero-val" id="pp-pnl">–</div>
         <div class="pp-hero-sub" id="pp-pnl-sub">–</div>
       </div>
@@ -418,6 +421,20 @@ renderLangToggle("dash-lang-toggle");
     pnlEl.textContent = money(tpnl);
     pnlEl.className = "pp-hero-val " + (tpnl >= 0 ? "pos" : "neg");
     document.getElementById("pp-pnl-sub").textContent = `Avg/trade: ${money(p.avg_pnl ?? p.avg_pips ?? 0)}`;
+
+    // Total PnL menjumlahkan trade dengan lot efektif BERBEDA begitu Martingale
+    // pernah aktif — backend sudah mengalikan martingale_mult per trade lewat
+    // _money(), jadi angkanya benar, tapi tanpa keterangan ini pembaca mengira
+    // semua trade memakai basis lot yang sama. Pola labelnya disamakan dengan
+    // dashboard (static/js/app.js) supaya konsisten.
+    const lotBase   = Number(p.lot_size || 0);
+    const lotNoteEl = document.getElementById("pp-lot-note");
+    if (lotNoteEl) {
+      lotNoteEl.textContent = lotBase > 0
+        ? (p.has_martingale ? `(basis ${lotBase.toFixed(2)} lot + Martingale)`
+                            : `(${lotBase.toFixed(2)} lot)`)
+        : "";
+    }
 
     document.getElementById("pp-total").textContent = p.total || 0;
     const periodeLbl = p.period_days === -1 ? "hari ini" : p.period_days > 0 ? p.period_days + " hari" : "semua";
