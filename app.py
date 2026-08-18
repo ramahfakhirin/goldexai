@@ -1631,7 +1631,13 @@ def _save_wait_ratelimited(reason: str, market, indicators, smc, timeframe: str)
             "bos_bear":        "Break of Structure bearish belum terkonfirmasi",
             "liq_buy":         "Belum ada liquidity sweep ke bawah",
             "liq_sell":        "Belum ada liquidity sweep ke atas",
-            "adx":             f"ADX {indicators.rsi_14:.0f} — momentum belum cukup kuat",
+            # Sebelumnya baris ini mencetak indicators.rsi_14 BERLABEL "ADX".
+            # RSI dan ADX sama-sama berskala 0-100 jadi angkanya tidak pernah
+            # terlihat janggal -- user membaca nilai RSI dan mengira itu ADX.
+            # ADX tidak tersedia di sini (dihitung di dalam
+            # detect_berkah_signal(), bukan di calculate_indicators()), jadi
+            # angkanya dihapus daripada menampilkan metrik yang salah.
+            "adx":             "ADX belum cukup kuat — momentum trend masih lemah",
             "bullish_engulfing":"Belum ada pola bullish engulfing",
             "bearish_engulfing":"Belum ada pola bearish engulfing",
             "stable_candle":   "Candle tidak cukup solid (doji/small body)",
@@ -1964,7 +1970,23 @@ def run_scheduled_analysis():
 
         # Tambah info timeframe ke reason
         tf_label = berkah.get("timeframe", "M5")
-        berkah.setdefault("adx",      indicators.atr_14)   # fallback kalau field tidak ada
+        # ADX tidak selalu ada di dict: 4 jalur early-return WAIT di
+        # detect_berkah_signal() (data kurang / HTF ranging / OVEREXTENDED /
+        # LOW_VOLATILITY) tidak sempat menghitungnya, dan
+        # detect_mean_reversion_signal() sengaja set 0.0 (ranging = ADX tidak
+        # relevan by design).
+        #
+        # Fallback lama di sini memakai indicators.atr_14 -- skala ATR gold
+        # (~1-6) vs ADX (0-100) beda jauh, jadi kalau sampai terpakai, setiap
+        # perbandingan "adx > threshold" diam-diam salah DAN angka yang tampil
+        # ke user bukan pengukuran nyata (tetap float valid, jadi tidak pernah
+        # muncul di log). Dalam praktiknya jalur itu selalu WAIT dan
+        # early-return di bawah sebelum adx dibaca, tapi jebakannya dibiarkan
+        # hidup. Diganti nilai netral + flag eksplisit supaya konsumen bisa
+        # menampilkan "n/a" alih-alih angka palsu.
+        _adx_raw = berkah.get("adx")
+        berkah["adx_available"] = _adx_raw is not None and float(_adx_raw) > 0
+        berkah.setdefault("adx",      0.0)
         berkah.setdefault("atr",      float(indicators.atr_14))
         berkah.setdefault("tp2",      berkah.get("tp", 0))
         berkah.setdefault("tp3",      berkah.get("tp", 0))
@@ -2023,15 +2045,26 @@ def run_scheduled_analysis():
         adx_val   = berkah.get("adx", 0)
         atr_val_n = berkah.get("atr", 0)
         sl_dist   = abs(berkah["entry"] - berkah["sl"])
+        # ADX cuma layak ditulis sebagai angka kalau memang hasil pengukuran
+        # nyata. Mean-Reversion sengaja tidak mengukurnya (setup ranging), dan
+        # tanpa penjagaan ini narasi Telegram jadi kontradiktif: "ADX 0.0
+        # menandakan momentum trend kuat".
+        _adx_ok   = bool(berkah.get("adx_available"))
 
         # Narasi otomatis berdasarkan data sinyal (ID + EN — lihat format_signal_message
         # untuk bagaimana keduanya digabung jadi satu pesan Telegram bilingual)
         if sig == "BUY":
+            adx_clause    = (f"ADX {adx_val:.1f} menandakan momentum trend kuat"
+                             if _adx_ok else
+                             "ADX n/a — setup ini tidak mengukur kekuatan trend")
+            adx_clause_en = (f"ADX {adx_val:.1f} indicates strong trend momentum"
+                             if _adx_ok else
+                             "ADX n/a — this setup does not measure trend strength")
             narrative = (
                 f"Pasar XAU/USD [{tf_label}] menunjukkan konfirmasi BUY {conf} "
                 f"dengan skor confluence {score}/7 — "
                 f"EMA50 di atas EMA200 mengonfirmasi bias bullish, "
-                f"ADX {adx_val:.1f} menandakan momentum trend kuat. "
+                f"{adx_clause}. "
                 f"Level kritis: pertahankan SL di ${berkah['sl']:.2f} "
                 f"(jarak {sl_dist:.2f} poin dari entry), "
                 f"target bertahap TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
@@ -2040,7 +2073,7 @@ def run_scheduled_analysis():
                 f"XAU/USD market [{tf_label}] shows a {conf} BUY confirmation "
                 f"with a confluence score of {score}/7 — "
                 f"EMA50 above EMA200 confirms bullish bias, "
-                f"ADX {adx_val:.1f} indicates strong trend momentum. "
+                f"{adx_clause_en}. "
                 f"Critical level: maintain SL at ${berkah['sl']:.2f} "
                 f"({sl_dist:.2f} points from entry), "
                 f"staged targets TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
@@ -2056,11 +2089,17 @@ def run_scheduled_analysis():
                 "Watch for high-impact news releases that could invalidate the structure",
             ]
         else:  # SELL
+            adx_clause    = (f"ADX {adx_val:.1f} menandakan tekanan jual masih kuat"
+                             if _adx_ok else
+                             "ADX n/a — setup ini tidak mengukur kekuatan trend")
+            adx_clause_en = (f"ADX {adx_val:.1f} indicates selling pressure remains strong"
+                             if _adx_ok else
+                             "ADX n/a — this setup does not measure trend strength")
             narrative = (
                 f"Pasar XAU/USD [{tf_label}] menunjukkan konfirmasi SELL {conf} "
                 f"dengan skor confluence {score}/7 — "
                 f"EMA50 di bawah EMA200 mengonfirmasi bias bearish, "
-                f"ADX {adx_val:.1f} menandakan tekanan jual masih kuat. "
+                f"{adx_clause}. "
                 f"Level kritis: pertahankan SL di ${berkah['sl']:.2f} "
                 f"(jarak {sl_dist:.2f} poin dari entry), "
                 f"target bertahap TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
@@ -2069,7 +2108,7 @@ def run_scheduled_analysis():
                 f"XAU/USD market [{tf_label}] shows a {conf} SELL confirmation "
                 f"with a confluence score of {score}/7 — "
                 f"EMA50 below EMA200 confirms bearish bias, "
-                f"ADX {adx_val:.1f} indicates selling pressure remains strong. "
+                f"{adx_clause_en}. "
                 f"Critical level: maintain SL at ${berkah['sl']:.2f} "
                 f"({sl_dist:.2f} points from entry), "
                 f"staged targets TP1 ${berkah['tp1']:.2f} → TP2 ${berkah['tp2']:.2f} → TP3 ${berkah['tp3']:.2f}."
@@ -2108,7 +2147,12 @@ def run_scheduled_analysis():
             "bias":       "BULLISH" if sig == "BUY" else "BEARISH",
             "method_confluence": {
                 "ema_trend":      f"MTF [{tf_label}] Confluence Score {berkah.get('score',0)}/7",
-                "rsi_momentum":   f"ADX {berkah.get('adx', indicators.atr_14):.1f}",
+                # NOTE: key-nya bernama "rsi_momentum" tapi isinya string ADX
+                # (penamaan lama, dibaca frontend apa adanya di app.js) --
+                # dibiarkan supaya tidak memutus kontrak UI. Fallback
+                # indicators.atr_14 di sini adalah duplikat jebakan
+                # ATR-as-ADX yang sama seperti di blok setdefault, dihapus.
+                "rsi_momentum":   (f"ADX {adx_val:.1f}" if _adx_ok else "ADX n/a"),
                 "macd":           "BoS + HTF BoS",
                 "heiken_ashi":    "Liquidity Sweep",
                 "break_retest":   "Pin Bar",
@@ -2142,7 +2186,8 @@ def run_scheduled_analysis():
                 "primary_trend":   smc.trend,
                 "key_support":     smc.support_levels[0] if smc.support_levels else 0,
                 "key_resistance":  smc.resistance_levels[0] if smc.resistance_levels else 0,
-                "price_position":  f"${price:.2f} | ADX={berkah['adx']:.1f}",
+                "price_position":  (f"${price:.2f} | ADX={adx_val:.1f}" if _adx_ok
+                                    else f"${price:.2f} | ADX=n/a"),
                 "current_phase":   smc.last_bos or smc.last_choch or "Normal",
                 "invalidation":    f"{'Close di bawah' if sig=='BUY' else 'Close di atas'} SL {berkah['sl']}",
             },

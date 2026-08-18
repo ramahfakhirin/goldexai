@@ -2683,7 +2683,11 @@ function updateTerminalStatus(analysis) {
 
   const sig  = analysis.signal || 'WAIT';
   const raw  = analysis.berkah_raw || {};
-  const adx  = raw.adx  ? raw.adx.toFixed(1) : '--';
+  // adx_available=false artinya ADX bukan pengukuran nyata untuk setup itu
+  // (mis. Mean-Reversion yang memang tidak mengukur kekuatan trend) -- jangan
+  // tampilkan angkanya. Sinyal lama di DB belum punya flag ini, jadi kalau
+  // undefined tetap pakai cek nilai lama supaya riwayat tidak ikut jadi '--'.
+  const adx  = (raw.adx_available === false || !raw.adx) ? '--' : raw.adx.toFixed(1);
   const cond = raw.conditions || {};
 
   if (sig === 'BUY') {
