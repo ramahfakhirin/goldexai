@@ -450,6 +450,129 @@ Total 50 test lulus. `import app` & `import chart_generator` sukses.
 
 ---
 
+## FOLLOW-UP — Bridge MT5 mengirim M5 untuk permintaan M1 ✅ SELESAI
+
+**File diubah:** `xauusd_ai_analyst.py`, `.env.example`
+**Di luar repo:** `C:\mt5_bridge\mt5_bridge_fixed.py` di VPS (diperbaiki manual)
+
+### Temuan
+
+Selama ~2 bulan, `run_multi_timeframe_scan()` **tidak pernah** benar-benar
+menganalisis M1. Bridge MT5 mengembalikan candle **M5** untuk permintaan
+`timeframe=1m`.
+
+Penyebab di `mt5_bridge.py` (VPS):
+
+```python
+timeframe_map = { "5m": ..., "15m": ..., "1h": ..., "4h": ..., "1d": ... }
+tf = timeframe_map.get(tf_str, mt5.TIMEFRAME_M5)   # "1m" TIDAK ADA -> default M5
+```
+
+Tak terlihat selama itu karena dua hal: **fallback diam** (timeframe tak dikenal
+dilayani sebagai M5, bukan ditolak) dan response tetap menulis
+`"timeframe": "1m"` walau isinya M5. Label benar, data salah.
+
+### Dampak ke mesin sinyal
+
+"M5 vs M1" sebenarnya **satu dataset yang sama dinilai dua kali**. Bedanya cuma
+parameter:
+
+| Parameter | "M5" | "M1" |
+|---|---|---|
+| `adx_threshold` | 22 | **18** (lebih longgar) |
+| `liquidity_lookback` | 5 | 3 |
+| `htf_agg_factor` | 12 | 15 |
+
+Diukur pada 4000 candle dengan data identik:
+
+```
+m1_only  : 44     <- sinyal yang HANYA lolos karena ambang lebih longgar
+m5_only  :  4
+keduanya : 285
+Dimenangkan param M1: 112 dari 333 (34%)
+```
+
+Jadi 34% sinyal produksi ditentukan set parameter yang lebih longgar — pada
+**ADX**, faktor paling prediktif dari analisa korelasi (win rate 58% saat
+`adx_ok` true vs 41% saat false). Bukan konfluensi multi-timeframe, melainkan
+pelonggaran ambang yang menyamar sebagai konfirmasi kedua.
+
+Efek samping: dedup candle memakai ID candle "M1" yang sebenarnya M5, sehingga
+**4 dari 5 tick scheduler langsung skip** — cadence efektif 5 menit, bukan 60
+detik seperti `ANALYSIS_INTERVAL_SEC`.
+
+### Yang dikerjakan di VPS
+
+Ditemukan **dua bridge berjalan bersamaan** dan sama-sama bind ke port 8765
+(Windows mengizinkan tanpa `SO_EXCLUSIVEADDRUSE`), sehingga siapa yang melayani
+tidak dapat diprediksi:
+
+- `mt5_bridge.py` (18 Jun) — peta timeframe tanpa `"1m"`
+- `mt5_bridge_fixed.py` (22 Jun) — peta sudah benar, **tapi tidak pernah
+  dijalankan**; loop update-nya hanya mengambil 200 candle padahal GOLDEX minta
+  500 (EMA200 mustahil dihitung → `safe_val()` mengembalikan 0.0)
+
+Diselesaikan dengan: menambahkan `"1m"` + menolak timeframe tak dikenal di
+`mt5_bridge.py`, memperbaiki 200→500 di `mt5_bridge_fixed.py`, mematikan semua
+proses, lalu menjalankan **hanya** `mt5_bridge_fixed.py`.
+
+Verifikasi setelah perbaikan:
+
+```
+ohlcv_cache : {'1h': 500, '1m': 500, '5m': 500}
+1m  jumlah=500  selisih=[1, 1, 1, 1, 1]      OK
+5m  jumlah=500  selisih=[5, 5, 5, 5, 5]      OK
+1h  jumlah=500  selisih=[60,60,60,60,60]     OK
+```
+
+### Perubahan di repo — kill-switch
+
+Lapisan M1 kini memproses M1 asli untuk **pertama kalinya** dan belum tercakup
+backtest mana pun (Yahoo hanya menyediakan M1 7 hari). Ditambahkan
+`MTF_ENABLE_M1` (default `true`) di `run_multi_timeframe_scan()` supaya lapisan
+itu bisa dimatikan lewat env var **tanpa perlu merusak bridge lagi**.
+
+Diverifikasi pada data nyata:
+
+```
+MTF_ENABLE_M1=true  -> 📊 M1 → WAIT | score=0/7 | OVEREXTENDED   (scan jalan normal)
+MTF_ENABLE_M1=false -> ⏸  M1 → dinonaktifkan (MTF_ENABLE_M1=false)
+```
+
+### Yang perlu dipantau
+
+Cadence scan naik dari 5 menit ke **1 menit**, dan seleksi sinyal berubah
+karena M1 kini benar-benar independen dari M5. Butuh beberapa hari data
+sebelum bisa dinilai. Kolom `trade_monitors.efficiency_ratio` ikut merekam
+rezim baru ini.
+
+---
+
+## KOREKSI — Task 4 item 2 (sumber spread)
+
+Audit Task 4 menyimpulkan *"tidak ada data spread sama sekali di sistem"* dan
+menyarankan perubahan di sisi VPS lebih dulu. **Itu keliru.**
+
+Yang benar: `/ohlcv` memang tidak membawa spread, tapi endpoint **`/price`
+sudah mengirimkannya sejak awal** — di kedua versi bridge:
+
+```python
+mid    = round((tick.bid + tick.ask) / 2, 2)
+spread = round((tick.ask - tick.bid) * 10, 1)
+...
+"bid": ..., "ask": ..., "spread": ...
+```
+
+Kekeliruan saya: diagnostik hanya memeriksa kolom `/ohlcv`, lalu digeneralisir
+ke seluruh bridge.
+
+**Konsekuensi:** gate spread bisa dibangun **murni di sisi aplikasi** — tidak
+perlu menyentuh VPS. Yang kurang ada di `app.py:1103`
+(`fetch_price_from_bridge`), yang hanya membaca `data["price"]` dan membuang
+`bid`/`ask`/`spread`.
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)

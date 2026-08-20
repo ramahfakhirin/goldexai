@@ -1880,38 +1880,54 @@ def run_multi_timeframe_scan(
         results["m5"] = {"signal": "WAIT", "timeframe": "M5", "reason": str(e), "score": 0}
 
     # ── SCAN M1 ──
-    try:
-        # M1 butuh inject df_m1 ke BRIDGE_DF
-        if bridge_df_m1 is not None and not bridge_df_m1.empty:
-            BRIDGE_DF = bridge_df_m1
-        else:
-            # Fetch M1 langsung dari Twelve Data
-            df_m1 = _fetch_twelve_data("1m")
-            if df_m1.empty:
-                raise ValueError("M1 data kosong dari Twelve Data")
-            BRIDGE_DF = df_m1
+    # Kill-switch. Sampai 20 Agu 2026 lapisan ini TIDAK PERNAH benar-benar
+    # menganalisis M1: bridge MT5 mengembalikan candle M5 untuk permintaan
+    # timeframe=1m (peta timeframe tidak punya kunci "1m" lalu jatuh ke default
+    # M5 secara diam-diam). Jadi "M5 vs M1" sebenarnya satu dataset yang sama
+    # dinilai dua kali, dan yang menang adalah set parameter M1 yang lebih
+    # longgar (adx_threshold 18 vs 22) -- pelonggaran ambang, bukan konfluensi.
+    # Setelah bridge diperbaiki, lapisan ini mulai memproses M1 asli untuk
+    # PERTAMA KALINYA, dan belum tercakup backtest mana pun. Set
+    # MTF_ENABLE_M1=false untuk mematikannya tanpa perlu menyentuh bridge lagi.
+    if os.getenv("MTF_ENABLE_M1", "true").lower() != "true":
+        results["m1"] = {
+            "signal": "WAIT", "timeframe": "M1", "score": 0,
+            "reason": "Lapisan M1 dinonaktifkan lewat MTF_ENABLE_M1=false",
+        }
+        print("  ⏸  M1  → dinonaktifkan (MTF_ENABLE_M1=false)")
+    else:
+        try:
+            # M1 butuh inject df_m1 ke BRIDGE_DF
+            if bridge_df_m1 is not None and not bridge_df_m1.empty:
+                BRIDGE_DF = bridge_df_m1
+            else:
+                # Fetch M1 langsung dari Twelve Data
+                df_m1 = _fetch_twelve_data("1m")
+                if df_m1.empty:
+                    raise ValueError("M1 data kosong dari Twelve Data")
+                BRIDGE_DF = df_m1
 
-        market_m1 = fetch_market_data("1m")
-        indic_m1  = calculate_indicators(market_m1)
-        sig_m1    = detect_berkah_signal(
-            market_m1, indic_m1,
-            max_extension_atr = float(os.getenv("MAX_EXTENSION_ATR", "1.5")),
-            score_threshold  = _vision_floor,
-            score_high_conf  = 5,
-            liquidity_lookback = 3,   # lookback lebih pendek untuk M1
-            adx_threshold    = 18,    # ADX lebih rendah di M1
-            htf_bias_override = htf_bias,   # HTF H1 asli (bukan EMA 3.3 jam)
-            htf_agg_factor    = 15,          # 15xM1 = struktur M15
-            capital          = capital,
-            risk_percent     = risk_percent,
-            value_per_lot    = value_per_lot,
-        )
-        sig_m1["timeframe"] = "M1"
-        results["m1"] = sig_m1
-        print(f"  📊 M1  → {sig_m1['signal']} | score={sig_m1.get('score', 0)}/7 | {sig_m1.get('confidence','')}")
-    except Exception as e:
-        print(f"  ⚠️  M1 scan error: {e}")
-        results["m1"] = {"signal": "WAIT", "timeframe": "M1", "reason": str(e), "score": 0}
+            market_m1 = fetch_market_data("1m")
+            indic_m1  = calculate_indicators(market_m1)
+            sig_m1    = detect_berkah_signal(
+                market_m1, indic_m1,
+                max_extension_atr = float(os.getenv("MAX_EXTENSION_ATR", "1.5")),
+                score_threshold  = _vision_floor,
+                score_high_conf  = 5,
+                liquidity_lookback = 3,   # lookback lebih pendek untuk M1
+                adx_threshold    = 18,    # ADX lebih rendah di M1
+                htf_bias_override = htf_bias,   # HTF H1 asli (bukan EMA 3.3 jam)
+                htf_agg_factor    = 15,          # 15xM1 = struktur M15
+                capital          = capital,
+                risk_percent     = risk_percent,
+                value_per_lot    = value_per_lot,
+            )
+            sig_m1["timeframe"] = "M1"
+            results["m1"] = sig_m1
+            print(f"  📊 M1  → {sig_m1['signal']} | score={sig_m1.get('score', 0)}/7 | {sig_m1.get('confidence','')}")
+        except Exception as e:
+            print(f"  ⚠️  M1 scan error: {e}")
+            results["m1"] = {"signal": "WAIT", "timeframe": "M1", "reason": str(e), "score": 0}
 
     # ── RESTORE BRIDGE_DF ke M5 (default) ──
     BRIDGE_DF = bridge_df_m5
