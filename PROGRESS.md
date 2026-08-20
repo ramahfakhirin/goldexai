@@ -602,6 +602,81 @@ perlu menyentuh VPS. Yang kurang ada di `app.py:1103`
 
 ---
 
+## FOLLOW-UP — Instrumentasi pendapat M1 saat entry ✅ SELESAI
+
+**File diubah:** `app.py`, `tests/test_guards.py`
+**Perilaku sinyal: TIDAK berubah sama sekali.** Murni pencatatan.
+
+### Kenapa
+
+Log produksi pertama setelah bridge diperbaiki (20 Agu 2026, 19 scan berturut)
+menunjukkan M1 dan M5 kini benar-benar berbeda pendapat:
+
+| | Hasil |
+|---|---|
+| M1 setuju (BUY) | 4 dari 19 (21%) |
+| M1 berbeda | 15 dari 19 (79%) |
+| `BEST` dari M5 | **19 dari 19** |
+
+Dulu M1 menang 34% lewat ambang ADX longgar; kini tidak pernah menang.
+
+Yang menarik: 6 scan terakhir M1 menandai **OVEREXTENDED** (harga terlalu jauh
+dari EMA21) sementara M5 tetap `BUY 5/7 HIGH_CONFIDENCE`. Peringatan itu
+**dibuang** — `run_multi_timeframe_scan` memfilter habis `WAIT` sebelum
+`max()` (`xauusd_ai_analyst.py:1974`), jadi M1 yang berkata "jangan" tidak
+punya suara.
+
+Selama M1 palsu, itu tidak merugikan. Sekarang berarti — apalagi konteksnya
+HTF terkunci BULL 15,6 hari dan 4 dari 6 BUY terakhir kena SL (loss-streak
+guard aktif memblokir). Dugaan yang masuk akal: entry terlalu telat. Tapi itu
+tetap **dugaan**.
+
+### Yang ditambahkan
+
+| Lokasi | Perubahan |
+|---|---|
+| `init_db()` | 3 kolom: `m1_signal`, `m1_score`, `m1_confidence` |
+| `create_trade_monitor()` | 3 param opsional, ikut di-INSERT |
+| `run_scheduled_analysis()` | Isi dari `mtf["m1"]` saat trade dibuat |
+| `get_m1_agreement_stats()` | Bandingkan hasil trade: M1 setuju vs menolak |
+| `/api/admin/guard_status` | Expose blok `m1_agreement` |
+
+Trade lama (`m1_signal` NULL) dipisah ke `belum_terekam` supaya tidak
+mencemari perbandingan.
+
+### Pertanyaan yang akan dijawab datanya
+
+> Dari trade yang kena SL, berapa persen lahir saat M1 sedang
+> WAIT/OVEREXTENDED?
+
+Angka kuncinya `sl_rate` di kedua kelompok. Kalau kelompok "M1 menolak" jauh
+lebih tinggi, menjadikan M1 sebagai **veto** (bukan sekadar kandidat) punya
+dasar empiris. Kalau tidak, idenya gugur — persis seperti ADX-rising yang
+terlihat masuk akal tapi terbukti merugikan saat diuji A/B.
+
+`alasan_m1_menolak` merinci OVEREXTENDED vs LOW_VOLATILITY vs WAIT biasa,
+supaya kalau ternyata ada sinyal, kita tahu jenis penolakan mana yang berarti.
+
+### Cara verifikasi
+
+```bash
+GOLDEX_DISABLE_SCHEDULER_AUTOSTART=1 python -X utf8 -c "import app"   # sukses
+python -X utf8 -m unittest discover tests                              # 54 tests OK
+```
+
+Kolom terbentuk: `['m1_signal', 'm1_score', 'm1_confidence']`
+
+End-to-end (skenario persis dari log — M5 BUY sementara M1 OVEREXTENDED):
+```
+tersimpan: {'timeframe': 'M5', 'm1_signal': 'WAIT', 'm1_score': 0,
+            'm1_confidence': 'OVEREXTENDED', 'efficiency_ratio': 0.31}
+```
+
+`/api/admin/guard_status` mengembalikan blok `m1_agreement` (nol karena DB
+lokal kosong). Tidak ada error server.
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)

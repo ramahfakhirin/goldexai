@@ -291,6 +291,23 @@ def init_db():
         # SL_HIT di rentang ER transisi vs trade yang menang). NULL = trade
         # lama sebelum kolom ini ada, atau ER gagal dihitung.
         "ALTER TABLE trade_monitors ADD COLUMN efficiency_ratio REAL",
+        # Pendapat lapisan M1 SAAT trade dibuka. Murni instrumentasi — tidak
+        # memengaruhi keputusan apa pun.
+        #
+        # Sejak bridge diperbaiki (20 Agu 2026) M1 benar-benar independen dari
+        # M5, dan mulai sering berbeda pendapat: M5 melihat struktur bagus
+        # sementara M1 menandai OVEREXTENDED. Pendapat M1 itu saat ini DIBUANG
+        # oleh pemilihan sinyal (WAIT difilter habis sebelum `max()` di
+        # run_multi_timeframe_scan), jadi tidak ada jejaknya di mana pun.
+        #
+        # Ketiga kolom ini merekam jejak itu supaya nanti bisa dijawab dengan
+        # data: dari trade yang kena SL, berapa persen lahir saat M1 sedang
+        # WAIT/OVEREXTENDED? Kalau jauh lebih tinggi dari trade yang menang,
+        # menjadikan M1 sebagai veto punya dasar empiris. Kalau tidak, idenya
+        # gugur. Lihat get_m1_agreement_stats().
+        "ALTER TABLE trade_monitors ADD COLUMN m1_signal TEXT",
+        "ALTER TABLE trade_monitors ADD COLUMN m1_score INTEGER",
+        "ALTER TABLE trade_monitors ADD COLUMN m1_confidence TEXT",
     ):
         try:
             conn.execute(_col_sql)
@@ -549,7 +566,10 @@ def get_stats() -> dict:
 def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          sl: float, tp1: float, tp2: float, tp3: float,
                          timeframe: str, vision_rescued: bool = False,
-                         efficiency_ratio: float | None = None) -> int | None:
+                         efficiency_ratio: float | None = None,
+                         m1_signal: str | None = None,
+                         m1_score: int | None = None,
+                         m1_confidence: str | None = None) -> int | None:
     """Buat trade monitor baru setelah signal BUY/SELL.
 
     Menangkap martingale_mult SAAT INI (dari rentetan loss murni terbaru) dan
@@ -563,6 +583,10 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
     efficiency_ratio = nilai Kaufman ER M5 saat trade dibuka (instrumentasi
     untuk evaluasi ER gate nanti; dicatat terlepas dari gate aktif/tidak).
 
+    m1_signal / m1_score / m1_confidence = pendapat lapisan M1 saat trade
+    dibuka. Murni instrumentasi — pendapat itu tidak memengaruhi keputusan
+    apa pun (lihat get_m1_agreement_stats()).
+
     Return None jika ada monitor ACTIVE lain yang menang race (idx_one_active_monitor) —
     caller harus perlakukan sama seperti has_active_monitor()==True (skip alert).
     """
@@ -575,11 +599,11 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
             INSERT INTO trade_monitors
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
              stop_loss, tp1, tp2, tp3, status, martingale_mult, vision_rescued,
-             efficiency_ratio)
-            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?,?)
+             efficiency_ratio, m1_signal, m1_score, m1_confidence)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?,?,?,?,?)
         """, (signal_id, now_iso, now_iso, timeframe,
               direction, entry, sl, tp1, tp2, tp3, mult, int(vision_rescued),
-              efficiency_ratio))
+              efficiency_ratio, m1_signal, m1_score, m1_confidence))
         monitor_id = cursor.lastrowid
         conn.commit()
         if mult > 1:
@@ -792,6 +816,79 @@ def get_vision_rescue_stats(days: int = 30) -> dict:
         "period_days":  days,
         "auto_pass":    _summarize(auto_pass),
         "vision_rescued": _summarize(rescued),
+    }
+
+
+def get_m1_agreement_stats(days: int = 30) -> dict:
+    """
+    Bandingkan hasil trade berdasarkan pendapat lapisan M1 SAAT entry.
+
+    Menjawab satu pertanyaan spesifik: dari trade yang kena SL, berapa persen
+    lahir saat M1 sedang WAIT/OVEREXTENDED? Pendapat M1 saat ini dibuang oleh
+    pemilihan sinyal (WAIT difilter sebelum `max()` di
+    run_multi_timeframe_scan), jadi ini satu-satunya jejaknya.
+
+    Kalau kelompok "M1 tidak setuju" punya proporsi SL_HIT jauh lebih tinggi
+    daripada kelompok "M1 setuju", menjadikan M1 sebagai veto punya dasar
+    empiris. Kalau tidak, idenya gugur — sama seperti ADX-rising yang terlihat
+    masuk akal tapi terbukti merugikan saat diuji.
+
+    Klasifikasi win/loss identik dengan get_performance_stats().
+    """
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cutoff = _period_cutoff(days)
+    if cutoff:
+        rows = conn.execute("""
+            SELECT * FROM trade_monitors
+            WHERE status = 'CLOSED'
+            AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ? OR created_at >= ?)
+        """, (cutoff, cutoff, cutoff, cutoff)).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM trade_monitors WHERE status = 'CLOSED'").fetchall()
+    conn.close()
+
+    closed = [dict(r) for r in rows]
+
+    def _summarize(subset):
+        total = len(subset)
+        if total == 0:
+            return {"total": 0, "wins": 0, "losses": 0, "win_rate": None,
+                    "sl_hit": 0, "sl_rate": None, "total_pnl": 0}
+        pnl_list = [_money(t.get("pnl_pips"), t.get("martingale_mult")) for t in subset]
+        wins     = sum(1 for v in pnl_list if v > 0.01)
+        losses   = sum(1 for v in pnl_list if v < -0.01)
+        sl_hit   = sum(1 for t in subset if (t.get("outcome") or "") == "SL_HIT")
+        decisive = wins + losses
+        return {
+            "total":     total,
+            "wins":      wins,
+            "losses":    losses,
+            "win_rate":  round(wins / decisive * 100, 1) if decisive else None,
+            "sl_hit":    sl_hit,
+            "sl_rate":   round(sl_hit / total * 100, 1),
+            "total_pnl": round(sum(pnl_list), 2),
+        }
+
+    # Trade lama (sebelum kolom ini ada) punya m1_signal NULL — dipisah supaya
+    # tidak mencemari perbandingan dengan data yang memang belum terekam.
+    tercatat  = [t for t in closed if t.get("m1_signal")]
+    belum     = [t for t in closed if not t.get("m1_signal")]
+    setuju    = [t for t in tercatat if t["m1_signal"] in ("BUY", "SELL")]
+    tdk_setuju = [t for t in tercatat if t["m1_signal"] not in ("BUY", "SELL")]
+
+    # Rincian alasan M1 menolak (OVEREXTENDED / LOW_VOLATILITY / WAIT biasa)
+    per_alasan = {}
+    for t in tdk_setuju:
+        k = t.get("m1_confidence") or "WAIT"
+        per_alasan[k] = per_alasan.get(k, 0) + 1
+
+    return {
+        "period_days":      days,
+        "m1_setuju":        _summarize(setuju),
+        "m1_tidak_setuju":  _summarize(tdk_setuju),
+        "alasan_m1_menolak": per_alasan,
+        "belum_terekam":    len(belum),
     }
 
 
@@ -2386,6 +2483,13 @@ def run_scheduled_analysis():
                     timeframe = tf_label,
                     vision_rescued = needs_vision_rescue,
                     efficiency_ratio = er_value,
+                    # Pendapat M1 saat entry — dicatat apa adanya, tidak
+                    # memengaruhi keputusan. Sejak M1 benar-benar independen,
+                    # ia kerap menandai OVEREXTENDED saat M5 tetap BUY, dan
+                    # peringatan itu dibuang oleh pemilihan sinyal.
+                    m1_signal     = (mtf.get("m1") or {}).get("signal"),
+                    m1_score      = (mtf.get("m1") or {}).get("score"),
+                    m1_confidence = (mtf.get("m1") or {}).get("confidence"),
                 )
                 if monitor_id is None:
                     # Kalah race vs monitor ACTIVE lain — jangan set cache/kirim Telegram
@@ -3007,6 +3111,7 @@ def api_guard_status():
         "buy":                   _rolling_summary("BUY"),
         "sell":                  _rolling_summary("SELL"),
         "vision_rescue":         get_vision_rescue_stats(days=30),
+        "m1_agreement":          get_m1_agreement_stats(days=30),
     })
 
 

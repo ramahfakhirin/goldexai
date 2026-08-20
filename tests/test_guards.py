@@ -43,7 +43,8 @@ class GuardTestCase(unittest.TestCase):
         self._tmpdir.cleanup()
 
     def _insert_trade(self, direction, outcome, hours_ago, vision_rescued=0,
-                       pnl=0.0, mult=1, signal_id=None):
+                       pnl=0.0, mult=1, signal_id=None,
+                       m1_signal=None, m1_score=None, m1_confidence=None):
         conn = sqlite3.connect(self._db_path)
         ts = (datetime.now(WIB) - timedelta(hours=hours_ago)).isoformat()
         if signal_id is None:
@@ -52,10 +53,12 @@ class GuardTestCase(unittest.TestCase):
             INSERT INTO trade_monitors
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
              stop_loss, tp1, tp2, tp3, status, outcome, outcome_price, outcome_time,
-             closed_at, pnl_pips, martingale_mult, vision_rescued)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+             closed_at, pnl_pips, martingale_mult, vision_rescued,
+             m1_signal, m1_score, m1_confidence)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (signal_id, ts, ts, "M5", direction, 4000, 3990, 4010, 4020, 4030,
-              "CLOSED", outcome, 4000, ts, ts, pnl, mult, vision_rescued))
+              "CLOSED", outcome, 4000, ts, ts, pnl, mult, vision_rescued,
+              m1_signal, m1_score, m1_confidence))
         conn.commit()
         conn.close()
 
@@ -143,6 +146,57 @@ class GuardTestCase(unittest.TestCase):
         self.assertEqual(stats["vision_rescued"]["total"], 3)
         self.assertEqual(stats["vision_rescued"]["wins"], 1)
         self.assertEqual(stats["vision_rescued"]["losses"], 2)
+
+    # ── get_m1_agreement_stats ──
+
+    def test_m1_stats_splits_agree_vs_disagree(self):
+        # M1 setuju (BUY): 1 menang, 1 SL
+        self._insert_trade("BUY", "TP3_HIT", 6, pnl=100, signal_id=-101,
+                           m1_signal="BUY", m1_score=4, m1_confidence="NORMAL")
+        self._insert_trade("BUY", "SL_HIT", 5, pnl=-50, signal_id=-102,
+                           m1_signal="BUY", m1_score=3, m1_confidence="NORMAL")
+        # M1 menolak: 3 SL, 1 menang
+        for i, (o, p) in enumerate([("SL_HIT", -50), ("SL_HIT", -50), ("SL_HIT", -50)]):
+            self._insert_trade("BUY", o, 4 - i * 0.5, pnl=p, signal_id=-(200 + i),
+                               m1_signal="WAIT", m1_score=0, m1_confidence="OVEREXTENDED")
+        self._insert_trade("BUY", "TP3_HIT", 1, pnl=100, signal_id=-210,
+                           m1_signal="WAIT", m1_score=2, m1_confidence="WAIT")
+
+        s = goldex_app.get_m1_agreement_stats(days=30)
+        self.assertEqual(s["m1_setuju"]["total"], 2)
+        self.assertEqual(s["m1_setuju"]["sl_hit"], 1)
+        self.assertEqual(s["m1_tidak_setuju"]["total"], 4)
+        self.assertEqual(s["m1_tidak_setuju"]["sl_hit"], 3)
+        # sl_rate inilah angka yang menentukan layak-tidaknya M1 jadi veto
+        self.assertEqual(s["m1_setuju"]["sl_rate"], 50.0)
+        self.assertEqual(s["m1_tidak_setuju"]["sl_rate"], 75.0)
+
+    def test_m1_stats_counts_rejection_reasons(self):
+        self._insert_trade("BUY", "SL_HIT", 5, pnl=-50, signal_id=-301,
+                           m1_signal="WAIT", m1_confidence="OVEREXTENDED")
+        self._insert_trade("BUY", "SL_HIT", 4, pnl=-50, signal_id=-302,
+                           m1_signal="WAIT", m1_confidence="OVEREXTENDED")
+        self._insert_trade("BUY", "SL_HIT", 3, pnl=-50, signal_id=-303,
+                           m1_signal="WAIT", m1_confidence="LOW_VOLATILITY")
+        s = goldex_app.get_m1_agreement_stats(days=30)
+        self.assertEqual(s["alasan_m1_menolak"]["OVEREXTENDED"], 2)
+        self.assertEqual(s["alasan_m1_menolak"]["LOW_VOLATILITY"], 1)
+
+    def test_m1_stats_separates_untracked_old_trades(self):
+        """Trade lama (m1_signal NULL) tidak boleh mencemari perbandingan."""
+        self._insert_trade("BUY", "SL_HIT", 5, pnl=-50, signal_id=-401)   # tanpa m1_*
+        self._insert_trade("BUY", "TP3_HIT", 4, pnl=100, signal_id=-402,
+                           m1_signal="BUY", m1_confidence="NORMAL")
+        s = goldex_app.get_m1_agreement_stats(days=30)
+        self.assertEqual(s["belum_terekam"], 1)
+        self.assertEqual(s["m1_setuju"]["total"], 1)
+        self.assertEqual(s["m1_tidak_setuju"]["total"], 0)
+
+    def test_m1_stats_empty_is_safe(self):
+        s = goldex_app.get_m1_agreement_stats(days=30)
+        self.assertEqual(s["m1_setuju"]["total"], 0)
+        self.assertIsNone(s["m1_setuju"]["win_rate"])
+        self.assertEqual(s["belum_terekam"], 0)
 
     # ── /api/admin/guard_status ──
 
