@@ -539,12 +539,41 @@ MTF_ENABLE_M1=true  -> 📊 M1 → WAIT | score=0/7 | OVEREXTENDED   (scan jalan
 MTF_ENABLE_M1=false -> ⏸  M1 → dinonaktifkan (MTF_ENABLE_M1=false)
 ```
 
+### Kondisi akhir VPS (20 Agu 2026)
+
+Sebelumnya ada **dua bridge berjalan bersamaan**, dan sebuah Scheduled Task
+bernama `Bridge` yang memanggil versi lama — sehingga reboot akan mengembalikan
+bug ini tanpa ada yang menyadari.
+
+`Set-ScheduledTask` menolak diubah (`0x8007052e` — task menyimpan kredensial
+user). Alih-alih memaksa lewat password, **nama file yang ditukar**: kode v2
+diberi nama kanonik `mt5_bridge.py`, sehingga task tidak perlu disentuh sama
+sekali.
+
+Kondisi sekarang di `C:\mt5_bridge\`:
+
+| Item | Isi |
+|---|---|
+| `mt5_bridge.py` | **kode v2 aktif** — Waitress 8 threads, cache OHLCV, `TIMEFRAME_M1` benar, fetch 500 candle |
+| `jalankan_bridge.bat` | untuk menjalankan manual, menunjuk `mt5_bridge.py` |
+| `_archive/` | semua versi lama & backup (`mt5_bridge_v1_lama.py`, dll) |
+| Scheduled Task `Bridge` | `python.exe mt5_bridge.py`, WorkingDirectory `C:\mt5_bridge` |
+
+Jalur auto-start **sudah diuji**, bukan hanya dikonfigurasi: semua proses
+dimatikan, task dijalankan, hasilnya tepat satu proses `mt5_bridge.py` dan
+verifikasi dari Coolify tetap lulus (`ohlcv_cache` muncul,
+`1m selisih=[1,1,1,1,1]`, 500 candle).
+
 ### Yang perlu dipantau
 
 Cadence scan naik dari 5 menit ke **1 menit**, dan seleksi sinyal berubah
 karena M1 kini benar-benar independen dari M5. Butuh beberapa hari data
 sebelum bisa dinilai. Kolom `trade_monitors.efficiency_ratio` ikut merekam
 rezim baru ini.
+
+Analisa korelasi faktor sebelumnya (`f_adx_ok` 58% vs 41%, dst) berbasis
+backtest M5-only. Dengan M1 asli, komposisi sinyal berubah — analisa itu perlu
+diulang memakai data production, bukan diwarisi begitu saja.
 
 ---
 
