@@ -308,6 +308,16 @@ def init_db():
         "ALTER TABLE trade_monitors ADD COLUMN m1_signal TEXT",
         "ALTER TABLE trade_monitors ADD COLUMN m1_score INTEGER",
         "ALTER TABLE trade_monitors ADD COLUMN m1_confidence TEXT",
+        # Spread broker (ask-bid, SATUAN HARGA) saat trade dibuka. Murni
+        # instrumentasi — tidak dipakai sebagai gerbang.
+        #
+        # Ini satu-satunya biaya yang belum pernah diukur sama sekali. Backtest
+        # berasumsi biaya nol, sementara produksi membayar spread tiap trade.
+        # Dengan SL yang kerap cuma ~10 poin, spread 2-3 poin berarti 20-30%
+        # risiko per trade habis sebelum harga bergerak. NULL = bridge tidak
+        # tersedia saat entry (mis. fallback Twelve Data, yang tidak punya
+        # bid/ask). Lihat get_spread_stats().
+        "ALTER TABLE trade_monitors ADD COLUMN entry_spread REAL",
     ):
         try:
             conn.execute(_col_sql)
@@ -569,7 +579,8 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          efficiency_ratio: float | None = None,
                          m1_signal: str | None = None,
                          m1_score: int | None = None,
-                         m1_confidence: str | None = None) -> int | None:
+                         m1_confidence: str | None = None,
+                         entry_spread: float | None = None) -> int | None:
     """Buat trade monitor baru setelah signal BUY/SELL.
 
     Menangkap martingale_mult SAAT INI (dari rentetan loss murni terbaru) dan
@@ -587,6 +598,9 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
     dibuka. Murni instrumentasi — pendapat itu tidak memengaruhi keputusan
     apa pun (lihat get_m1_agreement_stats()).
 
+    entry_spread = spread broker (ask-bid, satuan harga) saat entry. Juga
+    murni instrumentasi (lihat get_spread_stats()).
+
     Return None jika ada monitor ACTIVE lain yang menang race (idx_one_active_monitor) —
     caller harus perlakukan sama seperti has_active_monitor()==True (skip alert).
     """
@@ -599,11 +613,11 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
             INSERT INTO trade_monitors
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
              stop_loss, tp1, tp2, tp3, status, martingale_mult, vision_rescued,
-             efficiency_ratio, m1_signal, m1_score, m1_confidence)
-            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?,?,?,?,?)
+             efficiency_ratio, m1_signal, m1_score, m1_confidence, entry_spread)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?,?,?,?,?,?)
         """, (signal_id, now_iso, now_iso, timeframe,
               direction, entry, sl, tp1, tp2, tp3, mult, int(vision_rescued),
-              efficiency_ratio, m1_signal, m1_score, m1_confidence))
+              efficiency_ratio, m1_signal, m1_score, m1_confidence, entry_spread))
         monitor_id = cursor.lastrowid
         conn.commit()
         if mult > 1:
@@ -892,6 +906,96 @@ def get_m1_agreement_stats(days: int = 30) -> dict:
     }
 
 
+def get_spread_stats(days: int = 30) -> dict:
+    """
+    Seberapa besar spread broker memakan risiko per trade.
+
+    Backtest berasumsi biaya NOL; produksi membayar spread setiap kali entry.
+    Untuk scalping dengan SL kerap hanya ~10 poin, spread 2-3 poin berarti
+    20-30% risiko sudah habis sebelum harga bergerak sedikit pun — dan itu
+    tidak akan pernah muncul di backtest manapun.
+
+    Angka kuncinya `spread_pct_of_sl`: rata-rata spread dibagi jarak SL.
+    `estimasi_biaya_usd` mengalikannya ke lot efektif per trade (termasuk
+    martingale) supaya bisa langsung dibandingkan dengan gross_profit.
+
+    Murni pelaporan — tidak ada keputusan yang bergantung padanya.
+    """
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cutoff = _period_cutoff(days)
+    if cutoff:
+        rows = conn.execute("""
+            SELECT * FROM trade_monitors
+            WHERE status = 'CLOSED'
+            AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ? OR created_at >= ?)
+        """, (cutoff, cutoff, cutoff, cutoff)).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM trade_monitors WHERE status = 'CLOSED'").fetchall()
+    conn.close()
+
+    closed    = [dict(r) for r in rows]
+    tercatat  = [t for t in closed if t.get("entry_spread") is not None]
+
+    if not tercatat:
+        return {
+            "period_days": days, "terekam": 0, "belum_terekam": len(closed),
+            "spread_rata2": None, "sl_distance_rata2": None,
+            "spread_pct_of_sl": None, "estimasi_biaya_usd": None,
+            "per_kelompok": {},
+        }
+
+    def _jarak_sl(t):
+        try:
+            return abs(float(t["entry_price"]) - float(t["stop_loss"]))
+        except Exception:
+            return 0.0
+
+    spreads = [float(t["entry_spread"]) for t in tercatat]
+    jaraks  = [_jarak_sl(t) for t in tercatat]
+    valid   = [(s, j, t) for s, j, t in zip(spreads, jaraks, tercatat) if j > 0]
+
+    spread_avg = round(sum(spreads) / len(spreads), 3)
+    jarak_avg  = round(sum(j for _, j, _ in valid) / len(valid), 2) if valid else None
+    pct        = round(sum(s / j for s, j, _ in valid) / len(valid) * 100, 1) if valid else None
+
+    # Biaya = spread x lot efektif. Spread dibayar sekali per trade (masuk di
+    # ask, keluar di bid), jadi tidak dikali dua.
+    biaya = round(sum(
+        float(t["entry_spread"]) * PNL_MULT * (float(t.get("martingale_mult") or 1))
+        for t in tercatat
+    ), 2)
+
+    # Apakah trade ber-spread lebar lebih sering kena SL? Dibelah di median
+    # supaya tidak bergantung ambang sembarangan.
+    urut   = sorted(valid, key=lambda x: x[0])
+    tengah = len(urut) // 2
+    def _ringkas(bagian):
+        if not bagian:
+            return {"total": 0, "sl_hit": 0, "sl_rate": None, "spread_rata2": None}
+        sl = sum(1 for _, _, t in bagian if (t.get("outcome") or "") == "SL_HIT")
+        return {
+            "total":        len(bagian),
+            "sl_hit":       sl,
+            "sl_rate":      round(sl / len(bagian) * 100, 1),
+            "spread_rata2": round(sum(s for s, _, _ in bagian) / len(bagian), 3),
+        }
+
+    return {
+        "period_days":       days,
+        "terekam":           len(tercatat),
+        "belum_terekam":     len(closed) - len(tercatat),
+        "spread_rata2":      spread_avg,
+        "sl_distance_rata2": jarak_avg,
+        "spread_pct_of_sl":  pct,
+        "estimasi_biaya_usd": biaya,
+        "per_kelompok": {
+            "spread_sempit": _ringkas(urut[:tengah]),
+            "spread_lebar":  _ringkas(urut[tengah:]),
+        },
+    }
+
+
 def get_trade_history(limit: int = 30, offset: int = 0, days: int = 0) -> list:
     """Ambil history trade yang sudah closed, mendukung pagination (offset)
     dan filter periode (days: 0 = semua, -1 = hari ini, N = N hari terakhir)."""
@@ -1147,7 +1251,11 @@ def supersede_active_monitors():
 _TWELVE_TF_MAP = {"1m": "1min", "5m": "5min", "15m": "15min", "1h": "1h", "4h": "4h", "1d": "1day"}
 
 # ── Cache MT5 Bridge ──
-_bridge_price_cache = {"price": 0.0, "fetched_at": 0}
+# bid/ask ikut disimpan supaya spread bisa dicatat per trade. Endpoint /price
+# di bridge SUDAH mengirim bid/ask/spread sejak awal — selama ini dibuang di
+# sini karena fetch_price_from_bridge() cuma mengambil "price". Lihat
+# get_bridge_spread(): instrumentasi murni, tidak memengaruhi keputusan apa pun.
+_bridge_price_cache = {"price": 0.0, "bid": 0.0, "ask": 0.0, "fetched_at": 0}
 # NOTE: cache key was timeframe-only until this was found to cause a serious
 # bug — a caller asking for a small `count` (e.g. 5) could receive back a much
 # larger cached DataFrame fetched moments earlier by a different caller with
@@ -1198,12 +1306,45 @@ def fetch_price_from_bridge() -> float:
         data = json.loads(resp.read())
         if data.get("ok"):
             price = float(data["price"])
-            _bridge_price_cache.update({"price": price, "fetched_at": now})
+            _bridge_price_cache.update({
+                "price": price,
+                # Disimpan mentah. Field "spread" dari bridge sudah dikali 10
+                # ("dalam pips/10" menurut komentarnya), jadi tidak sebanding
+                # dengan jarak SL. ask-bid dihitung sendiri supaya satuannya
+                # sama persis dengan harga & SL.
+                "bid":   float(data.get("bid") or 0),
+                "ask":   float(data.get("ask") or 0),
+                "fetched_at": now,
+            })
             return price
         return 0.0
     except Exception as e:
         print(f"[Bridge] Price fetch error: {e}")
         return 0.0
+
+
+def get_bridge_spread() -> float | None:
+    """
+    Spread broker saat ini dalam SATUAN HARGA (ask - bid), bukan "pips/10"
+    seperti field `spread` bawaan bridge — supaya langsung sebanding dengan
+    jarak SL/TP.
+
+    Instrumentasi murni: dicatat per trade untuk menjawab berapa persen dari
+    risiko per trade yang termakan biaya. Tidak dipakai sebagai gerbang apa pun.
+
+    Return None kalau bridge tidak tersedia (mis. sedang fallback ke Twelve
+    Data, yang tidak menyediakan bid/ask sama sekali).
+    """
+    try:
+        fetch_price_from_bridge()   # hormati cache 3 detiknya sendiri
+        bid = float(_bridge_price_cache.get("bid") or 0)
+        ask = float(_bridge_price_cache.get("ask") or 0)
+        if bid > 0 and ask > 0 and ask >= bid:
+            return round(ask - bid, 3)
+        return None
+    except Exception as e:
+        print(f"[Bridge] get_bridge_spread error: {e}")
+        return None
 
 
 def fetch_ohlcv_from_bridge(timeframe: str = "5m", count: int = 200):
@@ -2490,6 +2631,9 @@ def run_scheduled_analysis():
                     m1_signal     = (mtf.get("m1") or {}).get("signal"),
                     m1_score      = (mtf.get("m1") or {}).get("score"),
                     m1_confidence = (mtf.get("m1") or {}).get("confidence"),
+                    # Spread broker saat entry — satu-satunya biaya yang belum
+                    # pernah diukur. Dicatat saja, tidak menggerbangi apa pun.
+                    entry_spread  = get_bridge_spread(),
                 )
                 if monitor_id is None:
                     # Kalah race vs monitor ACTIVE lain — jangan set cache/kirim Telegram
@@ -3112,6 +3256,8 @@ def api_guard_status():
         "sell":                  _rolling_summary("SELL"),
         "vision_rescue":         get_vision_rescue_stats(days=30),
         "m1_agreement":          get_m1_agreement_stats(days=30),
+        "spread":                get_spread_stats(days=30),
+        "spread_sekarang":       get_bridge_spread(),
     })
 
 

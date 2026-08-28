@@ -677,6 +677,98 @@ lokal kosong). Tidak ada error server.
 
 ---
 
+## FOLLOW-UP — Instrumentasi spread ✅ SELESAI
+
+**File diubah:** `app.py`, `tests/test_guards.py`
+**Perilaku: TIDAK berubah.** Murni pencatatan.
+
+### Konteks: hipotesis martingale terbantah
+
+Produksi terasa memburuk (7D: PF 1,08; 24H: PF 0,82), dugaan awal saya
+martingale-lah yang memakan edge. **Salah** — query produksi membantahnya:
+
+```
+total trade        : 178
+PF apa adanya      : 1.315   PnL +2621.60
+PF andai semua 1x  : 1.205   PnL +1066.90
+sebaran lot        : {1.0: 125, 2.0: 30, 4.0: 23}
+  lot 1.0x: 125 trade,  49 SL (39%), PnL +1326.40
+  lot 2.0x:  30 trade,  16 SL (53%), PnL -2333.20
+  lot 4.0x:  23 trade,   8 SL (35%), PnL +3628.40
+```
+
+Martingale justru **melipatgandakan** PnL. Temuan yang lebih penting:
+
+| | Trade | PF |
+|---|---|---|
+| Backtest (70 hari) | 177 | 1,38 |
+| Produksi (sepanjang waktu) | 178 | **1,315** |
+
+Sampel setara, PF hampir sama — **tidak ada kebocoran sistemik**. Yang terasa
+"parah" adalah jendela pendek (7D/24H), ciri khas variance. PF 0,82 dari 8
+trade tidak bermakna apa pun.
+
+⚠️ Catatan risiko: seluruh keunggulan martingale berasal dari **23 trade** di
+lot 4x (+$3.628) — 13% trade menghasilkan 138% profit pada leverage 4x. Itu
+konsentrasi variance, bukan edge terbukti. Tier 2x justru berdarah (−$2.333,
+SL rate 53%).
+
+### Kenapa spread
+
+Satu-satunya biaya yang **belum pernah diukur sama sekali**. Backtest
+berasumsi nol; produksi membayarnya tiap entry. Dengan SL kerap hanya ~10
+poin, spread 2–3 poin = 20–30% risiko habis sebelum harga bergerak.
+
+Data-nya sebenarnya sudah tersedia sejak awal — `/price` di bridge mengirim
+`bid`/`ask`/`spread`, tapi `fetch_price_from_bridge()` hanya mengambil
+`price` dan membuang sisanya (lihat koreksi audit Task 4).
+
+### Yang ditambahkan
+
+| Lokasi | Perubahan |
+|---|---|
+| `_bridge_price_cache` | Simpan `bid`/`ask` (sebelumnya dibuang) |
+| `get_bridge_spread()` | Spread dalam **satuan harga** (`ask - bid`) |
+| `init_db()` | Kolom `entry_spread REAL` |
+| `create_trade_monitor()` | Param `entry_spread`, ikut di-INSERT |
+| `run_scheduled_analysis()` | Isi dari `get_bridge_spread()` saat entry |
+| `get_spread_stats()` | Spread vs jarak SL, estimasi biaya, belah median |
+| `/api/admin/guard_status` | Blok `spread` + `spread_sekarang` |
+
+⚠️ **Jebakan satuan yang dihindari:** field `spread` bawaan bridge sudah
+dikali 10 (`round((ask-bid)*10, 1)`, komentarnya "dalam pips/10"), jadi
+**tidak sebanding** dengan jarak SL. `get_bridge_spread()` menghitung
+`ask - bid` sendiri supaya satuannya sama persis dengan harga dan SL.
+Diverifikasi: bid 4499.85 / ask 4500.15 → **0.3**, bukan 3.0.
+
+### Cara membacanya
+
+Angka kuncinya `spread_pct_of_sl` — rata-rata spread dibagi jarak SL.
+`estimasi_biaya_usd` mengalikannya ke lot efektif (termasuk martingale)
+supaya langsung sebanding dengan `gross_profit`. `per_kelompok` membelah di
+median untuk melihat apakah trade ber-spread lebar lebih sering kena SL.
+
+Trade tanpa data spread (bridge sedang fallback ke Twelve Data) masuk
+`belum_terekam`, **bukan** dihitung nol — kalau dianggap nol, rata-ratanya
+turun palsu.
+
+### Cara verifikasi
+
+```bash
+GOLDEX_DISABLE_SCHEDULER_AUTOSTART=1 python -X utf8 -c "import app"   # sukses
+python -X utf8 -m unittest discover tests                              # 59 tests OK
+```
+
+```
+spread tanpa bridge : None          (bukan 0.0, bukan crash)
+spread dari bid/ask : 0.3           (bukan 3.0 — satuan benar)
+tersimpan           : {'entry_spread': 0.3, 'm1_confidence': 'OVEREXTENDED'}
+```
+
+`/api/admin/guard_status` mengembalikan blok `spread`. Tidak ada error server.
+
+---
+
 ## Findings (di luar scope — belum diperbaiki)
 
 ### F1 — `setdefault` lain di `run_scheduled_analysis()` (~1967–1976)

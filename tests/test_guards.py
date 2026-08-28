@@ -44,7 +44,8 @@ class GuardTestCase(unittest.TestCase):
 
     def _insert_trade(self, direction, outcome, hours_ago, vision_rescued=0,
                        pnl=0.0, mult=1, signal_id=None,
-                       m1_signal=None, m1_score=None, m1_confidence=None):
+                       m1_signal=None, m1_score=None, m1_confidence=None,
+                       entry_spread=None, entry_price=4000, stop_loss=3990):
         conn = sqlite3.connect(self._db_path)
         ts = (datetime.now(WIB) - timedelta(hours=hours_ago)).isoformat()
         if signal_id is None:
@@ -54,11 +55,11 @@ class GuardTestCase(unittest.TestCase):
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
              stop_loss, tp1, tp2, tp3, status, outcome, outcome_price, outcome_time,
              closed_at, pnl_pips, martingale_mult, vision_rescued,
-             m1_signal, m1_score, m1_confidence)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (signal_id, ts, ts, "M5", direction, 4000, 3990, 4010, 4020, 4030,
+             m1_signal, m1_score, m1_confidence, entry_spread)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (signal_id, ts, ts, "M5", direction, entry_price, stop_loss, 4010, 4020, 4030,
               "CLOSED", outcome, 4000, ts, ts, pnl, mult, vision_rescued,
-              m1_signal, m1_score, m1_confidence))
+              m1_signal, m1_score, m1_confidence, entry_spread))
         conn.commit()
         conn.close()
 
@@ -197,6 +198,55 @@ class GuardTestCase(unittest.TestCase):
         self.assertEqual(s["m1_setuju"]["total"], 0)
         self.assertIsNone(s["m1_setuju"]["win_rate"])
         self.assertEqual(s["belum_terekam"], 0)
+
+    # ── get_spread_stats ──
+
+    def test_spread_pct_of_sl_dihitung_benar(self):
+        # SL 10 poin, spread 2 poin -> 20% risiko termakan biaya
+        for i in range(4):
+            self._insert_trade("BUY", "TP3_HIT", 5 - i, pnl=50, signal_id=-(500 + i),
+                               entry_spread=2.0, entry_price=4000, stop_loss=3990)
+        s = goldex_app.get_spread_stats(days=30)
+        self.assertEqual(s["terekam"], 4)
+        self.assertEqual(s["spread_rata2"], 2.0)
+        self.assertEqual(s["sl_distance_rata2"], 10.0)
+        self.assertEqual(s["spread_pct_of_sl"], 20.0)
+
+    def test_estimasi_biaya_ikut_martingale(self):
+        # PNL_MULT = 0.10 lot x 100 = 10 per poin.
+        # spread 2 poin @1x = $20 ; @4x = $80  -> total $100
+        self._insert_trade("BUY", "SL_HIT", 5, pnl=-50, signal_id=-601,
+                           entry_spread=2.0, mult=1)
+        self._insert_trade("BUY", "SL_HIT", 4, pnl=-50, signal_id=-602,
+                           entry_spread=2.0, mult=4)
+        s = goldex_app.get_spread_stats(days=30)
+        self.assertEqual(s["estimasi_biaya_usd"], 100.0)
+
+    def test_spread_lebar_vs_sempit_dipisah(self):
+        # 2 spread sempit (semua menang), 2 spread lebar (semua SL)
+        self._insert_trade("BUY", "TP3_HIT", 8, pnl=50, signal_id=-701, entry_spread=0.5)
+        self._insert_trade("BUY", "TP3_HIT", 7, pnl=50, signal_id=-702, entry_spread=0.6)
+        self._insert_trade("BUY", "SL_HIT", 6, pnl=-50, signal_id=-703, entry_spread=4.0)
+        self._insert_trade("BUY", "SL_HIT", 5, pnl=-50, signal_id=-704, entry_spread=5.0)
+        s = goldex_app.get_spread_stats(days=30)
+        self.assertEqual(s["per_kelompok"]["spread_sempit"]["sl_rate"], 0.0)
+        self.assertEqual(s["per_kelompok"]["spread_lebar"]["sl_rate"], 100.0)
+
+    def test_trade_tanpa_spread_dipisah_bukan_dianggap_nol(self):
+        """entry_spread NULL harus masuk belum_terekam, BUKAN dihitung 0 —
+        kalau dianggap 0 ia akan menurunkan rata-rata secara palsu."""
+        self._insert_trade("BUY", "SL_HIT", 5, pnl=-50, signal_id=-801)   # tanpa spread
+        self._insert_trade("BUY", "TP3_HIT", 4, pnl=50, signal_id=-802, entry_spread=3.0)
+        s = goldex_app.get_spread_stats(days=30)
+        self.assertEqual(s["terekam"], 1)
+        self.assertEqual(s["belum_terekam"], 1)
+        self.assertEqual(s["spread_rata2"], 3.0)
+
+    def test_spread_stats_kosong_aman(self):
+        s = goldex_app.get_spread_stats(days=30)
+        self.assertEqual(s["terekam"], 0)
+        self.assertIsNone(s["spread_pct_of_sl"])
+        self.assertIsNone(s["estimasi_biaya_usd"])
 
     # ── /api/admin/guard_status ──
 
