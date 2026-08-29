@@ -14,7 +14,9 @@ Mereplikasi PERSIS dari app.py + xauusd_ai_analyst.py:
     3 <= score < 5 = zona Vision-rescue (di-skip, lihat batasan);
     score < 3 = WAIT
   - Signal cooldown 900s antar sinyal baru
-  - Directional loss-streak guard (2x SL beruntun -> blokir 3 jam)
+  - Directional loss guard rolling-window (>=3 SL_HIT dari 6 trade CLOSED
+    terakhir di arah itu -> blokir arah tsb 3 jam sejak SL terakhir).
+    Cocok dengan is_direction_blocked() di app.py; BE_HIT bukan loss.
   - Satu trade aktif dalam satu waktu
   - Model posisi 3-way split: TP1 -> SL ke breakeven; TP2 -> SL ke TP1;
     TP3 -> full close; SL sebelum TP1 -> SL_HIT (loss penuh);
@@ -60,7 +62,8 @@ from xauusd_ai_analyst import (
 MIN_CONFLUENCE_SCORE   = 5
 VISION_RESCUE_MIN      = 3
 SIGNAL_COOLDOWN_SEC    = 900
-LOSS_STREAK_COUNT      = 2
+LOSS_STREAK_WINDOW     = 6
+LOSS_STREAK_THRESHOLD  = 3
 LOSS_STREAK_BLOCK_HRS  = 3.0
 EARLY_BE_TRIGGER_RATIO = 0.85
 EARLY_BE_MIN_POINTS    = 2.5
@@ -224,7 +227,9 @@ def simulate_trade_forward(df_m5: pd.DataFrame, start_idx: int, trade: dict):
 def run_backtest(df_m5: pd.DataFrame, df_h1: pd.DataFrame):
     trades = []
     last_signal_ts = None
-    loss_streak = {"BUY": [], "SELL": []}
+    # Riwayat SEMUA trade CLOSED per arah (terbaru di akhir) -- window guard
+    # butuh penyebutnya juga, bukan cuma SL, untuk hitung "3 dari 6".
+    riwayat_arah = {"BUY": [], "SELL": []}
 
     i = WARMUP_BARS
     n = len(df_m5)
@@ -259,13 +264,17 @@ def run_backtest(df_m5: pd.DataFrame, df_h1: pd.DataFrame):
             if last_signal_ts is not None and (now_ts - last_signal_ts).total_seconds() < SIGNAL_COOLDOWN_SEC:
                 i += 1
                 continue
-            # loss-streak guard
-            streak = loss_streak[sig][-LOSS_STREAK_COUNT:]
-            if len(streak) == LOSS_STREAK_COUNT and all(s[0] == "SL_HIT" for s in streak):
-                last_loss_ts = streak[-1][1]
-                if (now_ts - last_loss_ts).total_seconds() < LOSS_STREAK_BLOCK_HRS * 3600:
-                    i += 1
-                    continue
+            # Directional loss guard -- rolling window (lihat is_direction_blocked)
+            window = riwayat_arah[sig][-LOSS_STREAK_WINDOW:]
+            if len(window) >= LOSS_STREAK_THRESHOLD:
+                sl_rows = [r for r in window if r[0] == "SL_HIT" and r[1] is not None]
+                if len(sl_rows) >= LOSS_STREAK_THRESHOLD:
+                    # Cooldown dari SL_HIT paling baru dalam window, bukan dari
+                    # trade terakhir apa pun outcome-nya.
+                    last_loss_ts = max(r[1] for r in sl_rows)
+                    if (now_ts - last_loss_ts).total_seconds() < LOSS_STREAK_BLOCK_HRS * 3600:
+                        i += 1
+                        continue
 
             entry = float(best["entry"])
             sl, tp1, tp2, tp3 = float(best["sl"]), float(best["tp1"]), float(best["tp2"]), float(best["tp3"])
@@ -301,8 +310,7 @@ def run_backtest(df_m5: pd.DataFrame, df_h1: pd.DataFrame):
             })
 
             last_signal_ts = now_ts
-            if outcome in ("SL_HIT",):
-                loss_streak[sig].append((outcome, closed_at))
+            riwayat_arah[sig].append((outcome, closed_at))
 
             i = close_idx + 1
             continue

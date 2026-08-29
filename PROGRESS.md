@@ -792,3 +792,50 @@ ADX hanya hidup di dalam `detect_berkah_signal()`. Akibatnya konsumen di luar
 fungsi itu (mis. `_save_wait_ratelimited()`) tidak punya akses ke ADX sama
 sekali — sumber bug #1 di atas. Kalau ADX perlu ditampilkan di jalur WAIT,
 perlu dinaikkan ke `Indicators` atau di-pass eksplisit.
+
+### F4 — `src/db_bridge.py` menyimpan salinan mati `is_direction_blocked()` versi lama
+
+`src/db_bridge.py:485` masih memakai logika guard **beruntun** yang lama
+(`LOSS_STREAK_COUNT=2`, `any(r["outcome"] != "SL_HIT")`), sedangkan produksi di
+`app.py:1055` sudah pakai rolling window 3-dari-6.
+
+Tidak berbahaya sekarang: `grep -rn "db_bridge" --include=*.py .` tidak
+menemukan satu pun importer — file ini tidak dipakai siapa pun. Dicatat karena
+salinan guard yang berbeda-beda adalah jebakan kalau suatu saat file ini
+dihidupkan lagi, dan karena orang yang membacanya bisa mengira itu perilaku
+produksi. Tidak diperbaiki (di luar scope permintaan).
+
+---
+
+## Catatan: angka backtest di dokumen ini
+
+Semua angka backtest yang tercatat di atas (win rate, profit factor, jumlah
+trade) dihasilkan `backtest_berkah.py` **sebelum** guard-nya diselaraskan ke
+rolling window pada 2026-08-29. Harness lama memakai guard beruntun 2x SL,
+yang memblokir lebih jarang daripada produksi — jadi angka-angka lama itu
+sedikit lebih optimistis dan **tidak bisa dibandingkan langsung** dengan hasil
+run setelah tanggal tersebut. Angka lama tetap dibiarkan apa adanya sebagai
+catatan historis pengukuran saat itu.
+
+### Baseline setelah guard diselaraskan (2026-08-29)
+
+Run penuh `backtest_berkah.py` dengan guard rolling-window, periode dan data
+sama seperti run terakhir bergaya lama:
+
+| | Guard lama (beruntun 2x) | Guard baru (3 dari 6) |
+|---|---|---|
+| Trade | 184 | 185 |
+| Win rate | 55,6% | **54,9%** |
+| Profit factor | 1,387 | **1,35** |
+| PnL (0.1 lot) | +$2.417 | +$2.249 |
+
+Selisih PF −0,037. Perlu dicatat: itu **lebih kecil dari noise floor** yang
+sudah terukur di sesi ini (menggeser jendela data satu hari saja menggerakkan
+PF 1,38 -> 1,25, yaitu 0,13). Jadi cacat guard ini nyata dan layak diperbaiki
+demi kebenaran harness, tapi dampak numeriknya tidak cukup besar untuk
+membatalkan kesimpulan mana pun yang sudah diambil.
+
+Lebih penting lagi: semua eksperimen A/B di sesi ini menjalankan arm BASE dan
+arm varian dengan guard yang **sama**, jadi biasnya sebagian besar saling
+menghapus di selisihnya. Yang terpengaruh adalah level absolutnya, bukan
+perbandingan antar-varian.
