@@ -839,3 +839,74 @@ Lebih penting lagi: semua eksperimen A/B di sesi ini menjalankan arm BASE dan
 arm varian dengan guard yang **sama**, jadi biasnya sebagian besar saling
 menghapus di selisihnya. Yang terpengaruh adalah level absolutnya, bukan
 perbandingan antar-varian.
+
+---
+
+## Vision Shadow Mode — instrumentasi screening AI (2026-09-01)
+
+**Permintaan:** bisakah AI membantu screening setelah semua teknikal konfirmasi?
+
+**Temuan awal:** fitur itu sudah ada dan sudah lengkap — `_try_vision_veto()`
+(`app.py`), terpasang di alur, dikendalikan `VISION_VETO_NEAR_SMC`, default
+`false`, tidak pernah dinyalakan.
+
+### Pengukuran gerbang SMC (tanpa satu pun panggilan AI)
+
+Veto hanya menyentuh sinyal yang harganya dalam 0,5×ATR dari level SMC kuat.
+Diukur atas 186 trade backtest:
+
+| | Trade | Win rate | Profit factor |
+|---|---|---|---|
+| Dekat SMC (target veto) | 169 (**90,9%**) | 54,7% | 1,375 |
+| Jauh dari SMC | 17 | 60,0% | 1,419 |
+
+Dua kesimpulan:
+
+1. **Gerbangnya bukan gerbang.** 90,9% trade memenuhinya, karena yang diukur
+   adalah jarak ke *salah satu* dari puluhan zona (sampai 30 FVG + OB + 3
+   support + 3 resistance). Menyalakan `VISION_VETO_NEAR_SMC` praktis berarti
+   men-screening semua sinyal — nama flag dan komentarnya ("harganya
+   *kebetulan* dekat level SMC") menyesatkan. Docstring sudah dikoreksi.
+2. **Gerbang itu tidak memisahkan yang buruk.** Kelompok "jauh" cuma 17 trade —
+   terlalu sedikit untuk disimpulkan. Yang bisa dinyatakan: kedekatan SMC tidak
+   menambah informasi sebagai penyeleksi.
+
+Yang diuji di sini adalah **gerbangnya**, bukan **penilaian AI-nya**. Apakah
+Vision mampu membedakan setup bagus dari jelek masih sepenuhnya belum teruji.
+
+### Yang dikerjakan
+
+Mode bayangan: catat verdict Vision untuk tiap trade baru **tanpa
+menindaklanjutinya**. Nol risiko terhadap trading — trade sudah dibuka sebelum
+panggilan dilakukan, dan tidak ada jalur yang membaca kolomnya.
+
+- Kolom baru: `vision_verdict`, `vision_shadow_reason`, `near_smc`
+- `_vision_judge_signal()` — helper bersama; `_try_vision_veto()` jadi pembungkus
+  tipis di atasnya (perilakunya tidak berubah; jalurnya juga masih mati)
+- `_vision_shadow_record()` — dijalankan di thread daemon supaya latensi API
+  tidak menunda alert Telegram; kegagalan apa pun ditelan (kolom tetap NULL)
+- Sinyal hasil rescue **dilewati** — verdict-nya pasti VALID, jadi memasukkannya
+  memberi bias seleksi. Jalur itu sudah diukur `get_vision_rescue_stats()`
+- `get_vision_shadow_stats()` + terekspos di `/api/admin/guard_status`
+- Flag `VISION_SHADOW_MODE`, default `false`
+- 4 test baru (total 63, semua lulus)
+
+### Cara membacanya nanti
+
+Angka penentunya: **`sl_rate` kelompok non-VALID vs VALID.**
+
+- non-VALID jauh lebih tinggi → verdict berkorelasi dengan hasil, veto layak
+- kira-kira sama → Vision tidak menambah informasi, biarkan veto mati
+
+Alasannya: veto membuang trade dari sistem yang sudah untung (PF ~1,35). Filter
+yang menolak tanpa korelasi ke hasil membuang pemenang dan pecundang dalam
+proporsi sama — profit factor tidak membaik, jumlah trade berkurang, varians
+naik. **Penolak acak bukan netral, ia merugikan.**
+
+`hipotetis_jika_veto_aktif` langsung menghitung PF yang tersisa kalau semua
+non-VALID benar-benar diveto, dibanding kenyataan sekarang.
+
+Butuh 30-50 trade (~2-3/hari → sekitar 2 minggu) sebelum angkanya layak
+dipercaya. Sebelum itu, jangan simpulkan apa pun.
+
+**Belum aktif.** Perlu di-set `VISION_SHADOW_MODE=true` di environment Coolify.

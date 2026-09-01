@@ -318,6 +318,24 @@ def init_db():
         # tersedia saat entry (mis. fallback Twelve Data, yang tidak punya
         # bid/ask). Lihat get_spread_stats().
         "ALTER TABLE trade_monitors ADD COLUMN entry_spread REAL",
+        # ── Vision shadow mode (VISION_SHADOW_MODE) ──
+        # Verdict Vision AI atas sinyal yang SUDAH lolos semua gerbang teknikal,
+        # dicatat TANPA memengaruhi keputusan apa pun. Trade tetap dibuka persis
+        # seperti sebelumnya, apa pun jawaban AI-nya.
+        #
+        # Menjawab satu pertanyaan yang belum pernah diukur: apakah verdict
+        # Vision berkorelasi dengan hasil trade? Veto cuma berguna kalau SKIP
+        # lebih sering berakhir SL_HIT daripada VALID. Kalau tidak berkorelasi,
+        # veto adalah penolak acak -- dan penolak acak MERUGIKAN sistem yang
+        # sudah untung, karena membuang pemenang dalam proporsi yang sama.
+        #
+        # near_smc merekam apakah harga saat entry dekat level SMC kuat
+        # (is_near_strong_smc_level). Diukur 90,9% dari trade -- gerbang itu
+        # praktis selalu benar, jadi dicatat untuk mengonfirmasi ulang di data
+        # produksi, bukan sebagai penyeleksi. Lihat get_vision_shadow_stats().
+        "ALTER TABLE trade_monitors ADD COLUMN vision_verdict TEXT",
+        "ALTER TABLE trade_monitors ADD COLUMN vision_shadow_reason TEXT",
+        "ALTER TABLE trade_monitors ADD COLUMN near_smc INTEGER",
     ):
         try:
             conn.execute(_col_sql)
@@ -993,6 +1011,92 @@ def get_spread_stats(days: int = 30) -> dict:
             "spread_sempit": _ringkas(urut[:tengah]),
             "spread_lebar":  _ringkas(urut[tengah:]),
         },
+    }
+
+
+def get_vision_shadow_stats(days: int = 30) -> dict:
+    """
+    Apakah verdict Vision AI berkorelasi dengan hasil trade?
+
+    Ini SATU-SATUNYA pertanyaan yang menentukan layak-tidaknya Vision Veto
+    dinyalakan. Veto membuang trade dari sistem yang sekarang untung (PF ~1,35).
+    Kalau verdict-nya tidak berkorelasi dengan hasil, veto membuang pemenang dan
+    pecundang dalam proporsi yang sama: profit factor tidak membaik, jumlah
+    trade berkurang, varians naik. Filter yang menolak secara acak bukan netral,
+    ia merugikan.
+
+    Yang perlu dilihat: sl_rate kelompok SKIP vs kelompok VALID.
+      - SKIP jauh lebih tinggi  -> veto punya dasar empiris, layak dinyalakan
+      - kira-kira sama          -> Vision tidak menambah informasi, biarkan mati
+
+    `hipotetis_jika_veto_aktif` mensimulasikan apa yang TERJADI kalau semua
+    verdict non-VALID benar-benar diveto: PF dan jumlah trade yang tersisa,
+    dibandingkan dengan kenyataan sekarang. Ini perbandingan langsung tanpa
+    perlu mengubah apa pun di produksi.
+
+    Trade hasil Vision-rescue tidak masuk sini (verdict-nya pasti VALID) --
+    jalur itu diukur get_vision_rescue_stats().
+    """
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cutoff = _period_cutoff(days)
+    if cutoff:
+        rows = conn.execute("""
+            SELECT * FROM trade_monitors
+            WHERE status = 'CLOSED'
+            AND (closed_at >= ? OR outcome_time >= ? OR timestamp >= ? OR created_at >= ?)
+        """, (cutoff, cutoff, cutoff, cutoff)).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM trade_monitors WHERE status = 'CLOSED'").fetchall()
+    conn.close()
+
+    closed = [dict(r) for r in rows]
+
+    def _summarize(subset):
+        total = len(subset)
+        if total == 0:
+            return {"total": 0, "wins": 0, "losses": 0, "win_rate": None,
+                    "sl_hit": 0, "sl_rate": None, "total_pnl": 0, "profit_factor": None}
+        pnl_list = [_money(t.get("pnl_pips"), t.get("martingale_mult")) for t in subset]
+        wins     = sum(1 for v in pnl_list if v > 0.01)
+        losses   = sum(1 for v in pnl_list if v < -0.01)
+        sl_hit   = sum(1 for t in subset if (t.get("outcome") or "") == "SL_HIT")
+        decisive = wins + losses
+        gp = sum(v for v in pnl_list if v > 0)
+        gl = abs(sum(v for v in pnl_list if v < 0))
+        return {
+            "total":         total,
+            "wins":          wins,
+            "losses":        losses,
+            "win_rate":      round(wins / decisive * 100, 1) if decisive else None,
+            "sl_hit":        sl_hit,
+            "sl_rate":       round(sl_hit / total * 100, 1),
+            "total_pnl":     round(sum(pnl_list), 2),
+            "profit_factor": round(gp / gl, 3) if gl else None,
+        }
+
+    tercatat = [t for t in closed if t.get("vision_verdict")]
+    valid    = [t for t in tercatat if t["vision_verdict"] == "VALID"]
+    non_valid = [t for t in tercatat if t["vision_verdict"] != "VALID"]
+
+    per_verdict = {}
+    for t in tercatat:
+        k = t["vision_verdict"]
+        per_verdict[k] = per_verdict.get(k, 0) + 1
+
+    return {
+        "period_days":   days,
+        "belum_terekam": len(closed) - len(tercatat),
+        "sebaran_verdict": per_verdict,
+        "vision_valid":     _summarize(valid),
+        "vision_non_valid": _summarize(non_valid),
+        # Kalau veto benar-benar aktif, hanya kelompok VALID yang jadi trade.
+        "hipotetis_jika_veto_aktif": {
+            "tersisa":     _summarize(valid),
+            "terbuang":    _summarize(non_valid),
+            "semua_apa_adanya": _summarize(tercatat),
+        },
+        "near_smc_terekam": sum(1 for t in tercatat if t.get("near_smc")),
     }
 
 
@@ -2042,22 +2146,19 @@ def is_near_strong_smc_level(price: float, smc, atr_val: float, proximity_atr: f
     return False
 
 
-def _try_vision_veto(sig: str, market, berkah: dict, indicators, smc, tf_label: str,
-                      twelve_key: str, api_key: str) -> bool:
+def _vision_judge_signal(sig: str, market, berkah: dict, indicators, smc, tf_label: str,
+                         twelve_key: str, api_key: str) -> dict | None:
     """
-    Vision Veto: sanity-check visual TAMBAHAN untuk sinyal skor TINGGI
-    (auto-pass, tidak lewat zona rescue) yang harganya kebetulan dekat level
-    SMC kuat — skor numerik tidak pernah mengecek itu, jadi bisa auto-pass
-    walau visualnya jelas masih di tengah order block/FVG/S-R besar.
+    Render chart + minta penilaian Vision AI untuk satu sinyal. Mengembalikan
+    dict hasil Vision apa adanya, atau None kalau chart/API gagal.
 
-    Fail-safe SENGAJA DIBALIK dari _try_vision_rescue: kalau Vision API
-    gagal/timeout/error di sini, JANGAN veto (biarkan sinyal lanjut apa
-    adanya) — sinyal ini sudah lolos gerbang numerik dengan skor tinggi atas
-    kemampuannya sendiri, gangguan API eksternal tidak seharusnya
-    membatalkan sinyal yang sudah valid secara numerik. Beda dengan rescue
-    (yang butuh Vision buat LOLOS), veto di sini cuma pengaman tambahan.
+    Dipakai dua pemanggil dengan tujuan berbeda:
+      - _try_vision_veto()      -> memakai verdict untuk MEMBATALKAN sinyal
+      - _vision_shadow_record() -> cuma MENCATAT verdict, tidak mengubah apa pun
 
-    Return True kalau sinyal HARUS DIVETO (verdict Vision selain VALID).
+    Fungsi ini sendiri tidak memutuskan apa-apa; kebijakan fail-safe ada di
+    masing-masing pemanggil, karena keduanya memang berbeda (lihat docstring
+    _try_vision_veto).
     """
     try:
         chart_tf = {"M5": "5m", "M1": "1m"}.get(tf_label, "5m")
@@ -2089,20 +2190,91 @@ def _try_vision_veto(sig: str, market, berkah: dict, indicators, smc, tf_label: 
             "trend": smc.trend, "bos": smc.last_bos, "choch": smc.last_choch,
             "swing_high": smc.swing_high, "swing_low": smc.swing_low,
         }
-        vision = confirm_fn(
+        return confirm_fn(
             chart_b64  = chart["b64"], signal = sig,
             price      = market.current_price, timeframe = chart_tf,
             entry      = entry, stop_loss = sl, tp1 = tp1, tp2 = tp2, tp3 = tp3,
             confidence = pseudo_conf,
             indicators = indic_dict, smc = smc_dict, api_key = api_key,
         )
-        verdict = vision.get("verdict", "SKIP")
-        print(f"[Vision Veto] {sig} skor {score}/7 dekat level SMC → verdict={verdict} | "
-              f"{str(vision.get('reasoning',''))[:150]}")
-        return verdict != "VALID"
     except Exception as e:
-        print(f"[Vision Veto] Error: {e} — fail-safe, sinyal TETAP LANJUT (tidak diveto)")
+        print(f"[Vision] Gagal menilai sinyal: {e}")
+        return None
+
+
+def _try_vision_veto(sig: str, market, berkah: dict, indicators, smc, tf_label: str,
+                      twelve_key: str, api_key: str) -> bool:
+    """
+    Vision Veto: sanity-check visual TAMBAHAN untuk sinyal skor TINGGI
+    (auto-pass, tidak lewat zona rescue) yang harganya dekat level SMC kuat.
+
+    CATATAN PENGUKURAN (2026-09-01): gerbang is_near_strong_smc_level() ternyata
+    benar untuk 90,9% trade (169/186 di backtest), jadi "dekat level SMC" BUKAN
+    kondisi khusus -- menyalakan flag ini praktis berarti men-screening semua
+    sinyal. Subset itu juga tidak terbukti lebih buruk (PF 1,375 vs 1,419 pada
+    17 trade sisanya, terlalu sedikit untuk disimpulkan). Jadi gerbang ini tidak
+    menambah informasi sebagai penyeleksi.
+
+    Fail-safe SENGAJA DIBALIK dari _try_vision_rescue: kalau Vision API
+    gagal/timeout/error di sini, JANGAN veto (biarkan sinyal lanjut apa
+    adanya) -- sinyal ini sudah lolos gerbang numerik dengan skor tinggi atas
+    kemampuannya sendiri, gangguan API eksternal tidak seharusnya
+    membatalkan sinyal yang sudah valid secara numerik. Beda dengan rescue
+    (yang butuh Vision buat LOLOS), veto di sini cuma pengaman tambahan.
+
+    Return True kalau sinyal HARUS DIVETO (verdict Vision selain VALID).
+    """
+    vision = _vision_judge_signal(sig, market, berkah, indicators, smc, tf_label,
+                                  twelve_key, api_key)
+    if vision is None:
+        print("[Vision Veto] Error -- fail-safe, sinyal TETAP LANJUT (tidak diveto)")
         return False
+    verdict = vision.get("verdict", "SKIP")
+    score   = int(berkah.get("score", 0))
+    print(f"[Vision Veto] {sig} skor {score}/7 dekat level SMC -> verdict={verdict} | "
+          f"{str(vision.get('reasoning',''))[:150]}")
+    return verdict != "VALID"
+
+
+def _vision_shadow_record(monitor_id: int, sig: str, market, berkah: dict, indicators,
+                          smc, tf_label: str, twelve_key: str, api_key: str,
+                          near_smc: bool) -> None:
+    """
+    Mode bayangan: minta verdict Vision untuk trade yang SUDAH dibuka, lalu
+    catat ke barisnya. TIDAK ADA keputusan yang berubah -- trade sudah jalan
+    sebelum fungsi ini dipanggil, dan tidak ada jalur yang membacanya.
+
+    Dijalankan di thread terpisah supaya panggilan API (beberapa detik) tidak
+    menunda alert Telegram maupun siklus scheduler. Kegagalan apa pun ditelan:
+    kolom tetap NULL, trade tidak terpengaruh sama sekali.
+
+    Sinyal hasil Vision-rescue TIDAK dicatat di sini. Verdict-nya pasti VALID
+    (kalau tidak, sinyalnya sudah mati di gerbang rescue), jadi memasukkannya
+    akan mencemari perbandingan dengan bias seleksi. Jalur itu sudah punya
+    pengukurannya sendiri: get_vision_rescue_stats().
+    """
+    try:
+        vision = _vision_judge_signal(sig, market, berkah, indicators, smc, tf_label,
+                                      twelve_key, api_key)
+        verdict = (vision or {}).get("verdict")
+        reason  = str((vision or {}).get("reasoning", ""))[:500] or None
+
+        conn = get_db()
+        try:
+            conn.execute("""
+                UPDATE trade_monitors
+                SET vision_verdict = ?, vision_shadow_reason = ?, near_smc = ?
+                WHERE id = ?
+            """, (verdict, reason, int(bool(near_smc)), monitor_id))
+            conn.commit()
+        finally:
+            conn.close()
+
+        print(f"[Vision Shadow] monitor #{monitor_id} {sig} skor {berkah.get('score',0)}/7 "
+              f"near_smc={int(bool(near_smc))} -> verdict={verdict or 'GAGAL'} "
+              f"(dicatat saja, trade tidak terpengaruh)")
+    except Exception as e:
+        print(f"[Vision Shadow] Error mencatat monitor #{monitor_id}: {e} -- diabaikan")
 
 
 def run_scheduled_analysis():
@@ -2639,6 +2811,26 @@ def run_scheduled_analysis():
                     # Kalah race vs monitor ACTIVE lain — jangan set cache/kirim Telegram
                     # untuk signal yang sudah tidak jadi acuan dashboard.
                     return None
+
+                # ── Vision shadow mode (opsional, default OFF) ──
+                # Trade SUDAH dibuka di atas. Panggilan ini cuma mencatat
+                # pendapat Vision AI ke barisnya; tidak ada satu pun keputusan
+                # yang bergantung padanya. Dijalankan di thread terpisah supaya
+                # latensi API tidak menunda alert Telegram di bawah.
+                #
+                # Sinyal hasil rescue dilewati: verdict-nya pasti VALID, jadi
+                # memasukkannya akan memberi bias seleksi.
+                if (os.getenv("VISION_SHADOW_MODE", "false").lower() == "true"
+                        and not needs_vision_rescue):
+                    threading.Thread(
+                        target = _vision_shadow_record,
+                        args   = (monitor_id, sig, market, berkah, indicators, smc,
+                                  tf_label, twelve_key, api_key,
+                                  is_near_strong_smc_level(market.current_price, smc,
+                                                           indicators.atr_14)),
+                        daemon = True,
+                        name   = f"VisionShadow-{monitor_id}",
+                    ).start()
 
                 _set_latest_signal(signal_id, analysis, market, indicators, smc, tf_label)
                 msg = format_signal_message(analysis, market.current_price, tf_label, signal_id=signal_id)
@@ -3258,6 +3450,8 @@ def api_guard_status():
         "m1_agreement":          get_m1_agreement_stats(days=30),
         "spread":                get_spread_stats(days=30),
         "spread_sekarang":       get_bridge_spread(),
+        "vision_shadow":         get_vision_shadow_stats(days=30),
+        "vision_shadow_aktif":   os.getenv("VISION_SHADOW_MODE", "false").lower() == "true",
     })
 
 

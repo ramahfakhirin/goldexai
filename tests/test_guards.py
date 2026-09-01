@@ -45,7 +45,8 @@ class GuardTestCase(unittest.TestCase):
     def _insert_trade(self, direction, outcome, hours_ago, vision_rescued=0,
                        pnl=0.0, mult=1, signal_id=None,
                        m1_signal=None, m1_score=None, m1_confidence=None,
-                       entry_spread=None, entry_price=4000, stop_loss=3990):
+                       entry_spread=None, entry_price=4000, stop_loss=3990,
+                       vision_verdict=None, near_smc=None):
         conn = sqlite3.connect(self._db_path)
         ts = (datetime.now(WIB) - timedelta(hours=hours_ago)).isoformat()
         if signal_id is None:
@@ -55,13 +56,60 @@ class GuardTestCase(unittest.TestCase):
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
              stop_loss, tp1, tp2, tp3, status, outcome, outcome_price, outcome_time,
              closed_at, pnl_pips, martingale_mult, vision_rescued,
-             m1_signal, m1_score, m1_confidence, entry_spread)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+             m1_signal, m1_score, m1_confidence, entry_spread,
+             vision_verdict, near_smc)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (signal_id, ts, ts, "M5", direction, entry_price, stop_loss, 4010, 4020, 4030,
               "CLOSED", outcome, 4000, ts, ts, pnl, mult, vision_rescued,
-              m1_signal, m1_score, m1_confidence, entry_spread))
+              m1_signal, m1_score, m1_confidence, entry_spread,
+              vision_verdict, near_smc))
         conn.commit()
         conn.close()
+
+    # ── get_vision_shadow_stats — instrumentasi, bukan gerbang ──
+
+    def test_shadow_stats_kosong_saat_belum_ada_data(self):
+        self._insert_trade("BUY", "SL_HIT", 2, pnl=-10)
+        st = goldex_app.get_vision_shadow_stats(days=30)
+        self.assertEqual(st["belum_terekam"], 1)
+        self.assertEqual(st["vision_valid"]["total"], 0)
+        self.assertEqual(st["vision_non_valid"]["total"], 0)
+
+    def test_shadow_stats_memisahkan_valid_dan_non_valid(self):
+        self._insert_trade("BUY", "TP3_HIT", 5, pnl=30, vision_verdict="VALID", near_smc=1)
+        self._insert_trade("BUY", "TP3_HIT", 4, pnl=20, vision_verdict="VALID", near_smc=1)
+        self._insert_trade("SELL", "SL_HIT", 3, pnl=-10, vision_verdict="SKIP", near_smc=1)
+        self._insert_trade("SELL", "SL_HIT", 2, pnl=-10,
+                           vision_verdict="WAIT_FOR_PULLBACK", near_smc=0)
+        st = goldex_app.get_vision_shadow_stats(days=30)
+
+        self.assertEqual(st["vision_valid"]["total"], 2)
+        self.assertEqual(st["vision_non_valid"]["total"], 2)
+        # SKIP + WAIT_FOR_PULLBACK dua-duanya kena SL
+        self.assertEqual(st["vision_non_valid"]["sl_rate"], 100.0)
+        self.assertEqual(st["vision_valid"]["sl_rate"], 0.0)
+        self.assertEqual(st["sebaran_verdict"]["VALID"], 2)
+        self.assertEqual(st["sebaran_verdict"]["SKIP"], 1)
+        self.assertEqual(st["near_smc_terekam"], 3)
+        self.assertEqual(st["belum_terekam"], 0)
+
+    def test_shadow_stats_hipotetis_veto_memisahkan_sisa_dan_buangan(self):
+        self._insert_trade("BUY", "TP3_HIT", 5, pnl=30, vision_verdict="VALID")
+        self._insert_trade("SELL", "SL_HIT", 3, pnl=-10, vision_verdict="SKIP")
+        st = goldex_app.get_vision_shadow_stats(days=30)
+        hip = st["hipotetis_jika_veto_aktif"]
+        self.assertEqual(hip["tersisa"]["total"], 1)
+        self.assertEqual(hip["terbuang"]["total"], 1)
+        self.assertEqual(hip["semua_apa_adanya"]["total"], 2)
+
+    def test_shadow_stats_tidak_menghitung_trade_tanpa_verdict(self):
+        """Trade lama (kolom belum ada) tidak boleh mencemari perbandingan."""
+        self._insert_trade("BUY", "SL_HIT", 5, pnl=-10)
+        self._insert_trade("BUY", "TP3_HIT", 4, pnl=30, vision_verdict="VALID")
+        st = goldex_app.get_vision_shadow_stats(days=30)
+        self.assertEqual(st["belum_terekam"], 1)
+        self.assertEqual(st["vision_valid"]["total"], 1)
+        self.assertIsNone(st["vision_non_valid"]["win_rate"])
 
     # ── is_direction_blocked — rolling window loss guard ──
 
