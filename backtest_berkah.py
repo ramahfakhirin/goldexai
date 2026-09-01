@@ -17,6 +17,8 @@ Mereplikasi PERSIS dari app.py + xauusd_ai_analyst.py:
   - Directional loss guard rolling-window (>=3 SL_HIT dari 6 trade CLOSED
     terakhir di arah itu -> blokir arah tsb 3 jam sejak SL terakhir).
     Cocok dengan is_direction_blocked() di app.py; BE_HIT bukan loss.
+  - Biaya spread SPREAD_COST dikenakan sekali per trade (default 0.35 =
+    35 poin MT5); pnl_usd sudah bersih dari biaya ini
   - Satu trade aktif dalam satu waktu
   - Model posisi 3-way split: TP1 -> SL ke breakeven; TP2 -> SL ke TP1;
     TP3 -> full close; SL sebelum TP1 -> SL_HIT (loss penuh);
@@ -70,6 +72,15 @@ EARLY_BE_MIN_POINTS    = 2.5
 DISPLAY_LOT_SIZE       = 0.10
 POINT_VALUE_PER_LOT    = 100.0
 PNL_MULT               = DISPLAY_LOT_SIZE * POINT_VALUE_PER_LOT  # $10 / poin
+
+# Biaya spread per trade, dalam SATUAN HARGA (dolar), bukan "poin MT5".
+# 0.35 = 35 poin MT5 (1 poin = 0.01 untuk XAU/USD).
+#
+# Sampai sekarang backtest berasumsi biaya NOL, sementara produksi membayar
+# spread tiap kali entry. Itu salah satu sebab angka backtest selalu lebih
+# optimistis. Dikenakan SEKALI per trade (beli di ask, jual di bid = satu kali
+# ongkos pulang-pergi), bukan per partial close.
+SPREAD_COST = float(os.getenv("BACKTEST_SPREAD", "0.35"))
 
 WARMUP_BARS = 250  # cukup untuk EMA200 + ADX + swing lookback
 
@@ -294,8 +305,14 @@ def run_backtest(df_m5: pd.DataFrame, df_h1: pd.DataFrame):
                 "opened_at": now_ts, "closed_at": closed_at, "direction": sig,
                 "entry": entry, "sl": sl, "tp1": tp1, "tp2": tp2, "tp3": tp3,
                 "score": score, "confidence": best.get("confidence"), "timeframe": best.get("timeframe"),
-                "outcome": outcome, "pnl_points": pnl,
-                "pnl_usd": round(pnl * PNL_MULT, 2),
+                "outcome": outcome,
+                # pnl_points = kotor (sebelum spread); pnl_usd = BERSIH.
+                # Semua ringkasan memakai yang bersih supaya tidak lagi
+                # membandingkan dunia tanpa biaya dengan produksi.
+                "pnl_points": pnl,
+                "pnl_points_net": round(pnl - SPREAD_COST, 4),
+                "spread_cost_usd": round(SPREAD_COST * PNL_MULT, 2),
+                "pnl_usd": round((pnl - SPREAD_COST) * PNL_MULT, 2),
                 # Faktor confluence individual -- dipakai buat analisa korelasi
                 # faktor vs hasil trade (evaluasi apakah bobot +1 rata perlu
                 # dikalibrasi ulang berdasarkan faktor mana yang benar prediktif).

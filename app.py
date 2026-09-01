@@ -333,6 +333,14 @@ def init_db():
         # (is_near_strong_smc_level). Diukur 90,9% dari trade -- gerbang itu
         # praktis selalu benar, jadi dicatat untuk mengonfirmasi ulang di data
         # produksi, bukan sebagai penyeleksi. Lihat get_vision_shadow_stats().
+        # 1 = entry_spread BUKAN hasil pengukuran, melainkan nilai cadangan
+        # DEFAULT_SPREAD (bridge tidak mengirim bid/ask saat entry).
+        #
+        # Tanpa penanda ini, mengisi NULL dengan konstanta akan menghapus jejak
+        # mana yang benar-benar terukur -- statistik spread lalu jadi sebagian
+        # fakta, sebagian tebakan, tanpa cara membedakannya. get_spread_stats()
+        # memisahkan keduanya.
+        "ALTER TABLE trade_monitors ADD COLUMN entry_spread_estimasi INTEGER DEFAULT 0",
         "ALTER TABLE trade_monitors ADD COLUMN vision_verdict TEXT",
         "ALTER TABLE trade_monitors ADD COLUMN vision_shadow_reason TEXT",
         "ALTER TABLE trade_monitors ADD COLUMN near_smc INTEGER",
@@ -591,6 +599,25 @@ def get_stats() -> dict:
     }
 
 
+def get_entry_spread() -> tuple[float, bool]:
+    """
+    Spread untuk dicatat saat entry. Return (nilai, estimasi).
+
+    Kalau bridge mengirim bid/ask, itu yang dipakai (estimasi=False). Kalau
+    tidak (mis. fallback Twelve Data yang tidak punya bid/ask), pakai
+    DEFAULT_SPREAD -- default 0.35 satuan harga, setara 35 poin MT5 untuk
+    XAU/USD (1 poin = 0.01).
+
+    Nilai cadangan ditandai estimasi=True supaya analisis nanti bisa memisahkan
+    yang terukur dari yang diasumsikan; tanpa itu statistik spread jadi campuran
+    fakta dan tebakan yang tidak bisa diurai lagi.
+    """
+    s = get_bridge_spread()
+    if s is not None:
+        return s, False
+    return float(os.getenv("DEFAULT_SPREAD", "0.35")), True
+
+
 def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          sl: float, tp1: float, tp2: float, tp3: float,
                          timeframe: str, vision_rescued: bool = False,
@@ -598,7 +625,8 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
                          m1_signal: str | None = None,
                          m1_score: int | None = None,
                          m1_confidence: str | None = None,
-                         entry_spread: float | None = None) -> int | None:
+                         entry_spread: float | None = None,
+                         entry_spread_estimasi: bool = False) -> int | None:
     """Buat trade monitor baru setelah signal BUY/SELL.
 
     Menangkap martingale_mult SAAT INI (dari rentetan loss murni terbaru) dan
@@ -631,11 +659,13 @@ def create_trade_monitor(signal_id: int, direction: str, entry: float,
             INSERT INTO trade_monitors
             (signal_id, timestamp, created_at, timeframe, direction, entry_price,
              stop_loss, tp1, tp2, tp3, status, martingale_mult, vision_rescued,
-             efficiency_ratio, m1_signal, m1_score, m1_confidence, entry_spread)
-            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?,?,?,?,?,?)
+             efficiency_ratio, m1_signal, m1_score, m1_confidence, entry_spread,
+             entry_spread_estimasi)
+            VALUES (?,?,?,?,?,?,?,?,?,?,'ACTIVE',?,?,?,?,?,?,?,?)
         """, (signal_id, now_iso, now_iso, timeframe,
               direction, entry, sl, tp1, tp2, tp3, mult, int(vision_rescued),
-              efficiency_ratio, m1_signal, m1_score, m1_confidence, entry_spread))
+              efficiency_ratio, m1_signal, m1_score, m1_confidence, entry_spread,
+              int(entry_spread_estimasi)))
         monitor_id = cursor.lastrowid
         conn.commit()
         if mult > 1:
@@ -999,11 +1029,26 @@ def get_spread_stats(days: int = 30) -> dict:
             "spread_rata2": round(sum(s for s, _, _ in bagian) / len(bagian), 3),
         }
 
+    # Terukur vs diasumsikan. Sejak DEFAULT_SPREAD dipakai sebagai nilai
+    # cadangan, sebagian baris berisi konstanta, bukan hasil pengukuran.
+    # Mencampurnya akan membuat spread_rata2 tertarik ke nilai default dan
+    # menyamarkan seberapa banyak yang sebenarnya kita ketahui.
+    terukur   = [t for t in tercatat if not t.get("entry_spread_estimasi")]
+    diasumsi  = [t for t in tercatat if t.get("entry_spread_estimasi")]
+    spread_terukur = (round(sum(float(t["entry_spread"]) for t in terukur) / len(terukur), 3)
+                      if terukur else None)
+
     return {
         "period_days":       days,
         "terekam":           len(tercatat),
         "belum_terekam":     len(closed) - len(tercatat),
         "spread_rata2":      spread_avg,
+        # Hanya baris yang benar-benar diukur dari bid/ask bridge. Ini angka
+        # yang layak dipercaya; spread_rata2 di atas sudah tercampur asumsi.
+        "spread_rata2_terukur": spread_terukur,
+        "jumlah_terukur":       len(terukur),
+        "jumlah_diasumsikan":   len(diasumsi),
+        "default_spread":       float(os.getenv("DEFAULT_SPREAD", "0.35")),
         "sl_distance_rata2": jarak_avg,
         "spread_pct_of_sl":  pct,
         "estimasi_biaya_usd": biaya,
@@ -2783,6 +2828,7 @@ def run_scheduled_analysis():
                         print(f"[Scheduler] 🔍🚫 Vision veto — {sig} skor {score_val}/7 dekat level SMC, ditahan")
                         return None
 
+                _spread_entry, _spread_estimasi = get_entry_spread()
                 signal_id = save_signal(analysis, tf_label, market.current_price)
 
                 monitor_id = create_trade_monitor(
@@ -2803,9 +2849,11 @@ def run_scheduled_analysis():
                     m1_signal     = (mtf.get("m1") or {}).get("signal"),
                     m1_score      = (mtf.get("m1") or {}).get("score"),
                     m1_confidence = (mtf.get("m1") or {}).get("confidence"),
-                    # Spread broker saat entry — satu-satunya biaya yang belum
-                    # pernah diukur. Dicatat saja, tidak menggerbangi apa pun.
-                    entry_spread  = get_bridge_spread(),
+                    # Spread broker saat entry. Dicatat saja, tidak
+                    # menggerbangi apa pun. Kalau bridge diam, dipakai
+                    # DEFAULT_SPREAD dan ditandai sebagai estimasi.
+                    entry_spread           = _spread_entry,
+                    entry_spread_estimasi  = _spread_estimasi,
                 )
                 if monitor_id is None:
                     # Kalah race vs monitor ACTIVE lain — jangan set cache/kirim Telegram

@@ -46,7 +46,8 @@ class GuardTestCase(unittest.TestCase):
                        pnl=0.0, mult=1, signal_id=None,
                        m1_signal=None, m1_score=None, m1_confidence=None,
                        entry_spread=None, entry_price=4000, stop_loss=3990,
-                       vision_verdict=None, near_smc=None):
+                       vision_verdict=None, near_smc=None,
+                       entry_spread_estimasi=0):
         conn = sqlite3.connect(self._db_path)
         ts = (datetime.now(WIB) - timedelta(hours=hours_ago)).isoformat()
         if signal_id is None:
@@ -57,14 +58,52 @@ class GuardTestCase(unittest.TestCase):
              stop_loss, tp1, tp2, tp3, status, outcome, outcome_price, outcome_time,
              closed_at, pnl_pips, martingale_mult, vision_rescued,
              m1_signal, m1_score, m1_confidence, entry_spread,
-             vision_verdict, near_smc)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+             vision_verdict, near_smc, entry_spread_estimasi)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (signal_id, ts, ts, "M5", direction, entry_price, stop_loss, 4010, 4020, 4030,
               "CLOSED", outcome, 4000, ts, ts, pnl, mult, vision_rescued,
               m1_signal, m1_score, m1_confidence, entry_spread,
-              vision_verdict, near_smc))
+              vision_verdict, near_smc, entry_spread_estimasi))
         conn.commit()
         conn.close()
+
+    # ── get_entry_spread — nilai cadangan saat bridge diam ──
+
+    def test_entry_spread_pakai_bridge_kalau_tersedia(self):
+        asli = goldex_app.get_bridge_spread
+        goldex_app.get_bridge_spread = lambda: 0.42
+        try:
+            nilai, estimasi = goldex_app.get_entry_spread()
+        finally:
+            goldex_app.get_bridge_spread = asli
+        self.assertEqual(nilai, 0.42)
+        self.assertFalse(estimasi)
+
+    def test_entry_spread_jatuh_ke_default_kalau_bridge_diam(self):
+        asli = goldex_app.get_bridge_spread
+        goldex_app.get_bridge_spread = lambda: None
+        os.environ["DEFAULT_SPREAD"] = "0.35"
+        try:
+            nilai, estimasi = goldex_app.get_entry_spread()
+        finally:
+            goldex_app.get_bridge_spread = asli
+        self.assertEqual(nilai, 0.35)
+        self.assertTrue(estimasi)
+
+    def test_spread_stats_memisahkan_terukur_dari_asumsi(self):
+        """Nilai default tidak boleh menarik rata-rata yang terukur."""
+        self._insert_trade("BUY", "TP3_HIT", 5, pnl=30, entry_spread=0.20,
+                           entry_spread_estimasi=0)
+        self._insert_trade("BUY", "SL_HIT", 4, pnl=-10, entry_spread=0.30,
+                           entry_spread_estimasi=0)
+        self._insert_trade("SELL", "SL_HIT", 3, pnl=-10, entry_spread=0.35,
+                           entry_spread_estimasi=1)
+        st = goldex_app.get_spread_stats(days=30)
+        self.assertEqual(st["terekam"], 3)
+        self.assertEqual(st["jumlah_terukur"], 2)
+        self.assertEqual(st["jumlah_diasumsikan"], 1)
+        # rata-rata terukur hanya dari dua baris pertama
+        self.assertEqual(st["spread_rata2_terukur"], 0.25)
 
     # ── get_vision_shadow_stats — instrumentasi, bukan gerbang ──
 

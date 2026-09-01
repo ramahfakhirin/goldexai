@@ -910,3 +910,75 @@ Butuh 30-50 trade (~2-3/hari → sekitar 2 minggu) sebelum angkanya layak
 dipercaya. Sebelum itu, jangan simpulkan apa pun.
 
 **Belum aktif.** Perlu di-set `VISION_SHADOW_MODE=true` di environment Coolify.
+
+---
+
+## Biaya spread dibukukan (2026-09-01)
+
+Permintaan user: spread default 35 poin MT5 = **0,35 satuan harga** (1 poin emas
+= 0,01 di MT5), dipakai di backtest DAN produksi.
+
+### Backtest: efek terisolasi
+
+`SPREAD_COST` dikenakan sekali per trade (masuk di ask, keluar di bid = satu
+ongkos pulang-pergi), bukan per partial close. Kontrol dijalankan pada jendela
+data yang sama, hanya biaya yang dibedakan:
+
+| | Spread 0 | Spread 0,35 |
+|---|---|---|
+| Trade | 180 | 180 |
+| Win rate | 54,8% | 51,1% |
+| Profit factor | **1,31** | **1,20** |
+| PnL | $1.879,60 | $1.249,60 |
+| Netral | 12 | 0 |
+
+Selisih PnL $630,00 = persis 180 x $3,50. Tidak ada residu.
+
+Penurunan PF 0,11 ini **bukan noise**. Noise floor 0,13 yang dipakai di sesi
+ini berlaku untuk perbandingan antar-jendela data; di sini trade dan hasilnya
+identik, cuma dikurangi biaya tetap, jadi selisihnya eksak.
+
+Catatan metrik: `BE_HIT` tidak lagi netral. Stop di breakeven tetap membayar
+spread, jadi 12 trade yang dulu persis nol kini -$3,50 dan pindah ke kolom
+rugi. Karena itu win rate 54,8% -> 51,1% BUKAN perbandingan setara -- batas
+klasifikasinya bergeser. Profit factor lebih layak dipakai membandingkan.
+
+### Produksi: fallback + penanda asal-usul
+
+`get_entry_spread()` memakai bid/ask bridge; jatuh ke `DEFAULT_SPREAD` (0,35)
+kalau bridge diam. Kolom `entry_spread_estimasi` menandai baris yang memakai
+nilai cadangan.
+
+Penanda itu ditambahkan karena mengisi NULL dengan konstanta akan menghapus
+jejak mana yang benar-benar terukur -- `spread_rata2` perlahan tertarik ke 0,35
+seolah itu fakta. `get_spread_stats()` kini melaporkan `spread_rata2_terukur`
+(hanya dari bridge) di samping `spread_rata2` (semua).
+
+Peringatan satuan ditulis eksplisit di `.env.example`: menulis `35` berarti
+spread $35, tiga kali jarak SL biasa, dan seluruh statistik biaya jadi ngawur
+tanpa memunculkan error apa pun.
+
+3 test baru (total 66, semua lulus).
+
+### F5 — `pnl_pips` produksi juga KOTOR dari spread
+
+`_gain()` di `app.py:1724` menghitung `px - entry` dari **harga sinyal**, tanpa
+spread. Fill sebenarnya terjadi di ask (BUY) / bid (SELL), jadi PnL yang
+tercatat produksi sistematis lebih optimistis sebesar spread per trade.
+
+Ini menutup teka-teki yang menggantung sejak awal sesi. Dibandingkan pada dasar
+yang sama, backtest dan produksi ternyata **cocok hampir sempurna**:
+
+| | Kotor | Bersih |
+|---|---|---|
+| Backtest | 1,31 | 1,20 |
+| Produksi (178 trade, all-time) | 1,315 | ~1,20 |
+
+Jadi tidak pernah ada kebocoran sistemik untuk dicari -- yang ada hanya biaya
+yang tidak dibukukan di kedua sisi.
+
+Konsekuensi: profit factor dan PnL yang tampil di dashboard/`/performance`
+melebih-lebihkan isi rekening sebenarnya, sekitar 0,11 PF. **Tidak diperbaiki**
+-- di luar scope permintaan, dan menyentuh angka yang dilihat subscriber. Kalau
+mau dikoreksi, pilihannya: kurangi `entry_spread` saat menutup trade, atau
+tampilkan dua angka (kotor & bersih) supaya riwayat lama tetap terbaca.
