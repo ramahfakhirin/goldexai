@@ -812,9 +812,20 @@ def get_martingale_multiplier():
                 break
 
         # Circuit breaker: tanpa batas, rentetan SL beruntun bisa membuat lot
-        # membengkak eksponensial (5x SL = 32x lot). Default 4x = maksimal
-        # 2x doubling (1 -> 2 -> 4), bisa diatur lewat env var jika perlu.
-        max_multiplier = int(float(os.getenv("MAX_MARTINGALE_MULT", "4")))
+        # membengkak eksponensial (5x SL = 32x lot).
+        #
+        # Default diturunkan 4 -> 2 pada 2026-09-01 setelah drawdown 7 hari
+        # (-$1.182 / 47 trade). Yang mencurigakan bukan win rate-nya (turun 2x
+        # lipat, masih dalam wajar) melainkan kerugian RATA-RATA per trade yang
+        # membengkak 8x lipat: +$6,37 (30 hari) -> -$53,51 (24 jam). Win rate
+        # yang memburuk dua kali lipat tidak bisa menghasilkan kerugian delapan
+        # kali lipat; pengalinya yang melakukan itu.
+        #
+        # Dengan cap 4, SL ketiga beruntun dipertaruhkan 4x lot -- satu trade
+        # bisa -$400. Cap 2 membatasi urutan ke 1x -> 2x, memotong kerugian
+        # kasus terburuk per trade jadi separuh, tanpa menyentuh satu baris pun
+        # logika sinyal.
+        max_multiplier = int(float(os.getenv("MAX_MARTINGALE_MULT", "2")))
         return min(multiplier, max_multiplier)
     except Exception:
         return 1

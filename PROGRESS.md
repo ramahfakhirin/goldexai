@@ -982,3 +982,62 @@ melebih-lebihkan isi rekening sebenarnya, sekitar 0,11 PF. **Tidak diperbaiki**
 -- di luar scope permintaan, dan menyentuh angka yang dilihat subscriber. Kalau
 mau dikoreksi, pilihannya: kurangi `entry_spread` saat menutup trade, atau
 tampilkan dua angka (kotor & bersih) supaya riwayat lama tetap terbaca.
+
+---
+
+## Cap martingale diturunkan 4 -> 2 (2026-09-01)
+
+**Pemicu:** drawdown 7 hari di produksi. User meminta ganti total metode
+teknikal (usul Fibonacci); analisis angkanya menunjuk ke arah lain.
+
+| Periode | Trade | Win rate | PnL | Rugi rata-rata/trade |
+|---|---|---|---|---|
+| 30 hari | 215 | 50,3% | +$1.370 | **+$6,37** |
+| 7 hari | 47 | 36,4% | -$1.182 | -$25,16 |
+| 24 jam | 8 | 25,0% | -$428 | **-$53,51** |
+
+Dua alasan menolak penggantian metode:
+
+1. **23 hari sebelumnya menghasilkan +$2.552** (168 trade) dengan metode dan
+   pasar yang sama. Metode yang rusak fundamental tidak menghasilkan itu.
+2. **16 menang dari 44 trade menentukan** hanya butuh win rate sebenarnya 50%
+   dan kebetulan: p ~ 3,5%, atau sekitar dua minggu seperti ini per tahun.
+
+Yang TIDAK bisa dijelaskan varians: win rate memburuk 2x lipat, tapi kerugian
+rata-rata per trade membengkak **8x lipat**. Selisih itu datang dari pengali
+lot, bukan dari mesin sinyal. Dengan cap 4, SL ketiga beruntun dipertaruhkan
+4x lot -- satu trade bisa -$400 pada basis 0,10 lot.
+
+Cap 2 membatasi urutan ke 1x -> 2x, memotong kerugian kasus terburuk per trade
+jadi separuh, **tanpa menyentuh satu baris pun logika sinyal**.
+
+Keputusan sebelumnya (user mempertahankan martingale) tidak dibatalkan --
+martingale tetap hidup, hanya batasnya diturunkan. Bukti yang mendasari
+keputusan lama (PF 1,315 dengan vs 1,205 tanpa) diukur sebelum drawdown ini dan
+sebelum biaya spread diketahui.
+
+`MAX_MARTINGALE_MULT` kini terdokumentasi di `.env.example` (sebelumnya tidak
+sama sekali, meski sudah bisa diatur). 8 test baru mengunci perilakunya (total
+74 lulus).
+
+### Diperiksa, ternyata BUKAN masalah
+
+`EARLY_BE_MOVE` ditulis ke kolom `outcome`, dan loop martingale hanya mengenali
+SL_HIT (menggandakan) serta TP*/BE_HIT (mereset) -- nilai lain akan dilewati
+diam-diam dan menyambung rentetan yang seharusnya putus. Tapi baris itu ditulis
+saat `status` masih ACTIVE, sedangkan query martingale menyaring
+`status='CLOSED'`, jadi tidak pernah ikut terhitung. Juga hanya ada satu jalur
+penutupan trade (`app.py:703`) dan jalur itu selalu mengisi `outcome`, jadi
+tidak ada baris CLOSED ber-outcome NULL.
+
+### F6 — pengali martingale buta arah
+
+`get_martingale_multiplier()` (`xauusd_ai_analyst.py:791`) menghitung rentetan
+SL **lintas arah**: SL BUY lalu SL SELL tetap menggandakan lot, padahal
+keduanya setup independen. Ini tidak konsisten dengan `is_direction_blocked()`
+yang justru per-arah.
+
+Akibatnya di pasar choppy -- BUY dan SELL kalah bergantian -- pengali naik lebih
+cepat daripada kalau dihitung per arah, tanpa ada rentetan kekalahan nyata di
+salah satu arah. Belum diperbaiki (di luar scope permintaan). Perilaku saat ini
+sudah dikunci test supaya perubahannya tidak lolos diam-diam.

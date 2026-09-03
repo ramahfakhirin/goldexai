@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import xauusd_ai_analyst as analyst  # noqa: E402
 from xauusd_ai_analyst import (  # noqa: E402
     compute_adx_rising, check_volatility_floor, is_momentum_exhausted,
     efficiency_ratio,
@@ -147,6 +148,106 @@ class EfficiencyRatioTestCase(unittest.TestCase):
         s = pd.Series([100 + random.uniform(-5, 5) for _ in range(200)], dtype=float)
         series = efficiency_ratio(s, 20)
         self.assertTrue((series >= 0).all() and (series <= 1).all())
+
+
+
+
+class MartingaleCapTestCase(unittest.TestCase):
+    """
+    get_martingale_multiplier() menentukan lot efektif tiap trade, jadi cacat di
+    sini langsung berarti uang. Cap-nya diturunkan 4 -> 2 pada 2026-09-01 karena
+    drawdown yang kerugian per trade-nya membengkak 8x lipat sementara win rate
+    cuma memburuk 2x lipat -- selisih itu datang dari pengali, bukan dari sinyal.
+    """
+
+    def setUp(self):
+        import os
+        import sqlite3
+        import tempfile
+        from pathlib import Path
+        self._tmp = tempfile.TemporaryDirectory()
+        self._db = Path(self._tmp.name) / "signals.db"
+        conn = sqlite3.connect(self._db)
+        conn.execute("""
+            CREATE TABLE trade_monitors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                status TEXT, outcome TEXT, direction TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+        self._asli = analyst.get_db_path
+        analyst.get_db_path = lambda: self._db
+        os.environ.pop("MAX_MARTINGALE_MULT", None)
+
+    def tearDown(self):
+        analyst.get_db_path = self._asli
+        self._tmp.cleanup()
+
+    def _isi(self, outcomes, direction="BUY"):
+        """outcomes urut lama -> baru (id menaik)."""
+        import sqlite3
+        conn = sqlite3.connect(self._db)
+        for o in outcomes:
+            conn.execute(
+                "INSERT INTO trade_monitors (status, outcome, direction) VALUES ('CLOSED',?,?)",
+                (o, direction))
+        conn.commit()
+        conn.close()
+
+    def test_tanpa_riwayat_pengali_satu(self):
+        self.assertEqual(analyst.get_martingale_multiplier(), 1)
+
+    def test_satu_sl_menggandakan(self):
+        self._isi(["TP3_HIT", "SL_HIT"])
+        self.assertEqual(analyst.get_martingale_multiplier(), 2)
+
+    def test_default_baru_membatasi_di_dua(self):
+        """Tiga SL beruntun: dulu 4x, sekarang harus berhenti di 2x."""
+        self._isi(["SL_HIT", "SL_HIT", "SL_HIT"])
+        self.assertEqual(analyst.get_martingale_multiplier(), 2)
+
+    def test_kemenangan_mereset_rentetan(self):
+        self._isi(["SL_HIT", "SL_HIT", "TP1_HIT"])
+        self.assertEqual(analyst.get_martingale_multiplier(), 1)
+
+    def test_be_hit_juga_mereset(self):
+        """BE_HIT bukan loss murni -- SL sudah di breakeven, trade terlindungi."""
+        self._isi(["SL_HIT", "SL_HIT", "BE_HIT"])
+        self.assertEqual(analyst.get_martingale_multiplier(), 1)
+
+    def test_env_var_masih_bisa_menaikkan_cap(self):
+        import os
+        self._isi(["SL_HIT", "SL_HIT", "SL_HIT"])
+        os.environ["MAX_MARTINGALE_MULT"] = "4"
+        try:
+            self.assertEqual(analyst.get_martingale_multiplier(), 4)
+        finally:
+            os.environ.pop("MAX_MARTINGALE_MULT", None)
+
+    def test_cap_satu_mematikan_martingale(self):
+        import os
+        self._isi(["SL_HIT", "SL_HIT", "SL_HIT"])
+        os.environ["MAX_MARTINGALE_MULT"] = "1"
+        try:
+            self.assertEqual(analyst.get_martingale_multiplier(), 1)
+        finally:
+            os.environ.pop("MAX_MARTINGALE_MULT", None)
+
+    def test_rentetan_dihitung_lintas_arah(self):
+        """
+        Perilaku SAAT INI, dikunci supaya perubahannya tidak lolos diam-diam:
+        pengali tidak melihat arah sama sekali. SL BUY lalu SL SELL tetap
+        menggandakan, padahal keduanya setup independen -- beda dari
+        is_direction_blocked() yang justru per-arah. Lihat Findings F6.
+        """
+        import sqlite3
+        conn = sqlite3.connect(self._db)
+        conn.execute("INSERT INTO trade_monitors (status,outcome,direction) VALUES ('CLOSED','SL_HIT','BUY')")
+        conn.execute("INSERT INTO trade_monitors (status,outcome,direction) VALUES ('CLOSED','SL_HIT','SELL')")
+        conn.commit()
+        conn.close()
+        self.assertEqual(analyst.get_martingale_multiplier(), 2)
 
 
 if __name__ == "__main__":
