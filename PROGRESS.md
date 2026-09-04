@@ -1128,3 +1128,64 @@ mult 4.0  n=18  sl=13 (72,2%)  bersih -$1.206,40
 Trade 4x = 39% jumlah tapi 72% kerugian minggu itu. SL rate 72,2% di 4x vs
 52,6% di 1x: pengali memuncak tepat saat pasar paling tidak bersahabat, karena
 ia baru naik setelah rentetan kalah. Cap 4->2 memangkas kerugian itu ~separuh.
+
+---
+
+## Uji Fibonacci — ditolak (2026-09-04)
+
+User meminta ganti total metode teknikal, mengusulkan Fibonacci. Diuji dengan
+standar yang sama seperti tujuh ide sebelumnya: data sama, guard sama, biaya
+spread sama, model posisi sama; hanya mesin sinyal yang berbeda.
+
+Dua varian dipisah dengan sengaja, karena "metode Fibonacci" adalah dua
+keputusan berbeda (di mana masuk, di mana keluar). Kalau digabung lalu jelek,
+kita tidak tahu mana yang salah.
+
+| | Trade | Win rate | PF | PnL bersih | SL rata-rata |
+|---|---|---|---|---|---|
+| **BASE** (sekarang) | 180 | 51,1% | **1,272** | **+$1.704,10** | 8,28 |
+| FIB (exit RR proyek) | 195 | 47,7% | 0,866 | -$1.414,60 | 10,84 |
+| FIBX (exit extension fib) | 163 | 37,4% | 0,890 | -$1.012,90 | 11,07 |
+
+Split-sample:
+
+| | Paruh 1 | Paruh 2 |
+|---|---|---|
+| BASE | 1,097 OK | 1,400 OK |
+| FIB | 0,852 GAGAL | 0,878 GAGAL |
+| FIBX | 0,652 GAGAL | 1,101 OK |
+
+BASE untung di kedua paruh. FIB rugi di kedua paruh dengan besaran hampir
+identik dari 195 trade -- direplikasi, bukan periode yang kebetulan jelek.
+Selisih BASE vs FIB: **$3.119 dalam 70 hari**.
+
+Tiga celah pembelaan yang tertutup:
+
+1. **Bukan soal target.** FIB vs FIBX beda 10 poin win rate tapi PF setara
+   (0,866 vs 0,890). Mengganti level target tidak menyelamatkan apa pun --
+   yang bermasalah cara memilih titik masuknya.
+2. **Bukan soal stop kesempitan.** SL rata-rata fib 10,84-11,07 poin, jauh di
+   atas ambang 4 poin yang baru diperbaiki.
+3. **Bukan soal kurang kesempatan.** Fib memicu LEBIH sering (195 & 163 vs
+   180) -- kurang selektif, bukan kurang data.
+
+Aturan entry yang diuji: HTF bias dihormati, swing leg >= 2 x ATR, retrace ke
+zona 0,382-0,618, candle terakhir menolak searah tren, SL di balik 0,786 +
+0,3 x ATR. Anti-lookahead dijaga (df.iloc[:i+1] tiap bar).
+
+**Kesimpulan: metode teknikal adalah bagian TERBAIK sistem ini, bukan
+terburuknya.** Mesin sinyal menghasilkan PF 1,272 bersih. Yang membuat rekening
+impas adalah spread yang tak dibukukan dan setup ber-SL lebih rapat dari derak
+candle -- keduanya sudah ditutup, dan Fibonacci tidak menyentuh keduanya.
+
+### Anomali 64 trade: terjawab
+
+Run backtest yang menghasilkan 64 trade (vs 180 biasanya) TIDAK bisa
+direproduksi -- run BASE di atas menghasilkan 180 trade pada jendela data yang
+persis sama. Diperlakukan sebagai run gagal. Tabel kuartil SL yang ditolak
+karena sampel tipis memang benar untuk ditolak.
+
+Delapan ide diuji sepanjang sesi ini, semuanya ditolak: ADX-rising, HTF
+M15/M30/H4, gap-menyempit, mean-reversion saat diblokir, scalping lawan-tren,
+Fibonacci. Yang diterima hanya dua, dan keduanya bukan perubahan mesin sinyal:
+cap martingale dan gerbang SL minimum.
