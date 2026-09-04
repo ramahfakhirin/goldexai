@@ -1259,6 +1259,58 @@ def is_direction_blocked(direction: str) -> tuple:
         return False, ""
 
 
+def sl_too_tight(entry: float, sl: float, atr: float) -> tuple:
+    """
+    True kalau jarak SL lebih rapat daripada derak normal satu candle.
+
+    Return (terlalu_rapat: bool, keterangan: str).
+
+    Dasar empiris (225 trade produksi, 2026-09-04):
+      SL < 4 poin : 41 trade, SL rate 70,7%, PF 0,25, -$1.742
+      SL >= 4     : 129 trade, SL rate ~52%, PF ~1,15, +$1.174
+    Total bersih seluruh sistem cuma +$81 -- kelompok SL sempit sendirian yang
+    menghabiskannya.
+
+    JUJUR SOAL BUKTINYA: ini TIDAK lolos split-sample bersih. Efeknya hampir
+    seluruhnya di paruh kedua (29 trade, 79,3% SL, -$1.778); paruh pertama
+    netral (12 trade, 50,0% SL, +$36). Paruh pertama terlalu kecil untuk
+    menguji apa pun, tapi ini tetap penilaian di atas bukti belum lengkap.
+
+    Tetap dipasang karena dua hal:
+      1. Mekanismenya berdiri tanpa statistik -- ATR14 M5 berkisar 4,5-5,9
+         poin, jadi SL di bawah 4 poin lebih rapat dari rentang satu candle
+         rata-rata dan akan tersentuh derak normal berapa pun bagusnya sinyal.
+      2. Taruhannya asimetris -- di periode BAGUS pun trade SL sempit cuma
+         menyumbang +$36 dari +$1.583 (2%). Salah = rugi ~$36; benar = selamat
+         dari ribuan dolar.
+
+    Dipakai rasio ATR, bukan angka mati, supaya ambang ikut naik saat
+    volatilitas naik. MIN_SL_ATR_RATIO=0 mematikan gerbang.
+
+    Fail-open: ATR tidak tersedia (<=0) berarti TIDAK menolak -- gerbang ini
+    pengaman tambahan, bukan syarat lolos, jadi data indikator yang cacat tidak
+    boleh membunuh sinyal yang sudah valid.
+    """
+    try:
+        ratio = float(os.getenv("MIN_SL_ATR_RATIO", "0.8"))
+    except Exception:
+        ratio = 0.8
+    if ratio <= 0:
+        return False, ""
+    try:
+        atr_v = float(atr or 0)
+        dist  = abs(float(entry) - float(sl))
+    except Exception:
+        return False, ""
+    if atr_v <= 0 or dist <= 0:
+        return False, ""
+    ambang = ratio * atr_v
+    if dist < ambang:
+        return True, (f"SL {dist:.2f} poin < {ratio} x ATR ({atr_v:.2f}) = "
+                      f"{ambang:.2f} poin -- lebih rapat dari derak normal candle")
+    return False, ""
+
+
 def widen_sl_for_smc_structure(direction: str, entry: float, sl: float, smc) -> float:
     """
     Perluas SL kalau posisinya jatuh DI TENGAH zona order block / FVG SMC.
@@ -2545,6 +2597,18 @@ def run_scheduled_analysis():
                 berkah["sl"] = _new_sl
                 print(f"[Scheduler] 🛡️ SL diperluas {_old_sl:.2f} → {_new_sl:.2f} "
                       f"(hindari zona OB/FVG) — TP direcalculate untuk jaga rasio RR")
+
+        # ── Gerbang jarak SL minimum (relatif ATR) ──
+        # Ditempatkan SESUDAH pelebaran SMC di atas: yang dinilai adalah SL
+        # final, jadi kalau pelebaran sudah mengangkatnya melewati ambang,
+        # sinyal tidak ditolak. Alasan & bukti lengkap: lihat sl_too_tight().
+        if sig in ("BUY", "SELL") and berkah.get("sl") and berkah.get("entry"):
+            _tight, _note = sl_too_tight(
+                float(berkah["entry"]), float(berkah["sl"]),
+                getattr(indicators, "atr_14", 0))
+            if _tight:
+                print(f"[Scheduler] 📏 {sig} ditolak — {_note}")
+                return None
 
         # ── BUY atau SELL terdeteksi — panggil Claude hanya untuk narasi ──
         price = market.current_price

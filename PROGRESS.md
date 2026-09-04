@@ -1041,3 +1041,90 @@ Akibatnya di pasar choppy -- BUY dan SELL kalah bergantian -- pengali naik lebih
 cepat daripada kalau dihitung per arah, tanpa ada rentetan kekalahan nyata di
 salah satu arah. Belum diperbaiki (di luar scope permintaan). Perilaku saat ini
 sudah dikunci test supaya perubahannya tidak lolos diam-diam.
+
+---
+
+## Gerbang jarak SL minimum (2026-09-04)
+
+Data produksi nyata, 225 trade CLOSED, dibaca langsung dari container.
+
+### Angka utama: sistemnya impas, bukan untung
+
+```
+TOTAL  n=225  kotor +$1.439,30  ->  bersih +$81,30  ->  PF 1,007
+```
+
+Spread memakan **94% laba kotor**. Dashboard menampilkan +$1.439; yang tersisa
+di rekening $81. Ini mengonfirmasi F5 dengan data nyata, bukan estimasi.
+
+### Penyebabnya: SL lebih rapat dari derak candle
+
+| Jarak SL | Trade | SL rate | PnL bersih | PF |
+|---|---|---|---|---|
+| **< 4 poin** | 41 | **70,7%** | **-$1.742,30** | **0,25** |
+| 4-7 poin | 70 | 48,6% | +$418,10 | 1,108 |
+| 7-10 poin | 38 | 55,3% | +$702,70 | 1,244 |
+| >= 10 poin | 21 | 61,9% | +$52,80 | 1,016 |
+
+Total bersih +$81,30, sementara kelompok SL sempit sendirian rugi -$1.742,30.
+Tanpa kelompok itu sisanya +$1.823,60.
+
+SL rate 70,7% dari 41 trade melawan basis 44,9%: p ~ 0,0005.
+
+### Split-sample: TIDAK lolos bersih
+
+| | SL<4 | SL>=4 |
+|---|---|---|
+| Paruh 1 (3-17 Agu) | 12 trade, 50,0% SL, +$36,20, PF 1,191 | 63 trade, 46,0% SL, +$1.546,60, PF 1,395 |
+| Paruh 2 (17 Agu-4 Sep) | 29 trade, 79,3% SL, -$1.778,50, PF 0,167 | 66 trade, 59,1% SL, -$373,00, PF 0,939 |
+
+Menurut standar sesi ini (harus menang di kedua paruh), ini **gagal**.
+Dipasang tetap, dengan tiga alasan yang dicatat terbuka:
+
+1. **Paruh 1 tidak membantah, cuma terlalu kecil.** 12 trade tidak bisa
+   membedakan PF 1,19 dari 0,5; kalau SL rate sebenarnya 79%, mengamati 6/12
+   masih terjadi ~6% dari waktu.
+2. **Degradasinya tidak seragam.** SL>=4 turun 33% (1,395->0,939), SL<4 turun
+   86% (1,191->0,167). Selisih SL rate melebar dari 4 poin jadi 20 poin.
+3. **Mekanismenya berdiri tanpa statistik.** ATR14 M5 = 4,5-5,9 poin (diukur
+   terpisah). SL < 4 poin lebih rapat dari rentang satu candle rata-rata.
+
+**Yang menentukan: taruhannya asimetris.** Di paruh BAGUS pun trade SL sempit
+cuma menyumbang +$36 dari +$1.583 (2%) -- mereka tidak menopang sistem bahkan
+saat keadaan baik. Salah = rugi ~$36; benar = selamat dari ribuan dolar.
+
+### Implementasi
+
+`sl_too_tight(entry, sl, atr)` -- fungsi murni, dipanggil SESUDAH pelebaran SMC
+supaya yang dinilai SL final. Menolak sinyal (tidak melebarkan SL, karena yang
+terbukti membantu adalah menolaknya, bukan melebarkannya).
+
+Rasio ATR, bukan angka mati: mekanismenya "lebih rapat dari derak normal", jadi
+ambangnya harus ikut naik saat volatilitas naik. `MIN_SL_ATR_RATIO=0.8`
+(~4 poin pada ATR 5, mereproduksi batas yang diuji); 0 mematikan.
+
+Fail-open: ATR <= 0 berarti TIDAK menolak. Gerbang ini pengaman tambahan, bukan
+syarat lolos.
+
+7 test baru (total 81).
+
+### Veto M1: gugur, bukan karena salah
+
+```
+M1 setuju n=93   M1 menolak n=3   belum terekam 129
+```
+
+M1 hanya menolak 3 kali dari 96. Veto yang menyaring 3% trade tidak mengubah
+apa pun bahkan andai ketiganya rugi. Ide ditutup tanpa biaya.
+
+### Martingale: hipotesis terkonfirmasi
+
+```
+mult 1.0  n=19  sl=10 (52,6%)  bersih  -$458,80
+mult 2.0  n=11  sl= 6 (54,5%)  bersih   -$13,40
+mult 4.0  n=18  sl=13 (72,2%)  bersih -$1.206,40
+```
+
+Trade 4x = 39% jumlah tapi 72% kerugian minggu itu. SL rate 72,2% di 4x vs
+52,6% di 1x: pengali memuncak tepat saat pasar paling tidak bersahabat, karena
+ia baru naik setelah rentetan kalah. Cap 4->2 memangkas kerugian itu ~separuh.

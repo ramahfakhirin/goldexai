@@ -67,6 +67,64 @@ class GuardTestCase(unittest.TestCase):
         conn.commit()
         conn.close()
 
+    # ── sl_too_tight — gerbang jarak SL minimum ──
+
+    def test_sl_lebih_rapat_dari_ambang_ditolak(self):
+        """ATR 5 -> ambang 0,8 x 5 = 4 poin. SL 3 poin harus ditolak."""
+        os.environ["MIN_SL_ATR_RATIO"] = "0.8"
+        try:
+            tight, note = goldex_app.sl_too_tight(4000.0, 3997.0, 5.0)
+        finally:
+            os.environ.pop("MIN_SL_ATR_RATIO", None)
+        self.assertTrue(tight)
+        self.assertIn("lebih rapat", note)
+
+    def test_sl_tepat_di_ambang_diterima(self):
+        """Batasnya '<', bukan '<=' -- tepat 4,0 poin pada ATR 5 harus lolos."""
+        os.environ["MIN_SL_ATR_RATIO"] = "0.8"
+        try:
+            tight, _ = goldex_app.sl_too_tight(4000.0, 3996.0, 5.0)
+        finally:
+            os.environ.pop("MIN_SL_ATR_RATIO", None)
+        self.assertFalse(tight)
+
+    def test_ambang_ikut_naik_saat_volatilitas_naik(self):
+        """SL 6 poin lolos pada ATR 5, tapi ditolak pada ATR 10."""
+        os.environ["MIN_SL_ATR_RATIO"] = "0.8"
+        try:
+            self.assertFalse(goldex_app.sl_too_tight(4000.0, 3994.0, 5.0)[0])
+            self.assertTrue(goldex_app.sl_too_tight(4000.0, 3994.0, 10.0)[0])
+        finally:
+            os.environ.pop("MIN_SL_ATR_RATIO", None)
+
+    def test_rasio_nol_mematikan_gerbang(self):
+        os.environ["MIN_SL_ATR_RATIO"] = "0"
+        try:
+            self.assertFalse(goldex_app.sl_too_tight(4000.0, 3999.9, 5.0)[0])
+        finally:
+            os.environ.pop("MIN_SL_ATR_RATIO", None)
+
+    def test_atr_tidak_tersedia_fail_open(self):
+        """
+        ATR cacat/kosong TIDAK boleh membunuh sinyal. Gerbang ini pengaman
+        tambahan, bukan syarat lolos -- beda dari Vision rescue.
+        """
+        for atr in (0, None, -1):
+            self.assertFalse(goldex_app.sl_too_tight(4000.0, 3999.0, atr)[0])
+
+    def test_sl_sama_dengan_entry_tidak_menolak(self):
+        """Jarak nol = data cacat, bukan sinyal buruk -- jangan ditolak di sini."""
+        self.assertFalse(goldex_app.sl_too_tight(4000.0, 4000.0, 5.0)[0])
+
+    def test_arah_sell_diperlakukan_sama(self):
+        """Jaraknya absolut, jadi SL di ATAS entry dinilai identik."""
+        os.environ["MIN_SL_ATR_RATIO"] = "0.8"
+        try:
+            self.assertTrue(goldex_app.sl_too_tight(4000.0, 4003.0, 5.0)[0])
+            self.assertFalse(goldex_app.sl_too_tight(4000.0, 4006.0, 5.0)[0])
+        finally:
+            os.environ.pop("MIN_SL_ATR_RATIO", None)
+
     # ── get_entry_spread — nilai cadangan saat bridge diam ──
 
     def test_entry_spread_pakai_bridge_kalau_tersedia(self):
